@@ -11,7 +11,8 @@ def build_subseq(seq_rec, length):
     r_int = random.randint(0, d_len)
     seq_str = seq_rec['seq'].values[0]
     sub_seq = seq_str[r_int:r_int + length]
-    f_seq, r_seq = seq_str.split(sub_seq)
+    f_seq = seq_str[0:r_int + 1]
+    r_seq = seq_str[r_int + length:-1]
     contig_id = seq_rec['contig_id'].values[0]
     s = '|'
     if s in contig_id:
@@ -41,18 +42,26 @@ def build_subseq(seq_rec, length):
 
 def sel_contig(real_contig_df, sub_sag_df):
     synth_contig_list = []
+    fail_checker = False
     for contig_id, seq_len in zip(sub_sag_df['contig_id'], sub_sag_df['seq_len']):
         len_df = real_contig_df.loc[real_contig_df['seq_len'] >= seq_len]
-        r_sample = len_df.sample()
-        split_seqs_dfs = build_subseq(r_sample, seq_len)
-        real_contig_df = real_contig_df.loc[
-            ~real_contig_df['contig_id'].isin(list(r_sample['contig_id']))
-        ]
-        real_contig_df = pd.concat([real_contig_df, split_seqs_dfs[1]])
-        synth_contig_list.append(split_seqs_dfs[0])
-    concat_df = pd.concat(synth_contig_list)
-
-    return concat_df
+        if len_df.shape[0] == 0:
+            fail_checker = True
+            synth_contig_list = []
+            break
+        else:
+            r_sample = len_df.sample()
+            split_seqs_dfs = build_subseq(r_sample, seq_len)
+            real_contig_df = real_contig_df.loc[
+                ~real_contig_df['contig_id'].isin(list(r_sample['contig_id']))
+            ]
+            real_contig_df = pd.concat([real_contig_df, split_seqs_dfs[1]])
+            synth_contig_list.append(split_seqs_dfs[0])
+    if (len(synth_contig_list) != 0):
+        concat_df = pd.concat(synth_contig_list)
+    else:
+        concat_df = None
+    return concat_df, fail_checker
 
 
 src_gen_path = sys.argv[1]  # path containing the reference genomes
@@ -100,18 +109,15 @@ for gen_id in gen_dict.keys():
         len_contig_len = len(list(sub_df['seq_len']))
 
         if max_contig_len <= gen_max_len:
-            try:
-                gen_synth_df = sel_contig(gen_recs_df, sub_df)
-                sag_save_file = syn_out_path + '/' + \
-                                gen_id.rsplit('/', 1)[1].rsplit('.', 1)[0] + '.' + str(sag_rand) + \
-                                '.fasta'
-                with open(sag_save_file, 'w') as syn_fa:
-                    fasta_list = ['>' + f[0] + '\n' + f[1] + '\n' for f in
-                                  zip(gen_synth_df['contig_id'], gen_synth_df['seq'])
-                                  ]
-                    syn_fa.write(''.join(fasta_list))
-                sag_counter += 1
-            except:
-                print('ERROR', max_contig_len, gen_max_len)
-        else:
-            print(max_contig_len, gen_max_len)
+            gen_synth_df, failed = sel_contig(gen_recs_df, sub_df)
+            if failed is False:
+                if gen_synth_df['seq_len'].max() >= 20000:
+                    sag_save_file = syn_out_path + '/' + \
+                                    gen_id.rsplit('/', 1)[1].rsplit('.', 1)[0] + '.' + str(sag_rand) + \
+                                    '.fasta'
+                    with open(sag_save_file, 'w') as syn_fa:
+                        fasta_list = ['>' + f[0] + '\n' + f[1] + '\n' for f in
+                                      zip(gen_synth_df['contig_id'], gen_synth_df['seq'])
+                                      ]
+                        syn_fa.write(''.join(fasta_list))
+                    sag_counter += 1

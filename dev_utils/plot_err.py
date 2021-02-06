@@ -104,17 +104,15 @@ map_algo = {'synSAG': 'synSAG', 'minhash': 'MinHash', 'mbn_abund': 'MBN-Abund', 
 err_df['algorithm'] = [map_algo[x] for x in err_df['algorithm']]
 err_df['level'] = ['exact' if x == 'perfect' else x for x in err_df['level']]
 err_trim_df = err_df.loc[err_df['statistic'] != 'F1_score']
-
 sns.set(font_scale=1.5)  # crazy big
 level_list = ['strain']
 stat_list = ['sensitivity', 'precision']
 trim_df = err_trim_df.loc[((err_trim_df['level'].isin(level_list)) &
                            (err_trim_df['statistic'].isin(stat_list))
                            )]
-trim_df['sag_id'] = [x.replace('.synSAG', '') for x in trim_df['sag_id']]
+trim_df['sag_id'] = [x.replace('.fasta', '') for x in trim_df['sag_id']]
 sagid_list = list(trim_df['sag_id'].loc[trim_df['algorithm'] == 'SABer-xPG'])
 trim_df = trim_df.loc[trim_df['sag_id'].isin(sagid_list)]
-
 
 def myceil(x, base=5):
     return base * math.ceil(x / base)
@@ -141,12 +139,11 @@ precision_df = filter_df.loc[filter_df['statistic'] == 'precision']
 synSAG_df = merge_df.loc[((merge_df['stage'] == 'synSAG') &
                           (merge_df['statistic'] == 'sensitivity')
                           )]
-
 sensitivity_df['datatype'] = 'Sensitivity'
 precision_df['datatype'] = 'Precision'
 synSAG_df['datatype'] = 'synSAG_Sensitivity'
 syn_stage_sense_df = pd.concat([sensitivity_df, synSAG_df])
-
+syn_stage_precis_df = pd.concat([precision_df, synSAG_df])
 df_list = []
 df_list.extend([sensitivity_df, precision_df])
 for algo in set(filter_df['stage']):
@@ -214,6 +211,33 @@ for algo in set(syn_stage_sense_df['stage']):
     plt.clf()
     plt.close()
 
+for algo in set(syn_stage_precis_df['stage']):
+    # Plot Before and after SAG -> SABer-xPG completness
+    algo_list = ['synSAG', algo]
+    sub_trim_df = syn_stage_precis_df.loc[syn_stage_precis_df['stage'].isin(algo_list)]
+    sns.set_context("poster")
+    sns.set_style('whitegrid')
+    sns.set(font_scale=0.75)
+    g = sns.JointGrid(data=sub_trim_df, x='synSAG_score', y='stage_score', hue='stage',
+                      ylim=(0, 101)
+                      )
+    g.plot_joint(sns.scatterplot, legend=False)
+    g.plot_marginals(sns.histplot, kde=True)
+
+    g.savefig(comp_path + algo + "_synSAG_Precision.png", bbox_inches='tight', dpi=300)
+    plt.clf()
+    plt.close()
+
+    sns.set_context("poster")
+    sns.set_style('whitegrid')
+    sns.set(font_scale=0.75)
+    g = sns.catplot(x='synSAG_score_cat', y='stage_score', hue='stage', kind='box',
+                    data=sub_trim_df, linewidth=0.5
+                    )
+    g.savefig(comp_path + algo + "_synSAG_Precision_box.png", bbox_inches='tight', dpi=300)
+    plt.clf()
+    plt.close()
+
 unstack_df = err_trim_df.set_index(['sag_id', 'algorithm', 'level', 'statistic']).unstack('statistic')
 unstack_df.reset_index(inplace=True)
 unstack_df.columns = ['sag_id', 'algorithm', 'level', 'MCC', 'Precision',
@@ -264,6 +288,9 @@ for algo in set(unstack_df['algorithm']):
             outlier_list.append(outlier_df)
 
 concat_val_df = pd.concat(val_df_list)
+concat_val_df.sort_values(by=['level', 'stat', 'mean'], ascending=[False, False, False],
+                          inplace=True
+                          )
 concat_val_df.to_csv(err_path + '/Compiled_stats.tsv', sep='\t', index=False)
 concat_out_df = pd.concat(outlier_list)
 concat_out_df.to_csv(err_path + '/Compiled_outliers.tsv', sep='\t', index=False)

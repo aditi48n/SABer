@@ -25,9 +25,9 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
             (force is False)
     ):
         logging.info('Loading Abundance matrix for %s\n' % mg_id)
-        mh_covm_df = pd.read_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'), header=0,
-                                 sep='\t'
-                                 )
+        covm_df = pd.read_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'), header=0,
+                              sep='\t'
+                              )
     else:
         mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
         mg_headers = tuple(mg_subcontigs.keys())
@@ -38,11 +38,10 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
                                  nthreads
                                  )
         # Recruit subcontigs using OC-SVM
-        covm_pass_dfs = []
         minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
         logging.info("Starting one-class SVM analysis\n")
-        covm_df = abund_recruiter(abr_path, covm_pass_dfs, mg_covm_out, minhash_df, nthreads)
-
+        covm_df = abund_recruiter(abr_path, mg_covm_out, minhash_df, nthreads)
+        '''
         # Count # of subcontigs recruited to each SAG via samsum
         covm_cnt_df = covm_df.groupby(['sag_id', 'contig_id']).count().reset_index()
         covm_cnt_df.columns = ['sag_id', 'contig_id', 'subcontig_recruits']
@@ -79,14 +78,16 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
         )]
         mh_covm_df = pd.concat([covm_final_max_df, sub_mh_df])
         mh_covm_df.drop_duplicates(inplace=True)
-        mh_covm_df.to_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'),
-                          sep='\t', index=False
-                          )
+        '''
+        covm_df.to_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'),
+                       sep='\t', index=False
+                       )
 
-    return mh_covm_df
+    return covm_df
 
 
-def abund_recruiter(abr_path, covm_pass_dfs, mg_covm_out, minhash_df, nthreads):
+def abund_recruiter(abr_path, mg_covm_out, minhash_df, nthreads):
+    covm_pass_dfs = []
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     # Prep MinHash
@@ -95,16 +96,19 @@ def abund_recruiter(abr_path, covm_pass_dfs, mg_covm_out, minhash_df, nthreads):
     mh_recruit_dict = tra.build_uniq_dict(minhash_dedup_df, 'sag_id', nthreads,
                                           'MinHash Recruits')  # TODO: this might not need multithreading
     for i, sag_id in enumerate(list(mh_recruit_dict.keys()), 1):
+        logging.info('\rPrepping for OCSVM: {}/{}'.format(i, len(mh_recruit_dict.keys())))
         if isfile(o_join(abr_path, sag_id + '.abr_recruits.tsv')):
-            # logging.info('Loading Abundance Recruits for  %s\n' % sag_id)
             final_pass_df = pd.read_csv(o_join(abr_path, sag_id + '.abr_recruits.tsv'),
                                         header=None,
                                         names=['sag_id', 'subcontig_id', 'contig_id'],
                                         sep='\t'
                                         )
-            covm_pass_dfs.append(final_pass_df)
+            dedupped_pass_df = final_pass_df[['sag_id', 'contig_id']].drop_duplicates(
+                subset=['sag_id', 'contig_id']
+            )
+            covm_pass_dfs.append(dedupped_pass_df)
+
         else:
-            logging.info('\rPrepping for OCSVM: {}/{}'.format(i, len(mh_recruit_dict.keys())))
             mh_sub_df = mh_recruit_dict[sag_id]
             arg_list.append([abr_path, sag_id, mh_sub_df, mg_covm_out])
     logging.info('\n')
@@ -213,8 +217,9 @@ def runSamTools(abr_path, pe_id, nthreads, mg_id, mg_sam_out):
 def runCovM(abr_path, mg_id, nthreads, sorted_bam_list):
     # run coverm on sorted bams
     mg_covm_out = o_join(abr_path, mg_id + '.metabat.tsv')
+    mg_covm_std = o_join(abr_path, mg_id + '.covM.scaled.tsv')
     try:  # if file exists but is empty
-        covm_size = getsize(mg_covm_out)
+        covm_size = getsize(mg_covm_std)
     except:  # if file doesn't exist
         covm_size = -1
     if covm_size <= 0:
@@ -226,42 +231,47 @@ def runCovM(abr_path, mg_id, nthreads, sorted_bam_list):
             with open(o_join(abr_path, mg_id + '.stderr.txt'), 'w') as stderr_file:
                 run_covm = Popen(covm_cmd, stdout=covm_file, stderr=stderr_file)
                 run_covm.communicate()
+        mg_covm_df = pd.read_csv(mg_covm_out, header=0, sep='\t', index_col=['contigName'])
+        mg_covm_df.drop(columns=['contigLen', 'totalAvgDepth'], inplace=True)
+        scale = StandardScaler().fit(mg_covm_df.values)
+        scaled_data = scale.transform(mg_covm_df.values)
+        std_merge_df = pd.DataFrame(scaled_data, index=mg_covm_df.index).reset_index()
+        std_merge_df.to_csv(mg_covm_std, header=True, sep='\t', index=False)
 
-    return mg_covm_out
+    return mg_covm_std
 
 
 def recruitSubs(p):
     abr_path, sag_id, minhash_sag_df, mg_covm_out = p
     minhash_filter_df = minhash_sag_df.loc[(minhash_sag_df['jacc_sim_max'] == 1.0)]
+    abr_recruit_file = o_join(abr_path, sag_id + '.abr_recruits.tsv')
     if len(minhash_filter_df['sag_id']) != 0:
         mg_covm_df = pd.read_csv(mg_covm_out, header=0, sep='\t', index_col=['contigName'])
-        mg_covm_df.drop(columns=['contigLen', 'totalAvgDepth'], inplace=True)
-        scale = StandardScaler().fit(mg_covm_df.values)
-        scaled_data = scale.transform(mg_covm_df.values)
-        std_merge_df = pd.DataFrame(scaled_data, index=mg_covm_df.index)
-        recruit_contigs_df = std_merge_df.loc[std_merge_df.index.isin(
+        recruit_contigs_df = mg_covm_df.loc[mg_covm_df.index.isin(
             list(minhash_filter_df['subcontig_id']))
         ]
-        nonrecruit_filter_df = std_merge_df.copy()
-
-        kmeans_pass_list = runKMEANS(recruit_contigs_df, sag_id, std_merge_df)
+        kmeans_pass_list = runKMEANS(recruit_contigs_df, sag_id, mg_covm_df)
         kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
                                       columns=['sag_id', 'subcontig_id', 'contig_id']
                                       )
-        nonrecruit_kmeans_df = nonrecruit_filter_df.loc[nonrecruit_filter_df.index.isin(
+        nonrecruit_kmeans_df = mg_covm_df.loc[mg_covm_df.index.isin(
             kmeans_pass_df['subcontig_id']
         )]
         final_pass_list = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id)
         final_pass_df = pd.DataFrame(final_pass_list,
                                      columns=['sag_id', 'subcontig_id', 'contig_id']
                                      )
-        final_pass_df.to_csv(o_join(abr_path, sag_id + '.abr_recruits.tsv'),
-                             header=False, index=False, sep='\t'
-                             )
+        final_pass_df.to_csv(abr_recruit_file, header=False, index=False, sep='\t')
+        # dedup_pass_df = final_pass_df[['sag_id', 'contig_id']
+        #                                                ].drop_duplicates(subset=['contig_id'])
+        # dedup_pass_df = dedup_pass_df.reset_index(drop=True)
     else:
+        # dedup_pass_df = pd.DataFrame([], columns=['sag_id', 'contig_id'])
         final_pass_df = pd.DataFrame([], columns=['sag_id', 'subcontig_id', 'contig_id'])
-
-    return final_pass_df
+    dedupped_pass_df = final_pass_df[['sag_id', 'contig_id']].drop_duplicates(
+        subset=['sag_id', 'contig_id']
+    )
+    return dedupped_pass_df
 
 
 def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
@@ -291,7 +301,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     pred_df = std_clust_df[['subcontig_id', 'contig_id', 'kmeans_pred']]
     val_perc = pred_df.groupby('contig_id')['kmeans_pred'].value_counts(normalize=True).reset_index(name='percent')
     pos_perc = val_perc.loc[val_perc['kmeans_pred'] == 1]
-    major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+    major_df = pos_perc.loc[pos_perc['percent'] >= 0.95]
     major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
     kmeans_pass_list = []
     for md_nm in major_pred_df['subcontig_id']:
@@ -308,15 +318,14 @@ def runOCSVM(sag_df, mg_df, sag_id):
     pred_df = pd.DataFrame(zip(mg_df.index.values, contig_id_list, mg_pred),
                            columns=['subcontig_id', 'contig_id', 'ocsvm_pred']
                            )
-    # key_cnts = pred_df.groupby('contig_id')['ocsvm_pred'].value_counts().reset_index(name='count')
     val_perc = pred_df.groupby('contig_id')['ocsvm_pred'].value_counts(
         normalize=True).reset_index(name='percent')
     pos_perc = val_perc.loc[val_perc['ocsvm_pred'] == 1]
     major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
-    # pos_perc = key_cnts.loc[key_cnts['ocsvm_pred'] == 1]
-    # major_df = pos_perc.loc[pos_perc['count'] != 0]
     major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
     svm_pass_list = []
+    # print('KMEANS recruits: ', str(len(mg_df.index.values)))
+    # print('OCSVM recruits: ', str(len(major_pred_df['subcontig_id'])))
     for md_nm in major_pred_df['subcontig_id']:
         svm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
     return svm_pass_list

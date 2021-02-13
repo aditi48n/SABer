@@ -1,5 +1,6 @@
 import sys
-from os import makedirs, path
+from os import makedirs, path, listdir
+from os.path import isfile
 from os.path import join as joinpath
 
 import numpy as np
@@ -12,6 +13,7 @@ pd.set_option('display.max_columns', None)
 # pd.set_option('display.max_colwidth', -1)
 from tqdm import tqdm
 import multiprocessing
+import glob
 
 
 def calc_err(df):
@@ -140,9 +142,20 @@ def collect_error(p):
     return error_list, tp_list
 
 
+##################################################################################################
+# INPUT files
+saberout_path = sys.argv[1]
+synsrc_path = sys.argv[2]
+mocksag_path = joinpath(synsrc_path, 'Final_SAGs_20k/')
+src_genome_path = joinpath(synsrc_path, 'fasta/')
+sag_tax_map = joinpath(synsrc_path, 'genome_taxa_info.tsv')
+mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
+src_metag_file = sys.argv[3]
+nthreads = int(sys.argv[4])
+##################################################################################################
+
+
 # Map genome id and contig id to taxid for error analysis
-sag_tax_map = '/home/rmclaughlin/Ryan_Sandbox/SABer/mock_datasets/mock_SAGs/CAMI_I_HIGH/' + \
-              'genome_taxa_info.tsv'
 sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
 sag_taxmap_df['sp_taxid'] = [int(x) for x in sag_taxmap_df['@@TAXID']]
 sag_taxmap_df['sp_name'] = [x.split('|')[-2] for x in sag_taxmap_df['TAXPATHSN']]
@@ -158,8 +171,6 @@ taxpath_df['species'] = [x[1] if str(x[0]) == '' else x[0] for x in
                          zip(taxpath_df['species'], taxpath_df['genus'])
                          ]
 # Map MetaG contigs to their genomes
-mg_contig_map = '/home/rmclaughlin/Ryan_Sandbox/SABer/mock_datasets/mock_SAGs/CAMI_I_HIGH/' + \
-                'gsa_mapping_pool.binning'
 mg_contig_map_df = pd.read_csv(mg_contig_map, sep='\t', header=0)
 mg_contig_map_df['TAXID'] = [str(x) for x in mg_contig_map_df['TAXID']]
 
@@ -171,143 +182,124 @@ tax_mg_df = tax_mg_df[['@@SEQUENCEID', 'CAMI_genomeID', 'domain', 'phylum', 'cla
                        'family', 'genus', 'species', 'strain'
                        ]]
 
-files_path = sys.argv[1]
-err_path = files_path + '/error_analysis'
+err_path = saberout_path + '/error_analysis'
 if not path.exists(err_path):
     makedirs(err_path)
 
-tax_mg_df.to_csv(files_path + 'error_analysis/src2sag_map.tsv', sep='\t', index=False)
+tax_mg_df.to_csv(saberout_path + 'error_analysis/src2sag_map.tsv', sep='\t', index=False)
 
 # count all bp's for Source genomes, Source MetaG, MockSAGs
-src_metag_file = '/home/rmclaughlin/Ryan_Sandbox/SABer/mock_datasets/mock_metagenomes/' + \
-                 'CAMI_I_HIGH/CAMI_high_GoldStandardAssembly.fasta'
 # count all bp's for each read in metaG
 src_metag_cnt_dict = cnt_contig_bp(src_metag_file)
 # Add to tax DF
 tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
 
-src_genome_path = '/home/rmclaughlin/Ryan_Sandbox/SABer/mock_datasets/mock_SAGs/CAMI_I_HIGH/fasta/'
-mocksag_path = sys.argv[2]
-'''
-# list all source genomes
-src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
-                   if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna') and
-                       'Sample' not in f)
-                   ]
+if isfile(saberout_path + 'error_analysis/src_mock_df.tsv'):
+    src_mock_err_df = pd.read_csv(saberout_path + 'error_analysis/src_mock_df.tsv',
+                                  sep='\t', header=0
+                                  )
+else:
+    # list all source genomes
+    src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
+                       if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna') and
+                           'Sample' not in f)
+                       ]
 
-# list all mockSAGs
-mocksag_list = [joinpath(mocksag_path, f) for f in listdir(mocksag_path)
-            if (f.split('.')[-1] == 'fasta')
-                ]
-src_mock_list = src_genome_list + mocksag_list
+    # list all mockSAGs
+    mocksag_list = [joinpath(mocksag_path, f) for f in listdir(mocksag_path)
+                    if (f.split('.')[-1] == 'fasta')
+                    ]
+    src_mock_list = src_genome_list + mocksag_list
 
-# count total bp's for each src and mock fasta
-fa_bp_cnt_list = []
-for fa_file in mocksag_list:
-    f_id = fa_file.split('/')[-1].rsplit('.', 2)[0]
-    u_id = fa_file.split('/')[-1].split('.fasta')[0]
-    f_type = 'synSAG'
-    fa_file, fa_bp_cnt = cnt_total_bp(fa_file)
-    print(f_id, u_id, f_type, fa_bp_cnt)
-    fa_bp_cnt_list.append([f_id, u_id, f_type, fa_bp_cnt])
-src_bp_cnt_list = []
-for fa_file in src_genome_list:
-    f_id = fa_file.split('/')[-1].rsplit('.', 1)[0]
-    f_type = 'src_genome'
-    fa_file, fa_bp_cnt = cnt_total_bp(fa_file)
-    print(f_id, f_type, fa_bp_cnt)
-    src_bp_cnt_list.append([f_id, f_type, fa_bp_cnt])
+    # count total bp's for each src and mock fasta
+    fa_bp_cnt_list = []
+    for fa_file in mocksag_list:
+        f_id = fa_file.split('/')[-1].rsplit('.', 2)[0]
+        u_id = fa_file.split('/')[-1].split('.fasta')[0]
+        f_type = 'synSAG'
+        fa_file, fa_bp_cnt = cnt_total_bp(fa_file)
+        print(f_id, u_id, f_type, fa_bp_cnt)
+        fa_bp_cnt_list.append([f_id, u_id, f_type, fa_bp_cnt])
+    src_bp_cnt_list = []
+    for fa_file in src_genome_list:
+        f_id = fa_file.split('/')[-1].rsplit('.', 1)[0]
+        f_type = 'src_genome'
+        fa_file, fa_bp_cnt = cnt_total_bp(fa_file)
+        print(f_id, f_type, fa_bp_cnt)
+        src_bp_cnt_list.append([f_id, f_type, fa_bp_cnt])
 
-fa_bp_cnt_df = pd.DataFrame(fa_bp_cnt_list, columns=['sag_id', 'u_id', 'data_type',
-                            'tot_bp_cnt'
-                            ])
-src_bp_cnt_df = pd.DataFrame(src_bp_cnt_list, columns=['sag_id', 'data_type',
-                             'tot_bp_cnt'
-                             ])
-print(fa_bp_cnt_df.head())
-print(src_bp_cnt_df.head())
-merge_bp_cnt_df = fa_bp_cnt_df.merge(src_bp_cnt_df, on='sag_id', how='left')
-unstack_cnt_df = merge_bp_cnt_df[['u_id', 'tot_bp_cnt_x', 'tot_bp_cnt_y']]
-#unstack_cnt_df = fa_bp_cnt_df.set_index(['sag_id', 'data_type']).unstack(level=-1).reset_index()
-print(unstack_cnt_df.head())
-unstack_cnt_df.columns = ['sag_id', 'synSAG_tot', 'src_genome_tot']
-# calc basic stats for src and mock
-src_mock_err_list = []
-for ind, row in unstack_cnt_df.iterrows():
-    sag_id = row['sag_id']
-    mockSAG_tot = row['synSAG_tot']
-    src_genome_tot = row['src_genome_tot']
-    data_type_list = ['synSAG', 'src_genome']
-    for dt in data_type_list:
-        algorithm = dt
-        for level in ['domain', 'phylum', 'class', 'order',
-                        'family', 'genus', 'species', 'strain', 'exact'
-                        ]:
-            s_m_err_list = [sag_id, algorithm, level, 0, 0, 0, 0]
-            if dt == 'synSAG':
-                s_m_err_list[3] += mockSAG_tot # 'TruePos'
-                s_m_err_list[4] += 0 # 'FalsePos'
-                s_m_err_list[5] += src_genome_tot - mockSAG_tot # 'FalseNeg'
-                s_m_err_list[6] += 0 # 'TrueNeg'
-                src_mock_err_list.append(s_m_err_list)
+    fa_bp_cnt_df = pd.DataFrame(fa_bp_cnt_list, columns=['sag_id', 'u_id', 'data_type',
+                                                         'tot_bp_cnt'
+                                                         ])
+    src_bp_cnt_df = pd.DataFrame(src_bp_cnt_list, columns=['sag_id', 'data_type',
+                                                           'tot_bp_cnt'
+                                                           ])
+    print(fa_bp_cnt_df.head())
+    print(src_bp_cnt_df.head())
+    merge_bp_cnt_df = fa_bp_cnt_df.merge(src_bp_cnt_df, on='sag_id', how='left')
+    unstack_cnt_df = merge_bp_cnt_df[['u_id', 'tot_bp_cnt_x', 'tot_bp_cnt_y']]
+    # unstack_cnt_df = fa_bp_cnt_df.set_index(['sag_id', 'data_type']).unstack(level=-1).reset_index()
+    print(unstack_cnt_df.head())
+    unstack_cnt_df.columns = ['sag_id', 'synSAG_tot', 'src_genome_tot']
+    # calc basic stats for src and mock
+    src_mock_err_list = []
+    for ind, row in unstack_cnt_df.iterrows():
+        sag_id = row['sag_id']
+        mockSAG_tot = row['synSAG_tot']
+        src_genome_tot = row['src_genome_tot']
+        data_type_list = ['synSAG', 'src_genome']
+        for dt in data_type_list:
+            algorithm = dt
+            for level in ['domain', 'phylum', 'class', 'order',
+                          'family', 'genus', 'species', 'strain', 'exact'
+                          ]:
+                s_m_err_list = [sag_id, algorithm, level, 0, 0, 0, 0]
+                if dt == 'synSAG':
+                    s_m_err_list[3] += mockSAG_tot  # 'TruePos'
+                    s_m_err_list[4] += 0  # 'FalsePos'
+                    s_m_err_list[5] += src_genome_tot - mockSAG_tot  # 'FalseNeg'
+                    s_m_err_list[6] += 0  # 'TrueNeg'
+                    src_mock_err_list.append(s_m_err_list)
 
-src_mock_err_df = pd.DataFrame(src_mock_err_list, columns=['sag_id', 'algorithm', 'level',
-                                                    'TruePos', 'FalsePos',
-                                                    'FalseNeg', 'TrueNeg'
-                                                    ])
+    src_mock_err_df = pd.DataFrame(src_mock_err_list, columns=['sag_id', 'algorithm', 'level',
+                                                               'TruePos', 'FalsePos',
+                                                               'FalseNeg', 'TrueNeg'
+                                                               ])
 
-src_mock_err_df.to_csv(files_path + 'error_analysis/src_mock_df.tsv', index=False, sep='\t')
-'''
-src_mock_err_df = pd.read_csv(files_path + 'error_analysis/src_mock_df.tsv',
-                              sep='\t', header=0
-                              )
-#'''
+    src_mock_err_df.to_csv(saberout_path + 'error_analysis/src_mock_df.tsv', index=False, sep='\t')
 
 # MinHash
-mh_file = joinpath(files_path, 'minhash_recruits/' + \
-                   'CAMI_high_GoldStandardAssembly.mhr_trimmed_recruits.tsv'
-                   )
+mh_file = glob.glob(joinpath(saberout_path, 'minhash_recruits/*.mhr_trimmed_recruits.tsv'))[0]
 mh_concat_df = pd.read_csv(mh_file, sep='\t', header=0)
 mh_concat_df = mh_concat_df[['sag_id', 'contig_id']]
 
 # MBN Abundance
-mbn_file = joinpath(files_path,
-                    'abund_recruits/CAMI_high_GoldStandardAssembly.abr_trimmed_recruits.tsv'
-                    )
-
+mbn_file = glob.glob(joinpath(saberout_path, 'abund_recruits/*.abr_trimmed_recruits.tsv'))[0]
 mbn_concat_df = pd.read_csv(mbn_file, sep='\t', header=0)
 mbn_concat_df = mbn_concat_df[['sag_id', 'contig_id']]
 
 # Tetra GMM
-gmm_file = joinpath(files_path,
-                    'tetra_recruits/CAMI_high_GoldStandardAssembly.gmm.tra_trimmed_recruits.tsv'
-                    )
+gmm_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.gmm.tra_trimmed_recruits.tsv'))[0]
 gmm_concat_df = pd.read_csv(gmm_file, sep='\t', header=0)
 gmm_concat_df = gmm_concat_df[['sag_id', 'contig_id']]
 
 # Tetra OCSVM
-svm_file = joinpath(files_path,
-                    'tetra_recruits/CAMI_high_GoldStandardAssembly.svm.tra_trimmed_recruits.tsv'
-                    )
+svm_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.svm.tra_trimmed_recruits.tsv'))[0]
 svm_concat_df = pd.read_csv(svm_file, sep='\t', header=0)
 svm_concat_df = svm_concat_df[['sag_id', 'contig_id']]
 
 # Tetra Isolation Forest
-iso_file = joinpath(files_path,
-                    'tetra_recruits/CAMI_high_GoldStandardAssembly.iso.tra_trimmed_recruits.tsv'
-                    )
+iso_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.iso.tra_trimmed_recruits.tsv'))[0]
 iso_concat_df = pd.read_csv(iso_file, sep='\t', header=0)
 iso_concat_df = iso_concat_df[['sag_id', 'contig_id']]
 
 # Tetra Combined
-comb_file = joinpath(files_path,
-                     'tetra_recruits/CAMI_high_GoldStandardAssembly.comb.tra_trimmed_recruits.tsv'
-                     )
+comb_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.comb.tra_trimmed_recruits.tsv'))[0]
 comb_concat_df = pd.read_csv(comb_file, sep='\t', header=0)
 comb_concat_df = comb_concat_df[['sag_id', 'contig_id']]
 
 # Combined xPG Recruits
-xpg_file = joinpath(files_path, 'xPGs/CONTIG_MAP.xPG.tsv')
+xpg_file = joinpath(saberout_path, 'xPGs/CONTIG_MAP.xPG.tsv')
 print('loading Combined combined files')
 xpg_df = pd.read_csv(xpg_file, sep='\t', header=0,  # index_col=0,
                      names=['sag_id', 'contig_id']
@@ -349,27 +341,18 @@ piv_table_df.reset_index(inplace=True)
 piv_table_df.columns = [''.join(col).replace('predict', '') for col in
                         piv_table_df.columns.values
                         ]
-# final_group_df = final_concat_df.groupby(['sag_id', 'algorithm', 'contig_id'])[
-#    'subcontig_id'].count().reset_index()
-
-# print('merging all')
-# merge_tax_df = piv_table_df.merge(tax_mg_df, left_on='contig_id', right_on='@@SEQUENCEID',
-#                                    how='right'
-#                                    )
 
 algo_list = ['minhash', 'mbn_abund', 'tetra_gmm', 'tetra_svm', 'tetra_iso', 'tetra_comb', 'xpg']
 level_list = ['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain',
               'CAMI_genomeID'
               ]
 ####
-pool = multiprocessing.Pool(processes=int(sys.argv[3]))
+pool = multiprocessing.Pool(processes=nthreads)
 arg_list = []
 for sag_id in tqdm(piv_table_df['sag_id'].unique()):
     sag_sub_df = piv_table_df.loc[piv_table_df['sag_id'] == sag_id]
     arg_list.append([sag_id, tax_mg_df, sag_sub_df, algo_list, level_list])
-    #collect_error([sag_id, tax_mg_df, sag_sub_df, algo_list, level_list])
 results = pool.imap_unordered(collect_error, arg_list)
-# logging.info('[SABer]: Comparing Signature for %s\n' % sag_id)
 
 tot_error_list = []
 tot_tp_list = []

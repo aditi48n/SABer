@@ -1,3 +1,6 @@
+import matplotlib
+
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns;
@@ -83,10 +86,10 @@ sns.set_style('whitegrid')
 sns.set(font_scale=0.75)
 err_path = sys.argv[1]
 
-algo_path = err_path + 'multi-algo'
+algo_path = err_path + '/multi-algo'
 if not os.path.exists(algo_path):
     os.makedirs(algo_path)
-level_path = err_path + 'multi-level'
+level_path = err_path + '/multi-level'
 if not os.path.exists(level_path):
     os.makedirs(level_path)
 comp_path = err_path + '/Comp_plots/'
@@ -188,6 +191,8 @@ for algo in set(syn_stage_sense_df['stage']):
     # Plot Before and after SAG -> SABer-xPG completness
     algo_list = ['synSAG', algo]
     sub_trim_df = syn_stage_sense_df.loc[syn_stage_sense_df['stage'].isin(algo_list)]
+    print(sub_trim_df.head())
+    print(algo, sub_trim_df.loc[sub_trim_df['stage'] == algo]['score'].mean())
     sns.set_context("poster")
     sns.set_style('whitegrid')
     sns.set(font_scale=0.75)

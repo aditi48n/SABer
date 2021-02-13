@@ -352,7 +352,7 @@ def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
         sag_score = gmm.score_samples(sag_tetra_df.values)
         sag_pred_df = pd.DataFrame(data=sag_score, index=sag_tetra_df.index.values,
                                    columns=['scores'])
-        lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=1.5)
+        lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=3.0)
 
         mg_score = gmm.score_samples(mg_tetra_filter_df.values)
         mg_pred_df = pd.DataFrame(data=mg_score, index=mg_tetra_filter_df.index.values,
@@ -462,7 +462,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
         pred_df = std_clust_df[['subcontig_id', 'contig_id', 'kmeans_pred']]
         val_perc = pred_df.groupby('contig_id')['kmeans_pred'].value_counts(normalize=True).reset_index(name='percent')
         pos_perc = val_perc.loc[val_perc['kmeans_pred'] == 1]
-        major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+        major_df = pos_perc.loc[pos_perc['percent'] >= 0.95]
         major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
         kmeans_pass_list = []
         for md_nm in major_pred_df['subcontig_id']:

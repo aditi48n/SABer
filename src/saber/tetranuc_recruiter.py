@@ -239,8 +239,8 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
         iso_svm_set = set(iso_id_list).intersection(svm_id_list)
         gmm_iso_set = set(gmm_id_list).intersection(iso_id_list)
         # comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set)))
-        comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set) + list(gmm_iso_set)))
-        # comb_set_list = list(set(svm_id_list).intersection(ac_set))
+        # comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set) + list(gmm_iso_set)))
+        comb_set_list = list(set(svm_id_list).intersection(gmm_iso_set))
         comb_pass_list = []
         for md_nm in comb_set_list:
             comb_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])

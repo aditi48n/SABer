@@ -245,6 +245,7 @@ for algo in set(syn_stage_precis_df['stage']):
 
 unstack_df = err_trim_df.set_index(['sag_id', 'algorithm', 'level', 'statistic']).unstack('statistic')
 unstack_df.reset_index(inplace=True)
+print(unstack_df.head())
 unstack_df.columns = ['sag_id', 'algorithm', 'level', 'MCC', 'Precision',
                       'Sensitivity'
                       ]

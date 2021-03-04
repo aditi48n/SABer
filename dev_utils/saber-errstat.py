@@ -31,12 +31,26 @@ def calc_err(df):
                               (group_df['FalseNeg'] + group_df['TruePos'])
     group_df['F1_score'] = 2 * ((group_df['precision'] * group_df['sensitivity']) / \
                                 (group_df['precision'] + group_df['sensitivity']))
-    group_df['N'] = group_df['TrueNeg'] + group_df['TruePos'] + \
-                    group_df['FalseNeg'] + group_df['FalsePos']
-    group_df['S'] = (group_df['TruePos'] + group_df['FalseNeg']) / group_df['N']
-    group_df['P'] = (group_df['TruePos'] + group_df['FalsePos']) / group_df['N']
-    group_df['MCC'] = ((group_df['TruePos'] / group_df['N']) - group_df['S'] * group_df['P']) / \
-                      ((group_df['S'] * group_df['P']) * (1 - group_df['S']) * (1 - group_df['P'])) ** (1 / 2)
+
+    # Calc MCC, two ways depending on the denom
+    group_df['sum1'] = group_df['TruePos'] + group_df['FalsePos']
+    group_df['sum2'] = group_df['TruePos'] + group_df['FalseNeg']
+    group_df['sum3'] = group_df['TrueNeg'] + group_df['FalsePos']
+    group_df['sum4'] = group_df['TrueNeg'] + group_df['FalseNeg']
+    group_df['denom'] = [(x[0] * x[1] * x[2] * x[3]) ** (1 / 2)
+                         if (x[0] != 0 & x[1] != 0 & x[2] != 0 & x[3] != 0)
+                         else 1 for x in zip(group_df['sum1'], group_df['sum2'],
+                                             group_df['sum3'], group_df['sum4']
+                                             )]
+    group_df['MCC'] = ((group_df['TruePos'] * group_df['TrueNeg']) - \
+                       (group_df['FalsePos'] * group_df['FalseNeg'])) / group_df['denom']
+
+    # group_df['N'] = group_df['TrueNeg'] + group_df['TruePos'] + \
+    #                group_df['FalseNeg'] + group_df['FalsePos']
+    # group_df['S'] = (group_df['TruePos'] + group_df['FalseNeg']) / group_df['N']
+    # group_df['P'] = (group_df['TruePos'] + group_df['FalsePos']) / group_df['N']
+    # group_df['MCC'] = ((group_df['TruePos'] / group_df['N']) - group_df['S'] * group_df['P']) / \
+    #                  ((group_df['S'] * group_df['P']) * (1 - group_df['S']) * (1 - group_df['P'])) ** (1 / 2)
     group_df.set_index(['sag_id', 'algorithm', 'level'], inplace=True)
     stats_df = group_df[['precision', 'sensitivity', 'specificity', 'type1_error',
                          'type2_error', 'F1_score', 'MCC']]
@@ -149,9 +163,9 @@ synsrc_path = sys.argv[2]
 mocksag_path = joinpath(synsrc_path, 'Final_SAGs_20k/')
 src_genome_path = joinpath(synsrc_path, 'fasta/')
 sag_tax_map = joinpath(synsrc_path, 'genome_taxa_info.tsv')
-mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
-src_metag_file = sys.argv[3]
-nthreads = int(sys.argv[4])
+mg_contig_map = sys.argv[3]  # joinpath(synsrc_path, 'gsa_mapping_pool.binning')
+src_metag_file = sys.argv[4]
+nthreads = int(sys.argv[5])
 ##################################################################################################
 
 
@@ -332,7 +346,7 @@ final_concat_df = pd.concat([mh_concat_df, mbn_concat_df,
                              comb_concat_df,
                              xpg_df
                              ])
-final_concat_df = final_concat_df.loc[final_concat_df['sag_id'].isin(list(sag_set))]
+#final_concat_df = final_concat_df.loc[final_concat_df['sag_id'].isin(list(sag_set))]
 final_concat_df['predict'] = 1
 piv_table_df = pd.pivot_table(final_concat_df, columns=['algorithm'], index=['sag_id', 'contig_id'],
                               values=['predict'], aggfunc=np.sum, fill_value=0

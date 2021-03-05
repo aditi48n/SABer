@@ -2,6 +2,7 @@ import argparse
 import logging
 import multiprocessing
 import warnings
+from functools import reduce
 from os.path import isfile, basename
 from os.path import join as o_join
 
@@ -165,23 +166,35 @@ def ensemble_recruiter(p):
         mg_tetra_kmeans_df = mg_tetra_filter_df.loc[mg_tetra_filter_df.index.isin(
             kmeans_pass_df['subcontig_id'])]
         # Recruit tetras with OC-SVM
-        svm_recruits_df = OCSVM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
-                                          sag_tetra_df, tra_path, force
-                                          )
+        svm_recruits_df, svm_pred_df = OCSVM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
+                                                       sag_tetra_df, tra_path, force
+                                                       )
         # Recruit tetras with GMM
-        gmm_recruits_df = GMM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
-                                        sag_tetra_df, tra_path, force
-                                        )
+        gmm_recruits_df, gmm_pred_df = GMM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
+                                                     sag_tetra_df, tra_path, force
+                                                     )
         # Recruit tetras with ISO-F
-        iso_recruits_df = ISO_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
-                                        sag_tetra_df, tra_path, force
-                                        )
+        iso_recruits_df, iso_pred_df = ISO_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
+                                                     sag_tetra_df, tra_path, force
+                                                     )
+        pred_dfs = [svm_pred_df, gmm_pred_df, iso_pred_df]
+        all_preds_df = reduce(lambda left, right: pd.merge(left, right,
+                                                           left_index=True, right_index=True
+                                                           ), pred_dfs)
+        all_preds_df['total_pred'] = all_preds_df.sum(axis=1)
+        passed_preds_df = all_preds_df.loc[all_preds_df['total_pred'] >= 2]
     else:
         svm_recruits_df = None
         gmm_recruits_df = None
         iso_recruits_df = None
 
     if isinstance(gmm_recruits_df, pd.DataFrame):
+        '''
+        # Try new method with all predictions
+        comb_recruits_df = build_new_Ensemble(passed_preds_df, mg_headers, sag_id,
+                                          tra_path, force
+                                          )
+        '''
         # Build Ensemble recruit DF, quality filter as well
         comb_recruits_df = build_Ensemble(gmm_recruits_df, svm_recruits_df, iso_recruits_df, mg_headers, sag_id,
                                           tra_path, force
@@ -223,6 +236,38 @@ def build_df_dict(p):
     return uniq_dict
 
 
+def build_new_Ensemble(passed_preds_df, mg_headers, sag_id, tra_path, force):
+    passed_preds_df.reset_index(inplace=True)
+    passed_preds_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
+    passed_preds_df['sag_id'] = sag_id
+    passed_preds_df['contig_id'] = [x.rsplit('_', 1)[0] for x in passed_preds_df['subcontig_id']]
+    cnt_df = passed_preds_df.groupby(['sag_id', 'contig_id']
+                                     ).count().reset_index().set_index(['sag_id', 'contig_id'])
+    del cnt_df['subcontig_id']
+    del cnt_df['total_pred']
+    sum_df = passed_preds_df.groupby(['sag_id', 'contig_id']
+                                     ).sum().reset_index().set_index(['sag_id', 'contig_id'])
+    del sum_df['total_pred']
+    percent_df = sum_df / cnt_df
+    percent_df['total_pred'] = percent_df.sum(axis=1)
+    percent_df.reset_index(inplace=True)
+    filtered_preds_df = percent_df.loc[percent_df['total_pred'] > 1.0]
+    filtered_subcontigs_df = passed_preds_df.loc[
+        passed_preds_df['contig_id'].isin(filtered_preds_df['contig_id'])
+    ]
+    clean_pred_df = pd.DataFrame(filtered_subcontigs_df['subcontig_id'],
+                                 columns=['subcontig_id']
+                                 )
+    clean_pred_df['contig_id'] = [x.rsplit('_', 1)[0] for x in clean_pred_df['subcontig_id']]
+    clean_pred_df['sag_id'] = sag_id
+    comb_df = clean_pred_df[['sag_id', 'subcontig_id', 'contig_id']]
+    comb_filter_df = filter_tetras(sag_id, mg_headers, 'comb', comb_df)
+    comb_filter_df.to_csv(o_join(tra_path, sag_id + '.comb_recruits.tsv'),
+                          sep='\t', index=False
+                          )
+    return comb_filter_df
+
+
 def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_id, tra_path, force):
     if (isfile(o_join(tra_path, sag_id + '.comb_recruits.tsv')) &
             (force is False)
@@ -239,8 +284,8 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
         iso_svm_set = set(iso_id_list).intersection(svm_id_list)
         gmm_iso_set = set(gmm_id_list).intersection(iso_id_list)
         # comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set)))
-        # comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set) + list(gmm_iso_set)))
-        comb_set_list = list(set(svm_id_list).intersection(gmm_iso_set))
+        comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set) + list(gmm_iso_set)))
+        # comb_set_list = list(set(svm_id_list).intersection(gmm_iso_set))
         comb_pass_list = []
         for md_nm in comb_set_list:
             comb_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
@@ -295,7 +340,9 @@ def ISO_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
         iso_filter_df.to_csv(o_join(tra_path, sag_id + '.iso_recruits.tsv'),
                              sep='\t', index=False
                              )
-    return iso_filter_df
+        trimmed_mg_pred_df = mg_pred_df[['iqr_anomaly']]
+        trimmed_mg_pred_df.rename(columns={'iqr_anomaly': 'iso_pred'}, inplace=True)
+    return iso_filter_df, trimmed_mg_pred_df
 
 
 def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path, force):
@@ -308,14 +355,6 @@ def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_pa
                                     )
     else:
         # logging.info('Training OCSVM on SAG tetras\n')
-        '''
-        kmeans_pass_list = runKMEANS(sag_tetra_df, sag_id, mg_tetra_filter_df)
-        kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
-                                      columns=['sag_id', 'subcontig_id', 'contig_id']
-                                      )
-        mg_tetra_kmeans_df = mg_tetra_filter_df.loc[mg_tetra_filter_df.index.isin(
-            kmeans_pass_df['subcontig_id'])]
-        '''
         # fit OCSVM
         clf = svm.OneClassSVM(nu=0.9, gamma=0.0001)
         clf.fit(sag_tetra_df.values)
@@ -323,10 +362,10 @@ def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_pa
         sag_pred = clf.predict(sag_tetra_df.values)
         # sag_pred_df = pd.DataFrame(data=sag_pred, index=sag_tetra_df.index.values)
         mg_pred = clf.predict(mg_tetra_filter_df.values)
-        mg_pred_df = pd.DataFrame(data=mg_pred, index=mg_tetra_filter_df.index.values)
-        svm_pass_df = mg_pred_df.loc[mg_pred_df[0] != -1]
-        # And is has to be from the RPKM pass list
-        # svm_pass_df = svm_pass_df.loc[svm_pass_df.index.isin(mg_rpkm_contig_list)]
+        mg_pred_df = pd.DataFrame(data=mg_pred, index=mg_tetra_filter_df.index.values,
+                                  columns=['ocsvm_pred']
+                                  )
+        svm_pass_df = mg_pred_df.loc[mg_pred_df['ocsvm_pred'] != -1]
         svm_pass_list = []
         for md_nm in svm_pass_df.index.values:
             svm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
@@ -335,7 +374,8 @@ def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_pa
         svm_filter_df.to_csv(o_join(tra_path, sag_id + '.svm_recruits.tsv'),
                              sep='\t', index=False
                              )
-    return svm_filter_df
+        mg_pred_df.replace(to_replace=-1, value=0, inplace=True)
+    return svm_filter_df, mg_pred_df
 
 
 def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path, force):
@@ -370,64 +410,9 @@ def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
         gmm_filter_df.to_csv(o_join(tra_path, sag_id + '.gmm_recruits.tsv'),
                              sep='\t', index=False
                              )
-        '''        
-        sag_scores = gmm.score_samples(sag_tetra_df.values)
-        sag_scores_df = pd.DataFrame(data=sag_scores, index=sag_tetra_df.index.values)
-        sag_scores_df.columns = ['wLogProb']
-        sag_score_min = min(sag_scores_df.values)[0]
-        sag_score_max = max(sag_scores_df.values)[0]
-        mg_scores = gmm.score_samples(mg_tetra_filter_df.values)
-        mg_scores_df = pd.DataFrame(data=mg_scores, index=mg_tetra_filter_df.index.values)
-        mg_scores_df.columns = ['wLogProb']
-        gmm_pass_df = mg_scores_df.loc[(mg_scores_df['wLogProb'] >= sag_score_min) &
-                                       (mg_scores_df['wLogProb'] <= sag_score_max)
-                                       ]
-        gmm_pass_list = []
-        for md_nm in gmm_pass_df.index.values:
-            gmm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
-        gmm_df = pd.DataFrame(gmm_pass_list, columns=['sag_id', 'subcontig_id', 'contig_id'])
-        gmm_filter_df = filter_tetras(sag_id, mg_headers, 'gmm', gmm_df)
-        gmm_filter_df.to_csv(o_join(tra_path, sag_id + '.gmm_recruits.tsv'),
-                             sep='\t', index=False
-                             )
-        '''
-        '''
-        # calculate the AIC/BIC to determine number of components for GMM
-        n_comp = calc_components(sag_tetra_df)
-        if n_comp != None:
-            gmm = GMM(n_components=n_comp, random_state=42
-                      ).fit(sag_tetra_df.values)
-            # logging.info('GMM Converged: %s\n' % gmm.converged_)
-            try:  # TODO: add predict and predict_proba to this and output all to table
-                sag_scores = gmm.score_samples(sag_tetra_df.values)
-                sag_scores_df = pd.DataFrame(data=sag_scores, index=sag_tetra_df.index.values)
-                sag_scores_df.columns = ['wLogProb']
-                sag_score_min = min(sag_scores_df.values)[0]
-                sag_score_max = max(sag_scores_df.values)[0]
-                mg_scores = gmm.score_samples(mg_tetra_filter_df.values)
-                mg_scores_df = pd.DataFrame(data=mg_scores, index=mg_tetra_filter_df.index.values)
-                mg_scores_df.columns = ['wLogProb']
-                gmm_pass_df = mg_scores_df.loc[(mg_scores_df['wLogProb'] >= sag_score_min) &
-                                               (mg_scores_df['wLogProb'] <= sag_score_max)
-                                               ]
-                # And is has to be from the RPKM pass list
-                # gmm_pass_df = gmm_pass_df.loc[gmm_pass_df.index.isin(mg_rpkm_contig_list)]
-                gmm_pass_list = []
-                for md_nm in gmm_pass_df.index.values:
-                    gmm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
-            except:
-                # logging.info('Warning: No recruits found...\n')
-                gmm_pass_list = []
-            gmm_df = pd.DataFrame(gmm_pass_list, columns=['sag_id', 'subcontig_id', 'contig_id'])
-            gmm_filter_df = filter_tetras(sag_id, mg_headers, 'gmm', gmm_df)
-            gmm_filter_df.to_csv(o_join(tra_path, sag_id + '.gmm_recruits.tsv'),
-                                 sep='\t', index=False
-                                 )
-            
-        else:
-            gmm_filter_df = None
-        '''
-    return gmm_filter_df
+        trimmed_mg_pred_df = mg_pred_df[['iqr_anomaly']]
+        trimmed_mg_pred_df.rename(columns={'iqr_anomaly': 'gmm_pred'}, inplace=True)
+    return gmm_filter_df, trimmed_mg_pred_df
 
 
 def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
@@ -541,7 +526,7 @@ def filter_tetras(sag_id, mg_headers, tetra_id, tetra_df):
     # Only pass contigs that have the magjority of subcontigs recruited (>= N%)
     if (tetra_id == 'svm'):
         mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.01
+            mg_recruit_df['percent_recruited'] >= 0.10
             ]
     elif (tetra_id == 'gmm'):
         mg_recruit_filter_df = mg_recruit_df.loc[
@@ -549,11 +534,11 @@ def filter_tetras(sag_id, mg_headers, tetra_id, tetra_df):
             ]
     elif (tetra_id == 'iso'):
         mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.51
+            mg_recruit_df['percent_recruited'] >= 0.75
             ]
     elif (tetra_id == 'comb'):
         mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.51
+            mg_recruit_df['percent_recruited'] >= 0.10
             # mg_recruit_df['subcontig_recruits'] >= 1
             ]
     tetra_max_list = []

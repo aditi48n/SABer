@@ -131,6 +131,7 @@ trim_df['round_percent'] = [myceil(x) for x in trim_df['percent']]
 trim_df = trim_df[['sag_id', 'algorithm', 'statistic', 'score', 'percent', 'round_percent']]
 sag_df = trim_df[['sag_id', 'percent', 'round_percent']
 ].loc[((trim_df['algorithm'] == 'synSAG') & (trim_df['statistic'] == 'sensitivity'))]
+print(sag_df.head())
 merge_df = trim_df.merge(sag_df, on=['sag_id'])
 merge_df.columns = ['sag_id', 'stage', 'statistic', 'score', 'stage_score', 'stage_round_score',
                     'synSAG_score', 'synSAG_score_cat'

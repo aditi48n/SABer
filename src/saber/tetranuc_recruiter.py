@@ -2,7 +2,6 @@ import argparse
 import logging
 import multiprocessing
 import warnings
-from functools import reduce
 from os.path import isfile, basename
 from os.path import join as o_join
 
@@ -15,7 +14,6 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.ensemble import IsolationForest
 from sklearn.mixture import BayesianGaussianMixture as BayesGMM
 from sklearn.mixture import GaussianMixture as GMM
-from sklearn.preprocessing import StandardScaler
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -66,15 +64,10 @@ def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, 
         mg_tetra_df.to_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
                            sep='\t'
                            )
-    # Standardize the mg tetra DF
-    logging.info('Scaling tetramer Hz matrix\n')
-    scale = StandardScaler().fit(mg_tetra_df.values)  # TODO this should be added to the tetra_cnt step
-    scaled_data = scale.transform(mg_tetra_df.values)
-    std_tetra_df = pd.DataFrame(scaled_data, index=mg_tetra_df.index)
-    contig_ids = list(zip(*std_tetra_df.index.str.rsplit("_", n=1, expand=True).to_list()))[0]
-    std_tetra_df['contig_id'] = contig_ids
-    std_tetra_df.index.names = ['subcontig_id']
-    std_tetra_dict = build_uniq_dict(std_tetra_df, 'contig_id', nthreads, 'TetraHz')
+    contig_ids = list(zip(*mg_tetra_df.index.str.rsplit("_", n=1, expand=True).to_list()))[0]
+    mg_tetra_df['contig_id'] = contig_ids
+    mg_tetra_df.index.names = ['subcontig_id']
+    std_tetra_dict = build_uniq_dict(mg_tetra_df, 'contig_id', nthreads, 'TetraHz')
     # Prep MinHash
     minhash_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
     minhash_dedup_df = minhash_df[['sag_id', 'subcontig_id', 'contig_id', 'jacc_sim', 'jacc_sim_max']
@@ -162,9 +155,22 @@ def ensemble_recruiter(p):
     kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
                                   columns=['sag_id', 'subcontig_id', 'contig_id']
                                   )
-    if len(kmeans_pass_df) != 0:
+    if kmeans_pass_df.shape[0] > 1:
         mg_tetra_kmeans_df = mg_tetra_filter_df.loc[mg_tetra_filter_df.index.isin(
             kmeans_pass_df['subcontig_id'])]
+        # Recruit tetras with OC-SVM
+        svm_recruits_df = OCSVM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
+                                          sag_tetra_df, tra_path, force
+                                          )
+        # Recruit tetras with GMM
+        gmm_recruits_df = GMM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
+                                        sag_tetra_df, tra_path, force
+                                        )
+        # Recruit tetras with ISO-F
+        iso_recruits_df = ISO_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
+                                        sag_tetra_df, tra_path, force
+                                        )
+        '''
         # Recruit tetras with OC-SVM
         svm_recruits_df, svm_pred_df = OCSVM_recruiter(mg_headers, mg_tetra_kmeans_df, sag_id,
                                                        sag_tetra_df, tra_path, force
@@ -183,6 +189,7 @@ def ensemble_recruiter(p):
                                                            ), pred_dfs)
         all_preds_df['total_pred'] = all_preds_df.sum(axis=1)
         passed_preds_df = all_preds_df.loc[all_preds_df['total_pred'] >= 2]
+        '''
     else:
         svm_recruits_df = None
         gmm_recruits_df = None
@@ -284,8 +291,8 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
         iso_svm_set = set(iso_id_list).intersection(svm_id_list)
         gmm_iso_set = set(gmm_id_list).intersection(iso_id_list)
         # comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set)))
-        comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set) + list(gmm_iso_set)))
-        # comb_set_list = list(set(svm_id_list).intersection(gmm_iso_set))
+        # comb_set_list = list(set(list(gmm_svm_set) + list(iso_svm_set) + list(gmm_iso_set)))
+        comb_set_list = list(set(svm_id_list).intersection(gmm_iso_set))
         comb_pass_list = []
         for md_nm in comb_set_list:
             comb_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
@@ -342,7 +349,7 @@ def ISO_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
                              )
         trimmed_mg_pred_df = mg_pred_df[['iqr_anomaly']]
         trimmed_mg_pred_df.rename(columns={'iqr_anomaly': 'iso_pred'}, inplace=True)
-    return iso_filter_df, trimmed_mg_pred_df
+    return iso_filter_df  # , trimmed_mg_pred_df
 
 
 def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path, force):
@@ -375,7 +382,7 @@ def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_pa
                              sep='\t', index=False
                              )
         mg_pred_df.replace(to_replace=-1, value=0, inplace=True)
-    return svm_filter_df, mg_pred_df
+    return svm_filter_df  # , mg_pred_df
 
 
 def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path, force):
@@ -412,7 +419,7 @@ def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
                              )
         trimmed_mg_pred_df = mg_pred_df[['iqr_anomaly']]
         trimmed_mg_pred_df.rename(columns={'iqr_anomaly': 'gmm_pred'}, inplace=True)
-    return gmm_filter_df, trimmed_mg_pred_df
+    return gmm_filter_df  # , trimmed_mg_pred_df
 
 
 def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
@@ -538,7 +545,7 @@ def filter_tetras(sag_id, mg_headers, tetra_id, tetra_df):
             ]
     elif (tetra_id == 'comb'):
         mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.10
+            mg_recruit_df['percent_recruited'] >= 0.01
             # mg_recruit_df['subcontig_recruits'] >= 1
             ]
     tetra_max_list = []

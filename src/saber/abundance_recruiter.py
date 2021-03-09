@@ -250,7 +250,15 @@ def recruitSubs(p):
         recruit_contigs_df = mg_covm_df.loc[mg_covm_df.index.isin(
             list(minhash_filter_df['subcontig_id']))
         ]
-        kmeans_pass_list = runKMEANS(recruit_contigs_df, sag_id, mg_covm_df)
+        mh_recruit_list = [[sag_id, x, x.rsplit('_', 1)[0]] for x in recruit_contigs_df.index]
+        mh_recruit_df = pd.DataFrame(mh_recruit_list, columns=['sag_id', 'subcontig_id', 'contig_id'])
+        kmeans_pass_list, kclusters_df = runKMEANS(recruit_contigs_df, sag_id, mg_covm_df)
+        # print('\n')
+        # print(kclusters_df.head())
+        # print(kclusters_df.loc[kclusters_df['subcontig_id'].isin(
+        #                                            list(minhash_filter_df['subcontig_id']))
+        #      ].head())
+        # print(len(kclusters_df['kmeans_clust'].unique()))
         kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
                                       columns=['sag_id', 'subcontig_id', 'contig_id']
                                       )
@@ -261,14 +269,12 @@ def recruitSubs(p):
         final_pass_df = pd.DataFrame(final_pass_list,
                                      columns=['sag_id', 'subcontig_id', 'contig_id']
                                      )
-        final_pass_df.to_csv(abr_recruit_file, header=False, index=False, sep='\t')
-        # dedup_pass_df = final_pass_df[['sag_id', 'contig_id']
-        #                                                ].drop_duplicates(subset=['contig_id'])
-        # dedup_pass_df = dedup_pass_df.reset_index(drop=True)
+        mh_abr_df = pd.concat([final_pass_df, mh_recruit_df])
+        mh_abr_df.to_csv(abr_recruit_file, header=False, index=False, sep='\t')
+
     else:
-        # dedup_pass_df = pd.DataFrame([], columns=['sag_id', 'contig_id'])
-        final_pass_df = pd.DataFrame([], columns=['sag_id', 'subcontig_id', 'contig_id'])
-    dedupped_pass_df = final_pass_df[['sag_id', 'contig_id']].drop_duplicates(
+        mh_abr_df = pd.DataFrame([], columns=['sag_id', 'subcontig_id', 'contig_id'])
+    dedupped_pass_df = mh_abr_df[['sag_id', 'contig_id']].drop_duplicates(
         subset=['sag_id', 'contig_id']
     )
     return dedupped_pass_df
@@ -303,10 +309,14 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     pos_perc = val_perc.loc[val_perc['kmeans_pred'] == 1]
     major_df = pos_perc.loc[pos_perc['percent'] >= 0.95]
     major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
+    std_clust_pred_df = std_clust_df.merge(major_pred_df, on=['subcontig_id', 'contig_id'],
+                                           how='left'
+                                           )
+    filter_clust_pred_df = std_clust_pred_df.loc[std_clust_pred_df['kmeans_pred_x'] == 1]
     kmeans_pass_list = []
     for md_nm in major_pred_df['subcontig_id']:
         kmeans_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
-    return kmeans_pass_list
+    return kmeans_pass_list, filter_clust_pred_df
 
 
 def runOCSVM(sag_df, mg_df, sag_id):
@@ -324,8 +334,6 @@ def runOCSVM(sag_df, mg_df, sag_id):
     major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
     major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
     svm_pass_list = []
-    # print('KMEANS recruits: ', str(len(mg_df.index.values)))
-    # print('OCSVM recruits: ', str(len(major_pred_df['subcontig_id'])))
     for md_nm in major_pred_df['subcontig_id']:
         svm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
     return svm_pass_list

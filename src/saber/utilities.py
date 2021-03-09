@@ -11,6 +11,7 @@ from itertools import product, islice
 import pandas as pd
 import pyfastx
 from skbio.stats.composition import clr
+from sklearn.preprocessing import StandardScaler
 
 
 def is_exe(fpath):
@@ -189,10 +190,10 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
 def kmer_slide(scd_db, n, o_lap):
     all_sub_seqs = []
     all_sub_headers = []
-    for k in scd_db.keys():
-        rec = scd_db[k]
+    for k in scd_db:
+        rec = k
         header, seq = rec.name, rec.seq
-        if len(str(rec.seq)) >= int(o_lap):
+        if len(str(seq)) >= int(o_lap):
             clean_seq = str(seq).upper()
             sub_list = slidingWindow(clean_seq, n, o_lap)
             sub_headers = [header + '_' + str(i) for i, x in
@@ -272,10 +273,12 @@ def tetra_cnt(fasta):  # TODO: add multi-processing to this function
     tetra_cnt_dict = {''.join(x): [] for x in product('atgc', repeat=4)}
     header_list = []
     # count up all tetramers and also populate the tetra dict
+    subcontig_len_dict = {}
     for rec in fasta:
         header = rec.name
         header_list.append(header)
         seq = rec.seq
+        subcontig_len_dict[header] = len(seq)
         tmp_dict = {k: 0 for k, v in tetra_cnt_dict.items()}
         clean_seq = seq.strip('\n').lower()
         kmer_list = [''.join(x) for x in get_kmer(clean_seq, 4)]
@@ -313,8 +316,15 @@ def tetra_cnt(fasta):  # TODO: add multi-processing to this function
     last_val = dedupped_df.columns[-1]
     dedupped_df['sum'] = dedupped_df.sum(axis=1)
     # Covert to proportion
-    normal_df = dedupped_df.loc[:, first_val:last_val].div(dedupped_df['sum'], axis=0)
+    prop_df = dedupped_df.loc[:, first_val:last_val].div(dedupped_df['sum'], axis=0)
+    # Normalize proportions to length of subcontig
+    normal_list = [prop_df.loc[i] / subcontig_len_dict[i] for i in subcontig_len_dict.keys()]
+    normal_df = pd.DataFrame(normal_list, columns=prop_df.columns, index=prop_df.index)
     # Transform using CLR
     clr_df = normal_df.apply(clr)
+    # Standardize the mg tetra DF
+    scale = StandardScaler().fit(clr_df.values)  # TODO this should be added to the tetra_cnt step
+    scaled_data = scale.transform(clr_df.values)
+    std_tetra_df = pd.DataFrame(scaled_data, index=clr_df.index)
 
-    return clr_df
+    return std_tetra_df

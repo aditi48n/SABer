@@ -320,6 +320,9 @@ def ISO_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
         clf.fit(sag_tetra_df.values)
         sag_pred = clf.predict(sag_tetra_df.values)
         sag_score = clf.decision_function(sag_tetra_df.values)
+        # TODO:
+        #  convert sag_score and mg_score to normalized anomaly_score
+        #  as defined by score_samples/decision_fuction
         sag_pred_df = pd.DataFrame(data=sag_pred, index=sag_tetra_df.index.values,
                                    columns=['anomaly'])
         sag_pred_df.loc[sag_pred_df['anomaly'] == 1, 'anomaly'] = 0

@@ -188,6 +188,9 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
 
 
 def kmer_slide(scd_db, n, o_lap):
+    # TODO: this funtion doesn't seem to be working
+    #  1) does it return reads if they start less than the subseq/o_lap
+    #  2) is the o_lap function working correctly?
     all_sub_seqs = []
     all_sub_headers = []
     for k in scd_db:
@@ -195,7 +198,7 @@ def kmer_slide(scd_db, n, o_lap):
         header, seq = rec.name, rec.seq
         if len(str(seq)) >= int(o_lap):
             clean_seq = str(seq).upper()
-            sub_list = slidingWindow(clean_seq, n, o_lap)
+            sub_list = sliding_window(clean_seq, n, o_lap)
             sub_headers = [header + '_' + str(i) for i, x in
                            enumerate(sub_list, start=0)
                            ]
@@ -205,11 +208,38 @@ def kmer_slide(scd_db, n, o_lap):
     return tuple(all_sub_headers), tuple(all_sub_seqs)
 
 
-def get_frags(seq, l_max, o_lap):
+def sliding_window(seq, win_size, o_lap):
     "Fragments the seq into subseqs of length l_max and overlap of o_lap."
     "Leftover tail overlaps with tail-1"
     "Currently, if a seq is < l_max, it returns the full seq"
     seq_frags = []
+    # Verify the inputs
+    try:
+        it = iter(seq)
+    except TypeError:
+        raise Exception("**ERROR** sequence must be iterable.")
+    if not ((type(win_size) == type(0)) and (type(o_lap) == type(0))):
+        raise Exception("**ERROR** type(win_size) and type(win_size) must be int.")
+    if o_lap > win_size:
+        raise Exception("**ERROR** step must not be larger than win_size.")
+    if win_size <= len(seq):
+        i = 0
+        offset = len(seq) - win_size
+        while i + win_size <= offset:
+            seq_frags.append(seq[i:i + win_size])
+            i = i + win_size - o_lap
+        seq_frags.append(seq[-win_size:])
+        '''
+        for i in range(len(seq) - o_lap):
+            if i + win_size < len(seq):
+                seq_frags.append(seq[i:i+win_size])
+            else:
+                seq_frags.append(seq[-win_size:]) # add the end subcontig just in case
+                break
+        '''
+    elif win_size > len(seq):
+        seq_frags.append(seq)
+    '''
     if (l_max != 0) and (len(seq) > l_max):
         offset = l_max - o_lap
         for i in range(0, len(seq), offset):
@@ -222,13 +252,13 @@ def get_frags(seq, l_max, o_lap):
                 break
     # else:
     #    seq_frags.append(seq)
+    '''
 
     return seq_frags
 
 
-def slidingWindow(sequence, winSize,
-                  step):  # pulled source from https://scipher.wordpress.com/2010/12/02/simple-sliding-window-iterator-in-python/
-
+def slidingWindow(sequence, winSize, step):
+    # pulled source from https://scipher.wordpress.com/2010/12/02/simple-sliding-window-iterator-in-python/
     seq_frags = []
     # Verify the inputs
     try:
@@ -244,7 +274,7 @@ def slidingWindow(sequence, winSize,
         for i in range(0, numOfChunks * step, step):
             seq_frags.append(sequence[i:i + winSize])
         seq_frags.append(sequence[-winSize:])  # add the remaining tail
-    else:
+    elif winSize > len(sequence):
         seq_frags.append(sequence)
 
     return seq_frags

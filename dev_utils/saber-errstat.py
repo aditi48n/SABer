@@ -31,7 +31,7 @@ def calc_err(df):
                               (group_df['FalseNeg'] + group_df['TruePos'])
     group_df['F1_score'] = 2 * ((group_df['precision'] * group_df['sensitivity']) / \
                                 (group_df['precision'] + group_df['sensitivity']))
-
+    '''
     # Calc MCC, two ways depending on the denom
     group_df['sum1'] = group_df['TruePos'] + group_df['FalsePos']
     group_df['sum2'] = group_df['TruePos'] + group_df['FalseNeg']
@@ -44,13 +44,13 @@ def calc_err(df):
                                              )]
     group_df['MCC'] = ((group_df['TruePos'] * group_df['TrueNeg']) - \
                        (group_df['FalsePos'] * group_df['FalseNeg'])) / group_df['denom']
-
-    # group_df['N'] = group_df['TrueNeg'] + group_df['TruePos'] + \
-    #                group_df['FalseNeg'] + group_df['FalsePos']
-    # group_df['S'] = (group_df['TruePos'] + group_df['FalseNeg']) / group_df['N']
-    # group_df['P'] = (group_df['TruePos'] + group_df['FalsePos']) / group_df['N']
-    # group_df['MCC'] = ((group_df['TruePos'] / group_df['N']) - group_df['S'] * group_df['P']) / \
-    #                  ((group_df['S'] * group_df['P']) * (1 - group_df['S']) * (1 - group_df['P'])) ** (1 / 2)
+    '''
+    group_df['N'] = group_df['TrueNeg'] + group_df['TruePos'] + \
+                    group_df['FalseNeg'] + group_df['FalsePos']
+    group_df['S'] = (group_df['TruePos'] + group_df['FalseNeg']) / group_df['N']
+    group_df['P'] = (group_df['TruePos'] + group_df['FalsePos']) / group_df['N']
+    group_df['MCC'] = ((group_df['TruePos'] / group_df['N']) - group_df['S'] * group_df['P']) / \
+                      ((group_df['S'] * group_df['P']) * (1 - group_df['S']) * (1 - group_df['P'])) ** (1 / 2)
     group_df.set_index(['sag_id', 'algorithm', 'level'], inplace=True)
     stats_df = group_df[['precision', 'sensitivity', 'specificity', 'type1_error',
                          'type2_error', 'F1_score', 'MCC']]

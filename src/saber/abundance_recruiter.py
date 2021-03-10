@@ -17,7 +17,7 @@ from sklearn.cluster import MiniBatchKMeans
 
 
 def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
-                      minhash_df, covm_per_pass, nthreads, force
+                      minhash_df, nu, gamma, nthreads, force
                       ):
     logging.info('Starting Abundance Recruitment\n')
     mg_id = mg_sub_file[0]
@@ -29,8 +29,6 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
                               sep='\t'
                               )
     else:
-        mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
-        mg_headers = tuple(mg_subcontigs.keys())
         logging.info('Building %s abundance table\n' % mg_id)
         mg_sub_path = o_join(subcontig_path, mg_id + '.subcontigs.fasta')
         # Process raw metagenomes to calculate abundances
@@ -40,45 +38,7 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
         # Recruit subcontigs using OC-SVM
         minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
         logging.info("Starting one-class SVM analysis\n")
-        covm_df = abund_recruiter(abr_path, mg_covm_out, minhash_df, nthreads)
-        '''
-        # Count # of subcontigs recruited to each SAG via samsum
-        covm_cnt_df = covm_df.groupby(['sag_id', 'contig_id']).count().reset_index()
-        covm_cnt_df.columns = ['sag_id', 'contig_id', 'subcontig_recruits']
-        # Build subcontig count for each MG contig
-        mg_contig_list = [x.rsplit('_', 1)[0] for x in mg_headers]
-        mg_tot_df = pd.DataFrame(zip(mg_contig_list, mg_headers),
-                                 columns=['contig_id', 'subcontig_id'])
-        mg_tot_cnt_df = mg_tot_df.groupby(['contig_id']).count().reset_index()
-        mg_tot_cnt_df.columns = ['contig_id', 'subcontig_total']
-        covm_recruit_df = covm_cnt_df.merge(mg_tot_cnt_df, how='left', on='contig_id')
-        covm_recruit_df['percent_recruited'] = covm_recruit_df['subcontig_recruits'] / \
-                                               covm_recruit_df['subcontig_total']
-        covm_recruit_df.sort_values(by='percent_recruited', ascending=False, inplace=True)
-        # Only pass contigs that have the magjority of subcontigs recruited (>= 51%)
-        covm_recruit_filter_df = covm_recruit_df.loc[covm_recruit_df['subcontig_recruits'] != 0]
-        # covm_recruit_filter_df = covm_recruit_df.loc[covm_recruit_df['percent_recruited'] >=
-        #                                             float(covm_per_pass)
-        #                                             ]
-
-        covm_max_list = []
-        for i, sag_id in enumerate(list(set(covm_recruit_filter_df['sag_id'])), 1):
-            logging.info("\rSubsetting recruits for each SAG: {}/{}".format(i,
-                                                                            len(list(set(
-                                                                                covm_recruit_filter_df['sag_id'])))))
-            sag_max_only_df = covm_recruit_filter_df.loc[covm_recruit_filter_df['sag_id'] == sag_id]
-            covm_max_df = mg_tot_df[mg_tot_df['contig_id'].isin(list(sag_max_only_df['contig_id']))]
-            covm_max_df['sag_id'] = sag_id
-            covm_max_df = covm_max_df[['sag_id', 'subcontig_id', 'contig_id']]
-            covm_max_list.append(covm_max_df)
-        logging.info('\n')
-        covm_final_max_df = pd.concat(covm_max_list)
-        sub_mh_df = minhash_df[['sag_id', 'subcontig_id', 'contig_id']].loc[minhash_df['sag_id'].isin(
-            list(set(covm_final_max_df['sag_id']))
-        )]
-        mh_covm_df = pd.concat([covm_final_max_df, sub_mh_df])
-        mh_covm_df.drop_duplicates(inplace=True)
-        '''
+        covm_df = abund_recruiter(abr_path, mg_covm_out, minhash_df, nu, gamma, nthreads)
         covm_df.to_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'),
                        sep='\t', index=False
                        )
@@ -86,7 +46,7 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
     return covm_df
 
 
-def abund_recruiter(abr_path, mg_covm_out, minhash_df, nthreads):
+def abund_recruiter(abr_path, mg_covm_out, minhash_df, nu, gamma, nthreads):
     covm_pass_dfs = []
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
@@ -110,7 +70,7 @@ def abund_recruiter(abr_path, mg_covm_out, minhash_df, nthreads):
 
         else:
             mh_sub_df = mh_recruit_dict[sag_id]
-            arg_list.append([abr_path, sag_id, mh_sub_df, mg_covm_out])
+            arg_list.append([abr_path, sag_id, mh_sub_df, mg_covm_out, nu, gamma])
     logging.info('\n')
     logging.info("{} already complete, {} to run\n".format(len(covm_pass_dfs), len(arg_list)))
     results = pool.imap_unordered(recruitSubs, arg_list)
@@ -242,7 +202,7 @@ def runCovM(abr_path, mg_id, nthreads, sorted_bam_list):
 
 
 def recruitSubs(p):
-    abr_path, sag_id, minhash_sag_df, mg_covm_out = p
+    abr_path, sag_id, minhash_sag_df, mg_covm_out, nu, gamma = p
     minhash_filter_df = minhash_sag_df.loc[(minhash_sag_df['jacc_sim_max'] == 1.0)]
     abr_recruit_file = o_join(abr_path, sag_id + '.abr_recruits.tsv')
     if len(minhash_filter_df['sag_id']) != 0:
@@ -265,7 +225,9 @@ def recruitSubs(p):
         nonrecruit_kmeans_df = mg_covm_df.loc[mg_covm_df.index.isin(
             kmeans_pass_df['subcontig_id']
         )]
-        final_pass_list = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id)
+        final_pass_list = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id, nu=nu,
+                                   gamma=gamma
+                                   )
         final_pass_df = pd.DataFrame(final_pass_list,
                                      columns=['sag_id', 'subcontig_id', 'contig_id']
                                      )
@@ -319,9 +281,9 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     return kmeans_pass_list, filter_clust_pred_df
 
 
-def runOCSVM(sag_df, mg_df, sag_id):
+def runOCSVM(sag_df, mg_df, sag_id, nu=0.3, gamma=10):
     # fit OCSVM
-    clf = svm.OneClassSVM(nu=0.3, gamma=10)
+    clf = svm.OneClassSVM(nu=nu, gamma=gamma)
     clf.fit(sag_df.values)
     mg_pred = clf.predict(mg_df.values)
     contig_id_list = [x.rsplit('_', 1)[0] for x in mg_df.index.values]
@@ -355,17 +317,24 @@ if __name__ == '__main__':
         help='path to metagenome subcontigs file', required=True
     )
     parser.add_argument(
-        '--raw_fastqs',
-        help='path to raw metagenomes, comma separated list', required=True
+        "-l", "--metaraw", required=True, dest="mg_raw_file_list",
+        help="Text file containing paths to raw FASTQ files for samples. "
+             "One file per line, supports interleaved and separate PE reads. "
+             "For separate PE files, both file paths on one line sep by [tab]."
     )
     parser.add_argument(
         '--minh_df',
         help='path to output dataframe from abundance recruiter', required=True
     )
     parser.add_argument(
-        '--per_pass',
-        help='pass percentage of subcontigs to pass complete contig [0.70]', required=True,
-        default='0.70'
+        '--nu_val',
+        help='set value for NU, used by OC-SVM', required=True,
+        default='0.3'
+    )
+    parser.add_argument(
+        '--gamma_val',
+        help='set value for NU, used by OC-SVM', required=True,
+        default='10'
     )
     parser.add_argument(
         '--threads',
@@ -380,14 +349,16 @@ if __name__ == '__main__':
     abr_path = args.abr_path
     subcontig_path = args.sub_path
     mg_sub_file = args.mg_sub_file
-    mg_raw_file_list = args.raw_fastqs.split(',')
+    mg_raw_file_list = args.mg_raw_file_list
     minhash_recruit_file = args.minh_df
-    per_pass = float(args.per_pass)
+    nu = float(args.nu_val)
+    gamma = int(args.gamma_val)
     nthreads = int(args.threads)
 
     s_log.prep_logging("abund_log.txt", args.verbose)
     mg_id = basename(mg_sub_file).rsplit('.', 2)[0]
     minhash_recruit_df = pd.read_csv(minhash_recruit_file, header=0, sep='\t')
 
-    runAbundRecruiter(subcontig_path, abr_path, [mg_id, mg_sub_file],
-                      minhash_recruit_df, per_pass, nthreads)
+    runAbundRecruiter(subcontig_path, abr_path, [mg_id, mg_sub_file], mg_raw_file_list,
+                      minhash_recruit_df, nu, gamma, nthreads, False
+                      )

@@ -142,10 +142,10 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
         sag_sig_list = sag_sig_dict[sag_id]
         search_list = []
         for i, sig in enumerate(sag_sig_list):
-            sbt_out = sourmash.search_sbt_index(mg_sbt, sig, threshold=0.5)
-            for target in sbt_out:
-                similarity = target[1]
-                t_sig = target[0]
+            sbt_out = mg_sbt.search(sig, threshold=0.51)
+            sbt_out_cont = mg_sbt.search(sig, threshold=0.51, do_containment=True)
+            sbt_out.extend(sbt_out_cont)
+            for similarity, t_sig, filename in sbt_out:
                 q_subcontig = t_sig.name()
                 q_contig = q_subcontig.rsplit('_', 1)[0]
                 search_list.append([sag_id, q_subcontig, q_contig, similarity])
@@ -313,7 +313,7 @@ def sag_recruit_checker(mhr_path, sag_sub_files):
 
 def build_signature(p):
     header, seq = p
-    mg_minhash = sourmash.MinHash(n=10, ksize=51)  # , scaled=100)
+    mg_minhash = sourmash.MinHash(n=0, ksize=51, scaled=1000)
     mg_minhash.add_sequence(str(seq), force=True)
     mg_sig = sourmash.SourmashSignature(mg_minhash, name=header)
 

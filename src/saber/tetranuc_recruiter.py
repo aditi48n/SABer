@@ -2,6 +2,7 @@ import argparse
 import logging
 import multiprocessing
 import warnings
+from functools import reduce
 from os.path import isfile, basename
 from os.path import join as o_join
 
@@ -284,6 +285,17 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
                                      sep='\t', header=0
                                      )
     else:
+        dfs = [gmm_filter_df, svm_filter_df, iso_filter_df]
+        comb_recruit_df = reduce(lambda left, right: pd.merge(left, right,
+                                                              on=['sag_id', 'subcontig_id', 'contig_id']
+                                                              ), dfs
+                                 )
+        comb_recruit_df.dropna(subset=['gmm_p', 'svm_p', 'iso_p'], how='any',
+                               inplace=True
+                               )
+        pscale_cols = [x for x in comb_recruit_df.columns if '_w' in x]
+        comb_recruit_df['ensemble_score'] = comb_recruit_df[pscale_cols].sum(axis=1)
+        '''
         gmm_id_list = list(gmm_filter_df['subcontig_id'])
         svm_id_list = list(svm_filter_df['subcontig_id'])
         iso_id_list = list(iso_filter_df['subcontig_id'])
@@ -300,6 +312,8 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
                                columns=['sag_id', 'subcontig_id', 'contig_id']
                                )
         comb_filter_df = filter_tetras(sag_id, mg_headers, 'comb', comb_df)
+        '''
+        comb_filter_df = comb_recruit_df.loc[comb_recruit_df['ensemble_score'] >= 0.1]
         comb_filter_df.to_csv(o_join(tra_path, sag_id + '.comb_recruits.tsv'),
                               sep='\t', index=False
                               )
@@ -530,37 +544,30 @@ def filter_tetras(sag_id, mg_headers, tetra_id, tetra_df):
     mg_tot_cnt_df = mg_tot_df.groupby(['contig_id']).count().reset_index()
     mg_tot_cnt_df.columns = ['contig_id', 'subcontig_total']
     mg_recruit_df = cnt_df.merge(mg_tot_cnt_df, how='left', on='contig_id')
-    mg_recruit_df['percent_recruited'] = mg_recruit_df['subcontig_recruits'] / \
-                                         mg_recruit_df['subcontig_total']
-    mg_recruit_df.sort_values(by='percent_recruited', ascending=False, inplace=True)
+    mg_recruit_df[tetra_id + '_p'] = mg_recruit_df['subcontig_recruits'] / \
+                                     mg_recruit_df['subcontig_total']
+    mg_recruit_df.sort_values(by=tetra_id + '_p', ascending=False, inplace=True)
     # Only pass contigs that have the magjority of subcontigs recruited (>= N%)
-    if (tetra_id == 'svm'):
-        mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.10
-            ]
-    elif (tetra_id == 'gmm'):
-        mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.51
-            ]
-    elif (tetra_id == 'iso'):
-        mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.75
-            ]
-    elif (tetra_id == 'comb'):
-        mg_recruit_filter_df = mg_recruit_df.loc[
-            mg_recruit_df['percent_recruited'] >= 0.01
-            # mg_recruit_df['subcontig_recruits'] >= 1
-            ]
-    tetra_max_list = []
-    sag_max_only_df = mg_recruit_filter_df.loc[
-        mg_recruit_filter_df['sag_id'] == sag_id
+    thresh_dict = {'gmm': 0.50, 'svm': 0.00, 'iso': 0.74}
+    tetra_w = 1 - thresh_dict[tetra_id]
+    tot_W = sum([1 - thresh_dict[x] for x in thresh_dict.keys()])
+    mg_recruit_filter_df = mg_recruit_df.loc[
+        mg_recruit_df[tetra_id + '_p'] > thresh_dict[tetra_id]
         ]
-    tetra_max_df = mg_tot_df[mg_tot_df['contig_id'].isin(
-        list(sag_max_only_df['contig_id'])
-    )]
+    mg_recruit_filter_df[tetra_id + '_s'] = ((mg_recruit_filter_df[tetra_id + '_p'] - \
+                                              thresh_dict[tetra_id]) / tetra_w
+                                             )
+    mg_recruit_filter_df[tetra_id + '_w'] = (mg_recruit_filter_df[tetra_id + '_s'] * \
+                                             (tetra_w / tot_W)
+                                             )
+    tetra_max_df = mg_tot_df.merge(mg_recruit_filter_df, on=['contig_id'], how='inner')
+    # tetra_max_df = mg_tot_df[mg_tot_df['contig_id'].isin(
+    #    list(mg_recruit_filter_df['contig_id'])
+    # )]
     tetra_max_df['sag_id'] = sag_id
-    tetra_max_df = tetra_max_df[['sag_id', 'subcontig_id', 'contig_id']]
-
+    tetra_max_df = tetra_max_df[['sag_id', 'subcontig_id', 'contig_id', tetra_id + '_p',
+                                 tetra_id + '_s', tetra_id + '_w'
+                                 ]]
     return tetra_max_df
 
 

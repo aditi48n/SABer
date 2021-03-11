@@ -14,6 +14,7 @@ import multiprocessing
 from sklearn.preprocessing import StandardScaler
 import saber.tetranuc_recruiter as tra
 from sklearn.cluster import MiniBatchKMeans
+from sklearn.ensemble import IsolationForest
 
 
 def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
@@ -225,9 +226,8 @@ def recruitSubs(p):
         nonrecruit_kmeans_df = mg_covm_df.loc[mg_covm_df.index.isin(
             kmeans_pass_df['subcontig_id']
         )]
-        final_pass_list = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id, nu=nu,
-                                   gamma=gamma
-                                   )
+        final_pass_list = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id, nu, gamma)
+        # final_pass_list = runIFOREST(recruit_contigs_df, nonrecruit_kmeans_df, sag_id)
         final_pass_df = pd.DataFrame(final_pass_list,
                                      columns=['sag_id', 'subcontig_id', 'contig_id']
                                      )
@@ -281,7 +281,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     return kmeans_pass_list, filter_clust_pred_df
 
 
-def runOCSVM(sag_df, mg_df, sag_id, nu=0.3, gamma=10):
+def runOCSVM(sag_df, mg_df, sag_id, nu, gamma):
     # fit OCSVM
     clf = svm.OneClassSVM(nu=nu, gamma=gamma)
     clf.fit(sag_df.values)
@@ -299,6 +299,61 @@ def runOCSVM(sag_df, mg_df, sag_id, nu=0.3, gamma=10):
     for md_nm in major_pred_df['subcontig_id']:
         svm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
     return svm_pass_list
+
+
+def iqr_bounds(scores, k=1.5):
+    q1 = scores.quantile(0.25)
+    q3 = scores.quantile(0.75)
+    iqr = q3 - q1
+    lower_bound = (q1 - k * iqr)
+    upper_bound = (q3 + k * iqr)
+    return lower_bound, upper_bound
+
+
+def runIFOREST(sag_df, mg_df, sag_id):
+    # fit IsoForest
+    clf = IsolationForest(n_estimators=1000, random_state=42)
+    clf.fit(sag_df.values)
+    sag_pred = clf.predict(sag_df.values)
+    sag_scores = clf.score_samples(sag_df.values)
+    sag_dfunct = clf.decision_function(sag_df.values)
+    sag_anomaly = sag_scores / sag_dfunct
+    sag_pred_df = pd.DataFrame(data=sag_pred, index=sag_df.index.values,
+                               columns=['anomaly'])
+    sag_pred_df.loc[sag_pred_df['anomaly'] == 1, 'anomaly'] = 0
+    sag_pred_df.loc[sag_pred_df['anomaly'] == -1, 'anomaly'] = 1
+    sag_pred_df['scores'] = sag_scores
+    sag_pred_df['decision_function'] = sag_dfunct
+    sag_pred_df['normed_anomaly'] = sag_anomaly
+    lower_bound, upper_bound = iqr_bounds(sag_pred_df['normed_anomaly'], k=0.5)
+
+    mg_pred = clf.predict(mg_df.values)
+    mg_scores = clf.score_samples(mg_df.values)
+    mg_dfunct = clf.decision_function(mg_df.values)
+    mg_anomaly = mg_scores / mg_dfunct
+    mg_pred_df = pd.DataFrame(data=mg_pred, index=mg_df.index.values,
+                              columns=['anomaly'])
+    mg_pred_df.loc[mg_pred_df['anomaly'] == 1, 'anomaly'] = 0
+    mg_pred_df.loc[mg_pred_df['anomaly'] == -1, 'anomaly'] = 1
+    mg_pred_df['scores'] = mg_scores
+    mg_pred_df['decision_function'] = mg_dfunct
+    mg_pred_df['normed_anomaly'] = mg_anomaly
+    mg_pred_df['iqr_anomaly'] = 0
+    mg_pred_df['iqr_anomaly'] = (mg_pred_df['normed_anomaly'] < lower_bound) | \
+                                (mg_pred_df['normed_anomaly'] > upper_bound)
+    mg_pred_df['iqr_anomaly'] = mg_pred_df['iqr_anomaly'].astype(int)
+    # iso_pass_df = mg_pred_df.loc[mg_pred_df['iqr_anomaly'] != 1]
+    mg_pred_df['contig_id'] = [x.rsplit('_', 1)[0] for x in mg_pred_df.index.values]
+
+    val_perc = mg_pred_df.groupby('contig_id')['iqr_anomaly'].value_counts(
+        normalize=True).reset_index(name='percent')
+    pos_perc = val_perc.loc[val_perc['iqr_anomaly'] == 1]
+    major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+    major_pred_df = mg_pred_df.loc[mg_pred_df['contig_id'].isin(major_df['contig_id'])]
+    iso_pass_list = []
+    for md_nm in major_pred_df.index.values:
+        iso_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
+    return iso_pass_list
 
 
 if __name__ == '__main__':

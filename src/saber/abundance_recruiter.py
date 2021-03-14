@@ -293,7 +293,7 @@ def runOCSVM(sag_df, mg_df, sag_id, nu, gamma):
     val_perc = pred_df.groupby('contig_id')['ocsvm_pred'].value_counts(
         normalize=True).reset_index(name='percent')
     pos_perc = val_perc.loc[val_perc['ocsvm_pred'] == 1]
-    major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+    major_df = pos_perc.loc[pos_perc['percent'] >= 0.01]
     major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
     svm_pass_list = []
     for md_nm in major_pred_df['subcontig_id']:

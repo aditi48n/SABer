@@ -187,18 +187,19 @@ g.set_titles(row_template='{row_name}', col_template='{col_name}')
 g.savefig(err_path + '/SABer_MinHash_relplot.png', bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
-
+paired_cols = sns.color_palette("Paired")
 for algo in set(syn_stage_sense_df['stage']):
     # Plot Before and after SAG -> SABer-xPG completness
     algo_list = ['synSAG', algo]
     sub_trim_df = syn_stage_sense_df.loc[syn_stage_sense_df['stage'].isin(algo_list)]
+    sub_trim_df = sub_trim_df.loc[sub_trim_df['synSAG_score'] <= 50.0]
     print(sub_trim_df.head())
     print(algo, sub_trim_df.loc[sub_trim_df['stage'] == algo]['score'].mean())
     sns.set_context("poster")
     sns.set_style('whitegrid')
     sns.set(font_scale=0.75)
     g = sns.JointGrid(data=sub_trim_df, x='synSAG_score', y='stage_score', hue='stage',
-                      ylim=(0, 101)
+                      ylim=(0, 101), hue_order=algo_list, palette=[paired_cols[0], paired_cols[7]]
                       )
     g.plot_joint(sns.scatterplot, legend=False)
     g.plot_marginals(sns.histplot, kde=True)
@@ -211,7 +212,7 @@ for algo in set(syn_stage_sense_df['stage']):
     sns.set_style('whitegrid')
     sns.set(font_scale=0.75)
     g = sns.catplot(x='synSAG_score_cat', y='stage_score', hue='stage', kind='box',
-                    data=sub_trim_df, linewidth=0.5
+                    data=sub_trim_df, linewidth=0.5, hue_order=algo_list, palette=[paired_cols[0], paired_cols[7]]
                     )
     g.savefig(comp_path + algo + "_synSAG_Completeness_box.png", bbox_inches='tight', dpi=300)
     plt.clf()
@@ -459,14 +460,19 @@ cat_order = ['Binsanity-wf_0.2.5.9', 'Binsanity_0.2.5.9', 'COCACOLA', 'CONCOCT_2
              'MetaBAT_2.11.2', 'MetaBAT_CAMI', 'Metawatt_3.5_CAMI', 'MyCC_CAMI',
              'SABer-xPG'
              ]
+filter_sab_amb_df['Precision'] = filter_sab_amb_df['Precision'] * 100
+filter_sab_amb_df['Sensitivity'] = filter_sab_amb_df['Sensitivity'] * 100
+sns.set_context("poster")
+sns.set_style('whitegrid')
+sns.set(font_scale=0.75)
 g = sns.scatterplot(y='Precision', x='Sensitivity', hue='algorithm', palette=color_dict,
                     style='algorithm', markers=marker_dict, hue_order=cat_order,
                     data=filter_sab_amb_df, s=75
                     )
 
 g.set(ylabel='Average Precision', xlabel='Average Sensitivity')
-plt.xlim(0, 1)
-plt.ylim(0, 1.05)
+plt.xlim(0, 100)
+plt.ylim(0, 105)
 
 plt.legend(edgecolor='b', bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 g.figure.savefig(err_path + '/AMBER_SABer_scatterplot.png', bbox_inches='tight', dpi=300)

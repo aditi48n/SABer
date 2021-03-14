@@ -106,7 +106,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file,
         merge_jacc_df = mh_final_max_df.merge(minhash_df, how='left',
                                               on=['sag_id', 'subcontig_id', 'contig_id']
                                               )
-        minhash_filter_df = merge_jacc_df.loc[(merge_jacc_df['jacc_sim_max'] >= 0.9)]
+        minhash_filter_df = merge_jacc_df.loc[(merge_jacc_df['jacc_sim_max'] >= 0.95)]
         minhash_filter_df.to_csv(o_join(mhr_path, mg_id + '.mhr_trimmed_recruits.tsv'), sep='\t',
                                  index=False
                                  )
@@ -142,8 +142,8 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
         sag_sig_list = sag_sig_dict[sag_id]
         search_list = []
         for i, sig in enumerate(sag_sig_list):
-            sbt_out = mg_sbt.search(sig, threshold=0.9)
-            sbt_out_cont = mg_sbt.search(sig, threshold=0.9, do_containment=True)
+            sbt_out = mg_sbt.search(sig, threshold=0.95)
+            sbt_out_cont = mg_sbt.search(sig, threshold=0.95, do_containment=True)
             sbt_out.extend(sbt_out_cont)
             for similarity, t_sig, filename in sbt_out:
                 q_subcontig = t_sig.name()

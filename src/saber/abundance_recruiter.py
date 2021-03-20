@@ -131,13 +131,13 @@ def runBWAmem(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
         logging.info('Raw reads in FWD and REV file...\n')
         pe1 = raw_file_list[0]
         pe2 = raw_file_list[1]
-        mem_cmd = ['bwa', 'mem', '-t', str(nthreads), '-p',
+        mem_cmd = ['minimap2', '-ax', 'sr', '-t', str(nthreads),
                    o_join(subcontig_path, mg_id + '.subcontigs.fasta'), pe1, pe2
                    ]  # TODO: add support for specifying number of threads
     else:  # if the fastq is interleaved
         logging.info('Raw reads in interleaved file...\n')
         pe1 = raw_file_list[0]
-        mem_cmd = ['bwa', 'mem', '-t', str(nthreads), '-p',
+        mem_cmd = ['minimap2', '-ax', 'sr', '-t', str(nthreads),
                    o_join(subcontig_path, mg_id + '.subcontigs.fasta'), pe1
                    ]  # TODO: how to get install path for executables?
     pe_basename = basename(pe1)
@@ -145,7 +145,7 @@ def runBWAmem(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
     # BWA sam file exists?
     mg_sam_out = o_join(abr_path, pe_id + '.sam')
     if isfile(mg_sam_out) == False:
-        logging.info('Running BWA mem on %s\n' % pe_id)
+        logging.info('Running minimap2-sr on %s\n' % pe_id)
         with open(mg_sam_out, 'w') as sam_file:
             with open(o_join(abr_path, pe_id + '.stderr.txt'), 'w') as stderr_file:
                 run_mem = Popen(mem_cmd, stdout=sam_file, stderr=stderr_file)

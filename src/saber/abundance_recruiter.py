@@ -87,7 +87,7 @@ def abund_recruiter(abr_path, mg_covm_out, minhash_df, nu, gamma, nthreads):
 
 def procMetaGs(abr_path, mg_id, mg_sub_path, mg_raw_file_list, subcontig_path, nthreads):
     # Build BWA index
-    buildBWAindex(abr_path, mg_id, mg_sub_path)
+    # buildBWAindex(abr_path, mg_id, mg_sub_path)
     # Process each raw metagenome
     with open(mg_raw_file_list, 'r') as raw_fa_in:
         raw_data = raw_fa_in.readlines()

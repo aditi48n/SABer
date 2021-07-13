@@ -376,7 +376,7 @@ err_df = pd.read_csv(err_file, header=0, sep='\t')
 #            'tetra_svm': 'OCSVM', 'tetra_iso': 'Isolation Forest', 'tetra_comb': 'Tetra Ensemble',
 #            'xpg': 'SABer-xPG'
 #            }
-# err_df['algorithm'] = [map_algo[x] for x in err_df['algorithm']]
+#err_df['algorithm'] = [map_algo[x] for x in err_df['algorithm']]
 err_df['level'] = ['exact' if x == 'perfect' else x for x in err_df['level']]
 unstack_df = err_df.pivot_table(index=['sag_id', 'algorithm', 'level'],
                                 columns='statistic', values='score'

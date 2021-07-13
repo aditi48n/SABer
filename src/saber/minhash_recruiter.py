@@ -39,7 +39,8 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             build_list, minhash_pass_list = sag_recruit_checker(mhr_path, sag_sub_files, kmer)
             if len(build_list) != 0:
                 sag_sig_dict = build_sag_sig_dict(build_list, nthreads, sig_path, kmer)
-                build_mg_lca(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=True)  # make sure SBT exists first
+                # build_mg_lca(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=True)  # make sure SBT exists first
+                build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=True)  # make sure SBT exists first
                 pool = multiprocessing.Pool(processes=nthreads)
                 sbt_args = mg_id, mg_sub_file, sig_path, nthreads
                 chunk_list = [list(x) for x in np.array_split(np.array(list(sag_sig_dict.keys())),
@@ -50,16 +51,16 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                 for i, sag_id_list in enumerate(chunk_list):
                     sub_sag_sig_dict = {k: sag_sig_dict[k] for k in sag_id_list}
                     arg_list.append([sbt_args, mhr_path, sag_id_list, sub_sag_sig_dict, kmer])
-                results = pool.imap_unordered(compare_sag_lca, arg_list)
-                logging.info('Querying {} Signature Blocks against LCA\n'.format(len(chunk_list)))
+                results = pool.imap_unordered(compare_sag_sbt, arg_list)
+                logging.info('Querying {} Signature Blocks against SBT\n'.format(len(chunk_list)))
                 logging.info('WARNING: This can be VERY time consuming, be patient\n'.format(len(chunk_list)))
                 df_cnt = 0
-                logging.info('Signatures Queried Against LCA: {}/{}\r'.format(df_cnt,
+                logging.info('Signatures Queried Against SBT: {}/{}\r'.format(df_cnt,
                                                                               len(sag_sig_dict.keys()))
                              )
                 for i, search_df in enumerate(results):
                     df_cnt += len(search_df)
-                    logging.info('Signatures Queried Against LCA: {}/{}\r'.format(df_cnt,
+                    logging.info('Signatures Queried Against SBT: {}/{}\r'.format(df_cnt,
                                                                                   len(sag_sig_dict.keys()))
                                  )
                     minhash_pass_list.extend(search_df)
@@ -155,8 +156,8 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
         sag_sig_list = sag_sig_dict[sag_id]
         search_list = []
         for i, sig in enumerate(sag_sig_list):
-            sbt_out = mg_sbt.search(sig, threshold=0.1)
-            sbt_out_cont = mg_sbt.search(sig, threshold=0.1, do_containment=True)
+            sbt_out = mg_sbt.search(sig, threshold=0.000000000001)
+            sbt_out_cont = mg_sbt.search(sig, threshold=0.000000000001, do_containment=True)
             sbt_out.extend(sbt_out_cont)
             for similarity, t_sig, filename in sbt_out:
                 q_subcontig = t_sig.name()
@@ -350,7 +351,7 @@ def sag_recruit_checker(mhr_path, sag_sub_files, kmer):
 
 def build_signature(p):
     header, seq, kmer = p
-    mg_minhash = sourmash.MinHash(n=100, ksize=kmer)  # , scaled=100)
+    mg_minhash = sourmash.MinHash(n=100, ksize=kmer, scaled=0)
     mg_minhash.add_sequence(str(seq), force=True)
     mg_sig = sourmash.SourmashSignature(mg_minhash, name=header)
 

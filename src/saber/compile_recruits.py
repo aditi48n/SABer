@@ -2,18 +2,21 @@ import logging
 from os.path import join as o_join
 
 import pandas as pd
-import saber.utilities as s_utils
+
+import utilities as s_utils
 
 
 def run_combine_recruits(xpg_path, mg_file, tetra_df_dict,
-                         minhash_df, sag_list
+                         minhash_dict, sag_list
                          ):
     logging.info('Combining All Recruits\n')
     mg_contigs_dict = s_utils.get_seqs(mg_file)
     mg_contigs = tuple([(r.name, r.seq) for r in mg_contigs_dict])
     tetra_df = tetra_df_dict['comb']
     # Merge MinHash and GMM Tetra (passed first by ABR)
-    mh_gmm_merge_df = minhash_df[['sag_id', 'contig_id']
+    minhash_df = minhash_dict[201]
+    minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.90]
+    mh_gmm_merge_df = minhash_filter_df[['sag_id', 'contig_id']
     ].merge(tetra_df[['sag_id', 'contig_id']],
             how='outer', on=['sag_id', 'contig_id']
             ).drop_duplicates()

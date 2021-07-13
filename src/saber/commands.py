@@ -2,16 +2,17 @@ __author__ = 'Ryan J McLaughlin'
 
 import logging
 
-import saber
-import saber.abundance_recruiter as abr
-import saber.args as s_args
-import saber.classy as s_class
-import saber.compile_recruits as com
-import saber.logger as s_log
-import saber.minhash_recruiter as mhr
-import saber.tetranuc_recruiter as tra
-import saber.utilities as s_utils
 from pip._internal.operations import freeze
+
+# import saber
+import abundance_recruiter as abr
+import classy as s_class
+import compile_recruits as com
+import logger as s_log
+import minhash_recruiter as mhr
+import s_args
+import tetranuc_recruiter as tra
+import utilities as s_utils
 
 
 def info(sys_args):
@@ -88,28 +89,28 @@ def recruit(sys_args):
                                            recruit_s.overlap_len
                                            )
     # Run MinHash recruiting algorithm
-    minhash_df = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],
-                                           save_dirs_dict['minhash_recruits'],
-                                           sag_sub_files, mg_sub_file,
-                                           recruit_s.jacc_thresh, recruit_s.mh_per_pass,
-                                           recruit_s.nthreads, recruit_s.force
-                                           )
+    minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],
+                                                save_dirs_dict['minhash_recruits'],
+                                                sag_sub_files, mg_sub_file,
+                                                # recruit_s.jacc_thresh, recruit_s.mh_per_pass,
+                                                recruit_s.nthreads, recruit_s.force
+                                                )
     # Abundance Recruit Module
     abund_df = abr.runAbundRecruiter(save_dirs_dict['subcontigs'],
                                      save_dirs_dict['abund_recruits'], mg_sub_file,
-                                     recruit_s.mg_raw_file_list, minhash_df,
-                                     0.3, 10,
+                                     recruit_s.mg_raw_file_list, minhash_df_dict,
+                                     0.1, 0.1,
                                      recruit_s.nthreads, recruit_s.force
                                      )
     # Tetranucleotide Hz Recruit Module
     tetra_df_dict = tra.run_tetra_recruiter(save_dirs_dict['tetra_recruits'],
                                             sag_sub_files, mg_sub_file, abund_df,
-                                            minhash_df, recruit_s.gmm_per_pass, recruit_s.nthreads,
+                                            minhash_df_dict, recruit_s.gmm_per_pass, recruit_s.nthreads,
                                             recruit_s.force
                                             )
     # Collect and join all recruits
     com.run_combine_recruits(save_dirs_dict['xPGs'],
-                             recruit_s.mg_file, tetra_df_dict, minhash_df, sag_list
+                             recruit_s.mg_file, tetra_df_dict, minhash_df_dict, sag_list
                              )
     # Re-assemble SAG with MG recruits
 

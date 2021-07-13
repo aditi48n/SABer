@@ -8,13 +8,14 @@ from os.path import join as o_join
 
 import numpy as np
 import pandas as pd
-import saber.logger as s_log
-import saber.utilities as s_utils
 from sklearn import svm
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.ensemble import IsolationForest
 from sklearn.mixture import BayesianGaussianMixture as BayesGMM
 from sklearn.mixture import GaussianMixture as GMM
+
+import logger as s_log
+import utilities as s_utils
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -26,7 +27,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # res_values = method(rvalues)
 
 
-def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, minhash_df,
+def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, minhash_dict,
                         per_pass, nthreads, force
                         ):
     """Returns dataframe of subcontigs recruited via tetranucleotide Hz
@@ -70,14 +71,19 @@ def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, 
     mg_tetra_df.index.names = ['subcontig_id']
     std_tetra_dict = build_uniq_dict(mg_tetra_df, 'contig_id', nthreads, 'TetraHz')
     # Prep MinHash
-    minhash_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
-    minhash_dedup_df = minhash_df[['sag_id', 'subcontig_id', 'contig_id', 'jacc_sim', 'jacc_sim_max']
-    ].loc[minhash_df['jacc_sim_max'] == 1.0].drop_duplicates(subset=['sag_id', 'contig_id'])
+    # Filter out contigs that didn't meet MinHash recruit standards
+    minhash_df = minhash_dict[201]
+    minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.90]
+    minhash_dedup_df = minhash_filter_df[['sag_id', 'contig_id', 'jacc_sim_max']
+    ].loc[minhash_filter_df['jacc_sim_max'] >= 0.90].drop_duplicates(subset=['sag_id', 'contig_id'])
     mh_recruit_dict = build_uniq_dict(minhash_dedup_df, 'sag_id', nthreads,
                                       'MinHash Recruits')  # TODO: this might not need multithreading
     # Prep Abundance
     # abund_dedup_df = abund_recruit_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
-    ab_recruit_dict = build_uniq_dict(abund_recruit_df, 'sag_id', nthreads,
+    # ab_recruit_dict = build_uniq_dict(abund_recruit_df, 'sag_id', nthreads,
+    #                                  'Abundance Recruits')  # TODO: this might not need multithreading
+    mh_dedup_df = minhash_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
+    ab_recruit_dict = build_uniq_dict(minhash_df, 'sag_id', nthreads,
                                       'Abundance Recruits')  # TODO: this might not need multithreading
     # Subset tetras matrix for each SAG
     sag_id_list = list(mh_recruit_dict.keys())
@@ -276,7 +282,9 @@ def build_new_Ensemble(passed_preds_df, mg_headers, sag_id, tra_path, force):
     return comb_filter_df
 
 
-def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_id, tra_path, force):
+def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_id,
+                   tra_path, force
+                   ):
     if (isfile(o_join(tra_path, sag_id + '.comb_recruits.tsv')) &
             (force is False)
     ):
@@ -287,10 +295,10 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
     else:
         dfs = [gmm_filter_df, svm_filter_df, iso_filter_df]
         comb_recruit_df = reduce(lambda left, right: pd.merge(left, right,
-                                                              on=['sag_id', 'subcontig_id', 'contig_id']
-                                                              ), dfs
+                                                              on=['sag_id', 'subcontig_id', 'contig_id'],
+                                                              how='outer'), dfs
                                  )
-        comb_recruit_df.dropna(subset=['gmm_p', 'svm_p', 'iso_p'], how='any',
+        comb_recruit_df.dropna(subset=['gmm_p', 'svm_p', 'iso_p'], how='all',
                                inplace=True
                                )
         pscale_cols = [x for x in comb_recruit_df.columns if '_w' in x]
@@ -313,7 +321,8 @@ def build_Ensemble(gmm_filter_df, svm_filter_df, iso_filter_df, mg_headers, sag_
                                )
         comb_filter_df = filter_tetras(sag_id, mg_headers, 'comb', comb_df)
         '''
-        comb_filter_df = comb_recruit_df.loc[comb_recruit_df['ensemble_score'] >= 0.1]
+        comb_filter_df = comb_recruit_df.loc[comb_recruit_df['ensemble_score'] >= 0.51]
+        # comb_filter_df = comb_recruit_df.loc[comb_recruit_df['ensemble_score'] != 0]
         comb_filter_df.to_csv(o_join(tra_path, sag_id + '.comb_recruits.tsv'),
                               sep='\t', index=False
                               )
@@ -336,13 +345,13 @@ def ISO_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
         sag_score = clf.decision_function(sag_tetra_df.values)
         # TODO:
         #  convert sag_score and mg_score to normalized anomaly_score
-        #  as defined by score_samples/decision_fuction
+        #  as defined by score_samples/decision_function
         sag_pred_df = pd.DataFrame(data=sag_pred, index=sag_tetra_df.index.values,
                                    columns=['anomaly'])
         sag_pred_df.loc[sag_pred_df['anomaly'] == 1, 'anomaly'] = 0
         sag_pred_df.loc[sag_pred_df['anomaly'] == -1, 'anomaly'] = 1
         sag_pred_df['scores'] = sag_score
-        lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=0.5)
+        lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=1.5)
 
         mg_pred = clf.predict(mg_tetra_filter_df.values)
         mg_score = clf.decision_function(mg_tetra_filter_df.values)
@@ -356,6 +365,7 @@ def ISO_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
                                     (mg_pred_df['scores'] > upper_bound)
         mg_pred_df['iqr_anomaly'] = mg_pred_df['iqr_anomaly'].astype(int)
         iso_pass_df = mg_pred_df.loc[mg_pred_df['iqr_anomaly'] != 1]
+        #iso_pass_df = mg_pred_df.loc[mg_pred_df['anomaly'] != 1]
         iso_pass_list = []
         for md_nm in iso_pass_df.index.values:
             iso_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
@@ -380,7 +390,7 @@ def OCSVM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_pa
     else:
         # logging.info('Training OCSVM on SAG tetras\n')
         # fit OCSVM
-        clf = svm.OneClassSVM(nu=0.9, gamma=0.0001)
+        clf = svm.OneClassSVM(nu=0.1, gamma=0.01)
         clf.fit(sag_tetra_df.values)
         # print(clf.get_params())
         sag_pred = clf.predict(sag_tetra_df.values)
@@ -416,7 +426,7 @@ def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
         sag_score = gmm.score_samples(sag_tetra_df.values)
         sag_pred_df = pd.DataFrame(data=sag_score, index=sag_tetra_df.index.values,
                                    columns=['scores'])
-        lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=3.0)
+        lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=10.0)
 
         mg_score = gmm.score_samples(mg_tetra_filter_df.values)
         mg_pred_df = pd.DataFrame(data=mg_score, index=mg_tetra_filter_df.index.values,
@@ -426,6 +436,7 @@ def GMM_recruiter(mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path
                                     (mg_pred_df['scores'] > upper_bound)
         mg_pred_df['iqr_anomaly'] = mg_pred_df['iqr_anomaly'].astype(int)
         gmm_pass_df = mg_pred_df.loc[mg_pred_df['iqr_anomaly'] != 1]
+
         gmm_pass_list = []
         for md_nm in gmm_pass_df.index.values:
             gmm_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
@@ -471,7 +482,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
         pred_df = std_clust_df[['subcontig_id', 'contig_id', 'kmeans_pred']]
         val_perc = pred_df.groupby('contig_id')['kmeans_pred'].value_counts(normalize=True).reset_index(name='percent')
         pos_perc = val_perc.loc[val_perc['kmeans_pred'] == 1]
-        major_df = pos_perc.loc[pos_perc['percent'] >= 0.95]
+        major_df = pos_perc.copy()  # .loc[pos_perc['percent'] >= 0.95]
         major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
         kmeans_pass_list = []
         for md_nm in major_pred_df['subcontig_id']:
@@ -548,7 +559,8 @@ def filter_tetras(sag_id, mg_headers, tetra_id, tetra_df):
                                      mg_recruit_df['subcontig_total']
     mg_recruit_df.sort_values(by=tetra_id + '_p', ascending=False, inplace=True)
     # Only pass contigs that have the magjority of subcontigs recruited (>= N%)
-    thresh_dict = {'gmm': 0.50, 'svm': 0.00, 'iso': 0.74}
+    # thresh_dict = {'gmm': 0.50, 'svm': 0.00, 'iso': 0.74}
+    thresh_dict = {'gmm': 0.00, 'svm': 0.00, 'iso': 0.00}
     tetra_w = 1 - thresh_dict[tetra_id]
     tot_W = sum([1 - thresh_dict[x] for x in thresh_dict.keys()])
     mg_recruit_filter_df = mg_recruit_df.loc[

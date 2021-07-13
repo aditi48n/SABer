@@ -20,7 +20,6 @@ pd.options.mode.chained_assignment = None
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import auc  # , f1_score, matthews_corrcoef
 # import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
 import multiprocessing
 from sklearn.cluster import MiniBatchKMeans
 import logging
@@ -28,7 +27,6 @@ import logging
 
 def recruit_stats(p):
     sag_id, gam, n, subcontig_id_list, contig_id_list, exact_truth, strain_truth, pred = p
-
     pred_df = pd.DataFrame(zip(subcontig_id_list, contig_id_list, pred),
                            columns=['subcontig_id', 'contig_id', 'pred']
                            )
@@ -144,58 +142,55 @@ def calc_stats(sag_id, level, include, gam, n, TP, FP, TN, FN, y_truth, y_pred):
 
 
 def recruitSubs(p):
-    abr_path, sag_id, minhash_sag_df, mg_covm_out, gamma, nu, src2contig_list, src2strain_list = p
-    minhash_filter_df = minhash_sag_df.loc[(minhash_sag_df['jacc_sim_max'] == 1.0)]
-    if len(minhash_filter_df['sag_id']) != 0:
-        mg_covm_df = pd.read_csv(mg_covm_out, header=0, sep='\t', index_col=['contigName'])
-        mg_covm_df.drop(columns=['contigLen', 'totalAvgDepth'], inplace=True)
-        scale = StandardScaler().fit(mg_covm_df.values)
-        scaled_data = scale.transform(mg_covm_df.values)
-        std_merge_df = pd.DataFrame(scaled_data, index=mg_covm_df.index)
-        recruit_contigs_df = std_merge_df.loc[std_merge_df.index.isin(
-            list(minhash_filter_df['subcontig_id']))
-        ]
-        nonrecruit_filter_df = std_merge_df.copy()
+    abr_path, sag_id, mh_sag_df, mg_covm_file, gamma, nu, src2contig_list, src2strain_list = p
 
-        kmeans_pass_list = runKMEANS(recruit_contigs_df, sag_id, std_merge_df)
-        kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
-                                      columns=['sag_id', 'subcontig_id', 'contig_id']
-                                      )
-        nonrecruit_kmeans_df = nonrecruit_filter_df.loc[nonrecruit_filter_df.index.isin(
-            kmeans_pass_df['subcontig_id']
-        )]
-        final_pass_df = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id, gamma, nu)
-        # final_pass_df = pd.DataFrame(final_pass_list,
-        #                             columns=['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id', 'pred']
-        #                             )
+    mh_sag_filter_df = mh_sag_df.loc[mh_sag_df['jacc_sim_max'] >= 0.90]
+    mg_covm_df = pd.read_csv(mg_covm_file, header=0, sep='\t', index_col=['contigName'])
+    mg_covm_df['contig_id'] = [x.rsplit('_', 1)[0] for x in mg_covm_df.index.values]
+    mg_covm_filter_df = mg_covm_df.loc[mg_covm_df['contig_id'].isin(list(mh_sag_df['contig_id']))]
+    recruit_contigs_df = mg_covm_filter_df.loc[mg_covm_filter_df['contig_id'].isin(
+        list(mh_sag_filter_df['contig_id']))
+    ]
+    mg_covm_filter_df.drop(columns=['contig_id'], inplace=True)
+    recruit_contigs_df.drop(columns=['contig_id'], inplace=True)
 
-        complete_df = pd.DataFrame(nonrecruit_filter_df.index.values, columns=['subcontig_id'])
-        complete_df['sag_id'] = sag_id
-        complete_df['nu'] = nu
-        complete_df['gamma'] = gamma
-        complete_df['contig_id'] = [x.rsplit('_', 1)[0] for x in nonrecruit_filter_df.index.values]
-        merge_recruits_df = pd.merge(complete_df, final_pass_df,
-                                     on=['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id'],
-                                     how='outer'
-                                     )
-        merge_recruits_df.fillna(-1, inplace=True)
-        merge_recruits_df['exact_truth'] = [1 if x in src2contig_list else -1
-                                            for x in merge_recruits_df['contig_id']
-                                            ]
-        merge_recruits_df['strain_truth'] = [1 if x in src2strain_list else -1
-                                             for x in merge_recruits_df['contig_id']
-                                             ]
-        subcontig_id_list = list(merge_recruits_df['subcontig_id'])
-        contig_id_list = list(merge_recruits_df['contig_id'])
-        exact_truth = list(merge_recruits_df['exact_truth'])
-        strain_truth = list(merge_recruits_df['strain_truth'])
-        pred = list(merge_recruits_df['pred'])
-        stats_lists = recruit_stats([sag_id, gamma, nu, subcontig_id_list, contig_id_list,
-                                     exact_truth, strain_truth, pred
-                                     ])
-        return stats_lists
-    else:
-        return [], [], [], []
+    kmeans_pass_list = runKMEANS(recruit_contigs_df, sag_id, mg_covm_filter_df)
+    kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
+                                  columns=['sag_id', 'subcontig_id', 'contig_id']
+                                  )
+    nonrecruit_kmeans_df = mg_covm_filter_df.loc[mg_covm_filter_df.index.isin(
+        kmeans_pass_df['subcontig_id']
+    )]
+    final_pass_df = runOCSVM(recruit_contigs_df, nonrecruit_kmeans_df, sag_id, gamma, nu)
+    # final_pass_df = pd.DataFrame(final_pass_list,
+    #                             columns=['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id', 'pred']
+    #                             )
+
+    complete_df = pd.DataFrame(mg_covm_df.index.values, columns=['subcontig_id'])
+    complete_df['sag_id'] = sag_id
+    complete_df['nu'] = nu
+    complete_df['gamma'] = gamma
+    complete_df['contig_id'] = [x.rsplit('_', 1)[0] for x in mg_covm_df.index.values]
+    merge_recruits_df = pd.merge(complete_df, final_pass_df,
+                                 on=['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id'],
+                                 how='outer'
+                                 )
+    merge_recruits_df.fillna(-1, inplace=True)
+    merge_recruits_df['exact_truth'] = [1 if x in src2contig_list else -1
+                                        for x in merge_recruits_df['contig_id']
+                                        ]
+    merge_recruits_df['strain_truth'] = [1 if x in src2strain_list else -1
+                                         for x in merge_recruits_df['contig_id']
+                                         ]
+    subcontig_id_list = list(merge_recruits_df['subcontig_id'])
+    contig_id_list = list(merge_recruits_df['contig_id'])
+    exact_truth = list(merge_recruits_df['exact_truth'])
+    strain_truth = list(merge_recruits_df['strain_truth'])
+    pred = list(merge_recruits_df['pred'])
+    stats_lists = recruit_stats([sag_id, gamma, nu, subcontig_id_list, contig_id_list,
+                                 exact_truth, strain_truth, pred
+                                 ])
+    return stats_lists
 
 
 def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
@@ -225,7 +220,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     pred_df = std_clust_df[['subcontig_id', 'contig_id', 'kmeans_pred']]
     val_perc = pred_df.groupby('contig_id')['kmeans_pred'].value_counts(normalize=True).reset_index(name='percent')
     pos_perc = val_perc.loc[val_perc['kmeans_pred'] == 1]
-    major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+    major_df = pos_perc.copy()  # .loc[pos_perc['percent'] >= 0.51]
     major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
     kmeans_pass_list = []
     for md_nm in major_pred_df['subcontig_id']:
@@ -260,6 +255,8 @@ def runOCSVM(sag_df, mg_df, sag_id, gamma, nu):
     return pred_df
 
 
+# minhash_201_file = sys.argv[1]
+# minhash_21_file = sys.argv[2]
 minhash_file = sys.argv[1]
 mg_abund_file = sys.argv[2]
 src2sag_file = sys.argv[3]
@@ -270,31 +267,38 @@ pred_file_out = sys.argv[6]
 nthreads = int(sys.argv[7])
 
 minhash_df = pd.read_csv(minhash_file, header=0, sep='\t')
+mh_sag_df = minhash_df.loc[(minhash_df['sag_id'] == sag_id)]
 
-src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
-src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
-sag2src_dict = {}
-sag2strain_dict = {}
-for src_id in set(src2sag_df['CAMI_genomeID']):
-    if src_id in sag_id:
-        if sag_id in sag2src_dict.keys():
-            if len(src_id) > len(sag2src_dict[sag_id]):
+# mh_201_df = pd.read_csv(minhash_201_file, header=0, sep='\t')
+# mh_21_df = pd.read_csv(minhash_21_file, header=0, sep='\t')
+# mh_201_sag_df = minhash_df.loc[((minhash_df['sag_id'] == sag_id) &
+#                               (minhash_df['jacc_sim_max'] >= 0.90)
+#                               )]
+# mh_21_sag_df = minhash_df.loc[(minhash_df['sag_id'] == sag_id)]
+
+if mh_sag_df.shape[0] != 0:
+
+    src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
+    src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
+    sag2src_dict = {}
+    sag2strain_dict = {}
+    for src_id in set(src2sag_df['CAMI_genomeID']):
+        if src_id in sag_id:
+            if sag_id in sag2src_dict.keys():
+                if len(src_id) > len(sag2src_dict[sag_id]):
+                    sag2src_dict[sag_id] = src_id
+                    strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
+                    sag2strain_dict[sag_id] = strain_id
+
+            else:
                 sag2src_dict[sag_id] = src_id
                 strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
                 sag2strain_dict[sag_id] = strain_id
+    src2contig_df = src2sag_df.loc[src2sag_df['CAMI_genomeID'] == sag2src_dict[sag_id]]
+    src2strain_df = src2sag_df.loc[src2sag_df['strain'] == sag2strain_dict[sag_id]]
+    src2contig_list = list(set(src2contig_df['@@SEQUENCEID'].values))
+    src2strain_list = list(set(src2strain_df['@@SEQUENCEID'].values))
 
-        else:
-            sag2src_dict[sag_id] = src_id
-            strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
-            sag2strain_dict[sag_id] = strain_id
-src2contig_df = src2sag_df.loc[src2sag_df['CAMI_genomeID'] == sag2src_dict[sag_id]]
-src2strain_df = src2sag_df.loc[src2sag_df['strain'] == sag2strain_dict[sag_id]]
-src2contig_list = list(set(src2contig_df['@@SEQUENCEID'].values))
-src2strain_list = list(set(src2strain_df['@@SEQUENCEID'].values))
-
-minhash_sag_df = minhash_df.loc[(minhash_df['sag_id'] == sag_id)]
-
-if minhash_sag_df.shape[0] != 0:
     gamma_range = [10 ** k for k in range(-6, 6)]
     gamma_range.extend(['scale'])
     nu_range = [k / 10 for k in range(1, 10, 1)]
@@ -303,8 +307,8 @@ if minhash_sag_df.shape[0] != 0:
     arg_list = []
     for gam in gamma_range:
         for n in nu_range:
-            arg_list.append(['./abund/', sag_id, minhash_sag_df, mg_abund_file, gam, n,
-                             src2contig_list, src2strain_list
+            arg_list.append(['./abund/', sag_id, mh_sag_df, mg_abund_file,
+                             gam, n, src2contig_list, src2strain_list
                              ])
     results = pool.imap_unordered(recruitSubs, arg_list)
     score_list = []

@@ -280,73 +280,48 @@ else:
 
     src_mock_err_df.to_csv(saberout_path + 'error_analysis/src_mock_df.tsv', index=False, sep='\t')
 
-# MinHash
-mh_file = glob.glob(joinpath(saberout_path, 'minhash_recruits/*.mhr_trimmed_recruits.tsv'))[0]
-mh_concat_df = pd.read_csv(mh_file, sep='\t', header=0)
-mh_concat_df = mh_concat_df[['sag_id', 'contig_id']]
+stage_dict = {
+    'minhash': 'minhash_recruits/*.mhr_trimmed_recruits.tsv',
+    'mbn_abund': 'abund_recruits/*.abr_trimmed_recruits.tsv',
+    'tetra_gmm': 'tetra_recruits/*.gmm.tra_trimmed_recruits.tsv',
+    'tetra_svm': 'tetra_recruits/*.svm.tra_trimmed_recruits.tsv',
+    'tetra_iso': 'tetra_recruits/*.iso.tra_trimmed_recruits.tsv',
+    'tetra_comb': 'tetra_recruits/*.comb.tra_trimmed_recruits.tsv',
+    'xpg': 'xPGs/CONTIG_MAP.xPG.tsv'
+}
 
-# MBN Abundance
-mbn_file = glob.glob(joinpath(saberout_path, 'abund_recruits/*.abr_trimmed_recruits.tsv'))[0]
-mbn_concat_df = pd.read_csv(mbn_file, sep='\t', header=0)
-mbn_concat_df = mbn_concat_df[['sag_id', 'contig_id']]
+concat_df_list = []
+for k in stage_dict:
+    print(k)
+    v = stage_dict[k]
+    if glob.glob(joinpath(saberout_path, v)):
+        if k == 'xpg':
+            in_file = joinpath(saberout_path, v)
+            print(in_file)
+            concat_df = pd.read_csv(in_file, sep='\t', header=0, names=['sag_id', 'contig_id'])
+            concat_df = concat_df[['sag_id', 'contig_id']]
+            concat_df['algorithm'] = k
+            concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
+            concat_df_list.append(concat_df)
+        else:
+            in_file_list = glob.glob(joinpath(saberout_path, v))
+            for in_file in in_file_list:
+                # print(in_file)
+                # base = basename(in_file)
+                # print(base)
+                # alg = 'minhash_' + str(base.split('.')[-3])
+                # print(alg)
+                concat_df = pd.read_csv(in_file, sep='\t', header=0)
+                concat_df = concat_df[['sag_id', 'contig_id']]
+                # concat_df['algorithm'] = alg
+                concat_df['algorithm'] = k
+                concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
+                concat_df_list.append(concat_df)
 
-# Tetra GMM
-gmm_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.gmm.tra_trimmed_recruits.tsv'))[0]
-gmm_concat_df = pd.read_csv(gmm_file, sep='\t', header=0)
-gmm_concat_df = gmm_concat_df[['sag_id', 'contig_id']]
-
-# Tetra OCSVM
-svm_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.svm.tra_trimmed_recruits.tsv'))[0]
-svm_concat_df = pd.read_csv(svm_file, sep='\t', header=0)
-svm_concat_df = svm_concat_df[['sag_id', 'contig_id']]
-
-# Tetra Isolation Forest
-iso_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.iso.tra_trimmed_recruits.tsv'))[0]
-iso_concat_df = pd.read_csv(iso_file, sep='\t', header=0)
-iso_concat_df = iso_concat_df[['sag_id', 'contig_id']]
-
-# Tetra Combined
-comb_file = glob.glob(joinpath(saberout_path, 'tetra_recruits/*.comb.tra_trimmed_recruits.tsv'))[0]
-comb_concat_df = pd.read_csv(comb_file, sep='\t', header=0)
-comb_concat_df = comb_concat_df[['sag_id', 'contig_id']]
-
-# Combined xPG Recruits
-xpg_file = joinpath(saberout_path, 'xPGs/CONTIG_MAP.xPG.tsv')
-print('loading Combined combined files')
-xpg_df = pd.read_csv(xpg_file, sep='\t', header=0,  # index_col=0,
-                     names=['sag_id', 'contig_id']
-                     )
-xpg_df = xpg_df[['sag_id', 'contig_id']]
-
-mh_concat_df['algorithm'] = 'minhash'
-mbn_concat_df['algorithm'] = 'mbn_abund'
-gmm_concat_df['algorithm'] = 'tetra_gmm'
-svm_concat_df['algorithm'] = 'tetra_svm'
-iso_concat_df['algorithm'] = 'tetra_iso'
-comb_concat_df['algorithm'] = 'tetra_comb'
-xpg_df['algorithm'] = 'xpg'
-
-mh_concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-mbn_concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-gmm_concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-svm_concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-iso_concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-comb_concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-xpg_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
-
-sag_set = set(mh_concat_df['sag_id']).intersection(set(xpg_df['sag_id']), set(mbn_concat_df['sag_id']),
-                                                   set(gmm_concat_df['sag_id']), set(svm_concat_df['sag_id']),
-                                                   set(iso_concat_df['sag_id']), set(comb_concat_df['sag_id'])
-                                                   )
-final_concat_df = pd.concat([mh_concat_df, mbn_concat_df,
-                             gmm_concat_df, svm_concat_df,
-                             iso_concat_df,
-                             comb_concat_df,
-                             xpg_df
-                             ])
-#final_concat_df = final_concat_df.loc[final_concat_df['sag_id'].isin(list(sag_set))]
+final_concat_df = pd.concat(concat_df_list)
 final_concat_df['predict'] = 1
-piv_table_df = pd.pivot_table(final_concat_df, columns=['algorithm'], index=['sag_id', 'contig_id'],
+piv_table_df = pd.pivot_table(final_concat_df, columns=['algorithm'],
+                              index=['sag_id', 'contig_id'],
                               values=['predict'], aggfunc=np.sum, fill_value=0
                               )
 piv_table_df.reset_index(inplace=True)
@@ -354,7 +329,7 @@ piv_table_df.columns = [''.join(col).replace('predict', '') for col in
                         piv_table_df.columns.values
                         ]
 
-algo_list = ['minhash', 'mbn_abund', 'tetra_gmm', 'tetra_svm', 'tetra_iso', 'tetra_comb', 'xpg']
+algo_list = list(final_concat_df['algorithm'].unique())
 level_list = ['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain',
               'CAMI_genomeID'
               ]
@@ -391,3 +366,76 @@ calc_stats_df = calc_err(final_err_df)
 stat_list = ['precision', 'sensitivity', 'F1_score', 'MCC']
 calc_stats_df = calc_stats_df.loc[calc_stats_df['statistic'].isin(stat_list)]
 calc_stats_df.to_csv(err_path + '/All_stats_count.tsv', index=False, sep='\t')
+
+print(calc_stats_df.head())
+
+err_file = err_path + '/All_stats_count.tsv'
+err_df = pd.read_csv(err_file, header=0, sep='\t')
+# map_algo = {'synSAG': 'synSAG', 'minhash_21': 'MinHash_21', 'minhash_31': 'MinHash_31',
+#            'minhash_201': 'MinHash_201', 'mbn_abund': 'MBN-Abund', 'tetra_gmm': 'GMM',
+#            'tetra_svm': 'OCSVM', 'tetra_iso': 'Isolation Forest', 'tetra_comb': 'Tetra Ensemble',
+#            'xpg': 'SABer-xPG'
+#            }
+# err_df['algorithm'] = [map_algo[x] for x in err_df['algorithm']]
+err_df['level'] = ['exact' if x == 'perfect' else x for x in err_df['level']]
+unstack_df = err_df.pivot_table(index=['sag_id', 'algorithm', 'level'],
+                                columns='statistic', values='score'
+                                )
+unstack_df.reset_index(inplace=True)
+print(unstack_df.head())
+
+unstack_df.columns = ['sag_id', 'algorithm', 'level', 'F1_score', 'MCC', 'Precision',
+                      'Sensitivity'
+                      ]
+val_df_list = []
+outlier_list = []
+
+for algo in set(unstack_df['algorithm']):
+    algo_df = unstack_df.loc[unstack_df['algorithm'] == algo]
+    for level in set(algo_df['level']):
+        level_df = algo_df.loc[algo_df['level'] == level].set_index(
+            ['sag_id', 'algorithm', 'level']
+        )
+        for stat in ['F1_score', 'MCC', 'Precision', 'Sensitivity']:
+            stat_df = level_df[[stat]]
+            mean = list(stat_df.mean())[0]
+            var = list(stat_df.var())[0]
+            skew = list(stat_df.skew())[0]
+            kurt = list(stat_df.kurt())[0]
+            IQ_25 = list(stat_df.quantile(0.25))[0]
+            IQ_75 = list(stat_df.quantile(0.75))[0]
+            IQ_10 = list(stat_df.quantile(0.10))[0]
+            IQ_90 = list(stat_df.quantile(0.90))[0]
+            IQ_05 = list(stat_df.quantile(0.05))[0]
+            IQ_95 = list(stat_df.quantile(0.95))[0]
+            IQ_01 = list(stat_df.quantile(0.01))[0]
+            IQ_99 = list(stat_df.quantile(0.99))[0]
+            IQR = IQ_75 - IQ_25
+            # calc Tukey Fences
+            upper_bound = IQ_75 + (1.5 * IQR)
+            lower_bound = IQ_25 - (1.5 * IQR)
+            header_list = ['algorithm', 'level', 'stat', 'mean', 'var', 'skew', 'kurt',
+                           'IQ_25', 'IQ_75', 'IQ_10', 'IQ_90', 'IQ_05', 'IQ_95',
+                           'IQ_01', 'IQ_99', 'IQR (25-75)', 'upper_bound', 'lower_bound'
+                           ]
+            val_list = [algo, level, stat, mean, var, skew, kurt, IQ_25, IQ_75,
+                        IQ_10, IQ_90, IQ_05, IQ_95, IQ_01, IQ_99, IQR, upper_bound,
+                        lower_bound
+                        ]
+            val_df = pd.DataFrame([val_list], columns=header_list)
+            val_df_list.append(val_df)
+            stat_df['statistic'] = stat
+            stat_df.reset_index(inplace=True)
+            stat_df.columns = ['sag_id', 'algorithm', 'level', 'score', 'statistic']
+            stat_df = stat_df[['sag_id', 'algorithm', 'level', 'statistic', 'score']]
+            outlier_df = stat_df.loc[(stat_df['score'] < lower_bound) &
+                                     (stat_df['score'] < 0.99)]
+            outlier_list.append(outlier_df)
+
+concat_val_df = pd.concat(val_df_list)
+concat_val_df.sort_values(by=['level', 'stat', 'mean'], ascending=[False, False, False],
+                          inplace=True
+                          )
+concat_val_df.to_csv(err_path + '/Compiled_stats.tsv', sep='\t', index=False)
+concat_out_df = pd.concat(outlier_list)
+concat_out_df.to_csv(err_path + '/Compiled_outliers.tsv', sep='\t', index=False)

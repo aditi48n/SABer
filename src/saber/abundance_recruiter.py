@@ -34,17 +34,19 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
         logging.info('Building %s abundance table\n' % mg_id)
         mg_sub_path = o_join(subcontig_path, mg_id + '.subcontigs.fasta')
         # Process raw metagenomes to calculate abundances
-        mg_covm_out = procMetaGs(abr_path, mg_id, mg_sub_path, mg_raw_file_list, subcontig_path,
-                                 nthreads
+        mg_covm_out = procMetaGs(abr_path, mg_id, mg_sub_path, mg_raw_file_list,
+                                 subcontig_path, nthreads
                                  )
         # Recruit subcontigs using OC-SVM
         # minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
-        mh_21_df = minhash_dict[201]
-        mh_201_df = minhash_dict[201]
+        mh_recruits_df = minhash_dict[51]
+        mh_perfect_df = minhash_dict[51]
         # Filter out contigs that didn't meet MinHash recruit standards
-        mh_201_filter_df = mh_201_df.loc[mh_201_df['jacc_sim_max'] >= 0.90]
+        mh_filter_df = mh_perfect_df.loc[mh_perfect_df['jacc_sim_max'] >= 0.90]
         logging.info("Starting one-class SVM analysis\n")
-        covm_df = abund_recruiter(abr_path, mg_covm_out, mh_21_df, mh_201_filter_df, nu, gamma, nthreads)
+        covm_df = abund_recruiter(abr_path, mg_covm_out, mh_recruits_df, mh_filter_df,
+                                  nu, gamma, nthreads
+                                  )
         covm_df.to_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'),
                        sep='\t', index=False
                        )

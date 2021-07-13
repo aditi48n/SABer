@@ -22,10 +22,10 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     mg_id = mg_sub_file[0]
     mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
     mg_headers = tuple(mg_subcontigs.keys())
-    kmer_list = [201]  # [21, 31, 51, 71, 91, 101, 121, 151, 201]
+    kmer_list = [51]  # [21, 31, 51, 71, 91, 101, 121, 151, 201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
-        print(kmer)
+        # print(kmer)
         if ((isfile(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'))) &
                 (force is False)
         ):
@@ -350,7 +350,7 @@ def sag_recruit_checker(mhr_path, sag_sub_files, kmer):
 
 def build_signature(p):
     header, seq, kmer = p
-    mg_minhash = sourmash.MinHash(n=0, ksize=kmer, scaled=100)
+    mg_minhash = sourmash.MinHash(n=100, ksize=kmer)  # , scaled=100)
     mg_minhash.add_sequence(str(seq), force=True)
     mg_sig = sourmash.SourmashSignature(mg_minhash, name=header)
 

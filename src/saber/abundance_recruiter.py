@@ -39,12 +39,11 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
                                  )
         # Recruit subcontigs using OC-SVM
         # minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
-        mh_recruits_df = minhash_dict[51]
-        mh_perfect_df = minhash_dict[51]
+        mh_recruits_df = minhash_dict[201]
         # Filter out contigs that didn't meet MinHash recruit standards
-        mh_filter_df = mh_perfect_df.loc[mh_perfect_df['jacc_sim_max'] >= 0.90]
+        mh_perfect_df = mh_recruits_df.loc[mh_recruits_df['jacc_sim_max'] >= 0.90]
         logging.info("Starting one-class SVM analysis\n")
-        covm_df = abund_recruiter(abr_path, mg_covm_out, mh_recruits_df, mh_filter_df,
+        covm_df = abund_recruiter(abr_path, mg_covm_out, mh_recruits_df, mh_recruits_df,
                                   nu, gamma, nthreads
                                   )
         covm_df.to_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'),
@@ -216,7 +215,7 @@ def recruitSubs(p):
     if len(minhash_sag_df['sag_id']) != 0:
         mg_covm_df = pd.read_csv(mg_covm_out, header=0, sep='\t', index_col=['contigName'])
         mg_covm_df['contig_id'] = [x.rsplit('_', 1)[0] for x in mg_covm_df.index.values]
-        mg_covm_filter_df = mg_covm_df.loc[mg_covm_df['contig_id'].isin(list(mg_sub_df['contig_id']))]
+        mg_covm_filter_df = mg_covm_df.copy()  # mg_covm_df.loc[mg_covm_df['contig_id'].isin(list(mg_sub_df['contig_id']))]
         recruit_contigs_df = mg_covm_filter_df.loc[mg_covm_filter_df['contig_id'].isin(
             list(minhash_sag_df['contig_id']))
         ]

@@ -144,10 +144,10 @@ def calc_stats(sag_id, level, include, gam, n, TP, FP, TN, FN, y_truth, y_pred):
 def recruitSubs(p):
     abr_path, sag_id, mh_sag_df, mg_covm_file, gamma, nu, src2contig_list, src2strain_list = p
 
-    mh_sag_filter_df = mh_sag_df.loc[mh_sag_df['jacc_sim_max'] >= 0.90]
+    mh_sag_filter_df = mh_sag_df.copy()  # .loc[mh_sag_df['jacc_sim_max'] >= 0.90]
     mg_covm_df = pd.read_csv(mg_covm_file, header=0, sep='\t', index_col=['contigName'])
     mg_covm_df['contig_id'] = [x.rsplit('_', 1)[0] for x in mg_covm_df.index.values]
-    mg_covm_filter_df = mg_covm_df.loc[mg_covm_df['contig_id'].isin(list(mh_sag_df['contig_id']))]
+    mg_covm_filter_df = mg_covm_df.copy()  # .loc[mg_covm_df['contig_id'].isin(list(mh_sag_df['contig_id']))]
     recruit_contigs_df = mg_covm_filter_df.loc[mg_covm_filter_df['contig_id'].isin(
         list(mh_sag_filter_df['contig_id']))
     ]
@@ -268,7 +268,6 @@ nthreads = int(sys.argv[7])
 
 minhash_df = pd.read_csv(minhash_file, header=0, sep='\t')
 mh_sag_df = minhash_df.loc[(minhash_df['sag_id'] == sag_id)]
-
 # mh_201_df = pd.read_csv(minhash_201_file, header=0, sep='\t')
 # mh_21_df = pd.read_csv(minhash_21_file, header=0, sep='\t')
 # mh_201_sag_df = minhash_df.loc[((minhash_df['sag_id'] == sag_id) &
@@ -277,7 +276,6 @@ mh_sag_df = minhash_df.loc[(minhash_df['sag_id'] == sag_id)]
 # mh_21_sag_df = minhash_df.loc[(minhash_df['sag_id'] == sag_id)]
 
 if mh_sag_df.shape[0] != 0:
-
     src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
     src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
     sag2src_dict = {}
@@ -330,6 +328,8 @@ if mh_sag_df.shape[0] != 0:
     sort_score_df = score_df.sort_values(['MCC'], ascending=[False])
     best_MCC = sort_score_df['MCC'].iloc[0]
     best_df = score_df.loc[score_df['MCC'] == best_MCC]
+    best_df.to_csv(pred_file_out, index=False, sep='\t')
+
     '''
     pred_concat_df = pd.concat(pred_list)
     best_pred_list = []

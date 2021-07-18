@@ -99,7 +99,7 @@ def recruit(sys_args):
     abund_df = abr.runAbundRecruiter(save_dirs_dict['subcontigs'],
                                      save_dirs_dict['abund_recruits'], mg_sub_file,
                                      recruit_s.mg_raw_file_list, minhash_df_dict,
-                                     0.1, 0.1,
+                                     0.1, 10,
                                      recruit_s.nthreads, recruit_s.force
                                      )
     # Tetranucleotide Hz Recruit Module

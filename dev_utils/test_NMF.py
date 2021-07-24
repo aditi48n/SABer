@@ -20,7 +20,7 @@ def recruitSubs(p):
 
     # start ocsvm cross validation analysis
     sag_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
-    mg_nmf_df = nmf_feat_df.copy()  # .loc[~nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    mg_nmf_df = nmf_feat_df.loc[~nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
     sag_nmf_df.drop(columns=['contig_id'], inplace=True)
     mg_nmf_df.drop(columns=['contig_id'], inplace=True)
 
@@ -207,7 +207,55 @@ nmf_feat_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_
 
 sys.exit()
 '''
+'''
+# Build final table for testing
+minhash_recruits = sys.argv[1]
+nmf_dat = sys.argv[2]
 
+# load minhash file
+minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
+# load nmf file
+nmf_feat_df = pd.read_csv(nmf_dat, sep='\t', header=0, index_col='subcontig_id')
+pred_df_list = []
+for sag_id in minhash_df['sag_id'].unique():
+    print(sag_id)
+    sag_mh_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
+    sag_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    mg_nmf_df = nmf_feat_df.loc[~nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    sag_nmf_df.drop(columns=['contig_id'], inplace=True)
+    mg_nmf_df.drop(columns=['contig_id'], inplace=True)
+
+    # start ocsvm cross validation analysis
+    pred_df = runOCSVM(sag_nmf_df, mg_nmf_df, sag_id, 10000, 0.2)
+    val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
+        normalize=True).reset_index(name='precent')
+    pos_perc = val_perc.loc[val_perc['pred'] == 1]
+    major_df = pos_perc.loc[pos_perc['precent'] != 0] # >= 0.51]
+    major_pred = [1 if x in list(major_df['contig_id']) else -1
+                  for x in pred_df['contig_id']
+                  ]
+    pred_df['major_pred'] = major_pred
+    #pred_df.to_csv('~/Desktop/test_NMF/nmf_preds/' + sag_id + '_recruits.tsv',
+    #               sep='\t', index=False
+    #               )
+    pred_filter_df = pred_df.loc[pred_df['major_pred'] == 1]
+    merge_df = pd.concat([sag_mh_df[['sag_id', 'contig_id']],
+                         pred_filter_df[['sag_id', 'contig_id']]]
+                         ).drop_duplicates()
+    pred_df_list.append(merge_df)
+    print('Recruited', pred_filter_df.shape[0], 'subcontigs...')
+    print('Total of', pred_filter_df[['sag_id', 'contig_id']].drop_duplicates().shape[0],
+          'contigs...')
+
+    print('Total of', merge_df.shape[0], 'contigs with minhash...')
+
+final_pred_df = pd.concat(pred_df_list)
+final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.abr_trimmed_recruits.tsv',
+                     sep='\t', index=False
+                     )
+'''
+
+# Below is to run cross validation
 #################################################
 # Inputs
 #################################################

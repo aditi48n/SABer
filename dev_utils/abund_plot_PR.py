@@ -16,20 +16,21 @@ sns.set_style('whitegrid')
 sns.set(font_scale=1.0)
 
 # TODO: build plot to investigate best hyperparams based on starting completeness
-pred_file = 'CH_20k.SCORES.tsv'
-src2sag_file = '../test_mh/error_analysis/src2sag_map.tsv'
-abund_file = '../test_mh/abund_recruits/CAMI_high_GoldStandardAssembly.covM.scaled.tsv'
+pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_recruits.tsv'
+src2sag_file = '/home/ryan/Desktop/test_NMF/src2sag_map.tsv'
+abund_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_20.tsv'
 
 pred_df = pd.read_csv(pred_file, header=0, sep='\t')
 src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
 abund_df = pd.read_csv(abund_file, header=0, sep='\t')
-
-abund_df['contig_id'] = [x.rsplit('_', 1)[0] for x in abund_df['contigName']]
-count_df = abund_df.groupby(['contig_id'])['contigName'].count().reset_index()
+# abund_df['contig_id'] = [x.rsplit('_', 1)[0] for x in abund_df['contigName']]
+# count_df = abund_df.groupby(['contig_id'])['contigName'].count().reset_index()
+count_df = abund_df.groupby(['contig_id'])['subcontig_id'].count().reset_index()
 
 src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
 src2sag_df = pd.merge(src2sag_df, count_df, left_on='@@SEQUENCEID', right_on='contig_id', how='left')
-src_count_df = src2sag_df.groupby(['CAMI_genomeID'])['contigName'].sum().reset_index()
+# src_count_df = src2sag_df.groupby(['CAMI_genomeID'])['contigName'].sum().reset_index()
+src_count_df = src2sag_df.groupby(['CAMI_genomeID'])['subcontig_id'].sum().reset_index()
 src_count_df.columns = ['CAMI_genomeID', 'subcontig_count']
 sag2src_dict = {}
 for sag_id in set(pred_df['sag_id']):
@@ -165,6 +166,7 @@ top_df = pred_df.loc[((pred_df['level'] == top_level) &
 '''
 best_sub_list = []
 for sag_id in set(pred_df['sag_id']):
+    print(sag_id)
     sag_top_df = pred_df.loc[pred_df['sag_id'] == sag_id]
     sag_top_df['rank1_sensitivity'] = (sag_top_df['round1_sensitivity']).astype(float).rank(
         method='dense', ascending=False).astype(float)
@@ -222,14 +224,16 @@ pred_stack_df = pred_stack_df.sort_values(['nu', 'gamma_sorter'], ascending=[Tru
 ax = sns.catplot(x="metric", y="score", hue="gamma", kind='box',
                  data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
                  flierprops=flierprops)
-plt.savefig('PR_plots/gamma_boxplot.png', bbox_inches='tight', dpi=300)
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/gamma_boxplot.png',
+            bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
 
 ax = sns.catplot(x="metric", y="score", hue="nu", kind='box',
                  data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
                  flierprops=flierprops)
-plt.savefig('PR_plots/nu_boxplot.png', bbox_inches='tight', dpi=300)
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/nu_boxplot.png',
+            bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
 
@@ -245,7 +249,7 @@ for level in lev_dict:
         print(count_df.shape)
         count_df.columns = ['level', 'inclusion', 'nu', 'gamma', 'count']
         count_df = count_df.sort_values(['count'], ascending=[False])
-        count_df.to_csv('PR_plots/' + level + '_' + inclusion + '_top_ranked_params.tsv',
+        count_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots/' + level + '_' + inclusion + '_top_ranked_params.tsv',
                         index=False, sep='\t'
                         )
         top_level = count_df['level'].iloc[0]
@@ -256,7 +260,7 @@ for level in lev_dict:
         nu_order = list(sorted(set(count_df['nu'])))
         g = sns.FacetGrid(count_df, col="gamma", col_wrap=4)
         g.map(sns.barplot, "nu", "count", order=nu_order, ci=None)
-        plt.savefig('PR_plots/' + level + '_' + inclusion + '_nu_gamma_facetplot.png')
+        plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/' + level + '_' + inclusion + '_nu_gamma_facetplot.png')
         plt.clf()
         plt.close()
 sys.exit()

@@ -13,18 +13,31 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 def recruitSubs(p):
-    sag_id, mh_sag_df, nmf_table, gamma, nu, src2contig_list, src2strain_list = p
+    sag_id, mh_sag_df, nmf_table, cov_table, gamma, nu, src2contig_list, src2strain_list = p
 
     # load nmf file
     nmf_feat_df = pd.read_csv(nmf_table, sep='\t', header=0, index_col='subcontig_id')
+    # load covm file
+    cov_df = pd.read_csv(cov_table, sep='\t', header=0)
+    cov_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
+    cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df['subcontig_id']]
+    cov_df.set_index('subcontig_id', inplace=True)
 
     # start ocsvm cross validation analysis
-    sag_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
-    mg_nmf_df = nmf_feat_df.loc[~nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    sag_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    mg_nmf_df = nmf_feat_df.loc[~nmf_feat_df['contig_id'].isin(mh_sag_df['contig_id'])]
     sag_nmf_df.drop(columns=['contig_id'], inplace=True)
     mg_nmf_df.drop(columns=['contig_id'], inplace=True)
+    sag_cov_df = cov_df.loc[cov_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    mg_cov_df = cov_df.loc[~cov_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    sag_cov_df.drop(columns=['contig_id'], inplace=True)
+    mg_cov_df.drop(columns=['contig_id'], inplace=True)
 
-    final_pass_df = runOCSVM(sag_nmf_df, mg_nmf_df, sag_id, gamma, nu)
+    # merge covM and NMF
+    sag_join_df = sag_nmf_df.join(sag_cov_df, lsuffix='_nmf', rsuffix='_covm')
+    mg_join_df = mg_nmf_df.join(mg_cov_df, lsuffix='_nmf', rsuffix='_covm')
+
+    final_pass_df = runOCSVM(sag_join_df, mg_join_df, sag_id, gamma, nu)
 
     complete_df = pd.DataFrame(mg_nmf_df.index.values, columns=['subcontig_id'])
     complete_df['sag_id'] = sag_id
@@ -226,11 +239,11 @@ for sag_id in minhash_df['sag_id'].unique():
     mg_nmf_df.drop(columns=['contig_id'], inplace=True)
 
     # start ocsvm cross validation analysis
-    pred_df = runOCSVM(sag_nmf_df, mg_nmf_df, sag_id, 10000, 0.2)
+    pred_df = runOCSVM(sag_nmf_df, mg_nmf_df, sag_id, 100, 0.4)
     val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
         normalize=True).reset_index(name='precent')
     pos_perc = val_perc.loc[val_perc['pred'] == 1]
-    major_df = pos_perc.loc[pos_perc['precent'] != 0] # >= 0.51]
+    major_df = pos_perc.loc[pos_perc['precent'] >= 0.51]
     major_pred = [1 if x in list(major_df['contig_id']) else -1
                   for x in pred_df['contig_id']
                   ]
@@ -253,29 +266,94 @@ final_pred_df = pd.concat(pred_df_list)
 final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.abr_trimmed_recruits.tsv',
                      sep='\t', index=False
                      )
+
+sys.exit()
 '''
 
-# Below is to run cross validation
+'''
+# Run Abundance after NMF tetra
+minhash_recruits = sys.argv[1]
+nmf_recruits = sys.argv[2]
+covm_table = sys.argv[3]
+
+# load minhash file
+minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
+minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.90]
+# load nmf file
+nmf_df = pd.read_csv(nmf_recruits, sep='\t', header=0)
+# load covM table
+cov_df = pd.read_csv(covm_table, sep='\t', header=0)
+cov_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
+cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df['subcontig_id']]
+
+pred_df_list = []
+for sag_id in minhash_filter_df['sag_id'].unique():
+    print(sag_id)
+    sag_mh_df = minhash_filter_df.loc[minhash_filter_df['sag_id'] == sag_id]
+    sag_cov_df = cov_df.loc[cov_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    mg_cov_df = cov_df.loc[~cov_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    sag_cov_df.drop(columns=['contig_id'], inplace=True)
+    mg_cov_df.drop(columns=['contig_id'], inplace=True)
+    sag_cov_df.set_index('subcontig_id', inplace=True)
+    mg_cov_df.set_index('subcontig_id', inplace=True)
+
+    # start ocsvm cross validation analysis
+    pred_df = runOCSVM(sag_cov_df, mg_cov_df, sag_id, 'scale', 0.5)
+    val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
+        normalize=True).reset_index(name='precent')
+    pos_perc = val_perc.loc[val_perc['pred'] == 1]
+    major_df = pos_perc.loc[pos_perc['precent'] >= 0.51]
+    major_pred = [1 if x in list(major_df['contig_id']) else -1
+                  for x in pred_df['contig_id']
+                  ]
+    pred_df['major_pred'] = major_pred
+    #pred_df.to_csv('~/Desktop/test_NMF/nmf_preds/' + sag_id + '_recruits.tsv',
+    #               sep='\t', index=False
+    #               )
+    pred_filter_df = pred_df.loc[pred_df['major_pred'] == 1]
+    merge_df = pd.concat([sag_mh_df[['sag_id', 'contig_id']],
+                         pred_filter_df[['sag_id', 'contig_id']]]
+                         ).drop_duplicates()
+    pred_df_list.append(merge_df)
+    print('Recruited', pred_filter_df.shape[0], 'subcontigs...')
+    print('Total of', pred_filter_df[['sag_id', 'contig_id']].drop_duplicates().shape[0],
+          'contigs...')
+
+    print('Total of', merge_df.shape[0], 'contigs with minhash...')
+
+final_pred_df = pd.concat(pred_df_list)
+final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.tetra_trimmed_recruits.tsv',
+                     sep='\t', index=False
+                     )
+
+sys.exit()
+'''
+
+# Below is to run cross validation for  covM abundance and nmf tetra
 #################################################
 # Inputs
 #################################################
 sag_id = sys.argv[1]
 minhash_recruits = sys.argv[2]
 nmf_dat = sys.argv[3]
-nmf_output = sys.argv[4]
-best_output = sys.argv[5]
-src2sag_file = sys.argv[6]
-nthreads = int(sys.argv[7])
+cov_dat = sys.argv[4]
+nmf_output = sys.argv[5]
+best_output = sys.argv[6]
+src2sag_file = sys.argv[7]
+nthreads = int(sys.argv[8])
 
 # Example:
-# python dev_utils/test_NMF.py \
-# 1021_F_run134.final.scaffolds.gt1kb.2806 \
-# ~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.201.mhr_trimmed_recruits.tsv \
-# ~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans.tsv \
-# ~/Desktop/test_NMF/nmf_preds/1021_F_run134.final.scaffolds.gt1kb.2806.nmf_recruits.tsv \
-# ~/Desktop/test_NMF/nmf_preds/1021_F_run134.final.scaffolds.gt1kb.2806.nmf_best.tsv \
-# ~/Desktop/test_NMF/src2sag_map.tsv \
+# python
+# dev_utils/test_NMF.py
+# 1021_F_run134.final.scaffolds.gt1kb.2806
+# ~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.201.mhr_trimmed_recruits.tsv
+# ~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_20.tsv
+# ~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.covM.scaled.tsv
+# ~/Desktop/test_NMF/nmf_preds/1021_F_run134.final.scaffolds.gt1kb.2806.nmf_scores.tsv
+# ~/Desktop/test_NMF/nmf_preds/1021_F_run134.final.scaffolds.gt1kb.2806.nmf_best.tsv
+# ~/Desktop/test_NMF/src2sag_map.tsv
 # 6
+
 #################################################
 
 minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
@@ -312,7 +390,7 @@ if sag_mh_df.shape[0] != 0:
     arg_list = []
     for gam in gamma_range:
         for n in nu_range:
-            arg_list.append([sag_id, sag_mh_df, nmf_dat,
+            arg_list.append([sag_id, sag_mh_df, nmf_dat, cov_dat,
                              gam, n, src2contig_list, src2strain_list
                              ])
     results = pool.imap_unordered(recruitSubs, arg_list)
@@ -344,70 +422,3 @@ if sag_mh_df.shape[0] != 0:
 else:
     print(sag_id, ' has no minhash recruits...')
 
-# OLD Don't use below #
-sys.exit()
-nmf_mh_df = nmf_feat_df.merge(minhash_df, on='contig_id')
-print(nmf_mh_df.head())
-print(nmf_mh_df.shape)
-sys.exit()
-plt.figure(figsize=(20, 12))
-contig_ids = np.array(shifted_df.index)
-xs = nmf_features[:, 0]
-# Select the 1th feature: ys
-ys = nmf_features[:, 1]
-zs = nmf_features[:, 2]
-
-# Scatter plot
-plt.scatter(xs, ys, alpha=0.5)
-# Annotate the points
-# for x, y, countries in zip(xs, ys, countries):
-#    plt.annotate(contig_ids, (x, y), fontsize=10, alpha=0.5)
-plt.show()
-plt.clf()
-
-plt.scatter(ys, zs, alpha=0.5)
-plt.show()
-plt.clf()
-
-plt.scatter(xs, zs, alpha=0.5)
-plt.show()
-plt.clf()
-
-sys.exit()
-eurovision = pd.read_csv("~/Desktop/eurovision-2016.csv")
-print(eurovision.head())
-televote_Rank = eurovision.pivot(index='From country', columns='To country', values='Televote Rank')
-# fill NAs by min per country
-televote_Rank.fillna(televote_Rank.min(), inplace=True)
-print(televote_Rank.head())
-print(televote_Rank.shape)
-
-# Import NMF
-from sklearn.decomposition import NMF
-
-# Create an NMF instance: model
-model = NMF(n_components=2)
-# Fit the model to televote_Rank
-model.fit(televote_Rank)
-# Transform the televote_Rank: nmf_features
-nmf_features = model.transform(televote_Rank)
-# Print the NMF features
-nmf_feat_df = pd.DataFrame(nmf_features)
-nmf_comp_df = pd.DataFrame(model.components_)
-# print(nmf_feat_df.head())
-print(nmf_feat_df.shape)
-# print(nmf_comp_df.head())
-print(nmf_comp_df.shape)
-
-plt.figure(figsize=(20, 12))
-countries = np.array(televote_Rank.index)
-xs = nmf_features[:, 0]
-# Select the 1th feature: ys
-ys = nmf_features[:, 1]
-
-# Scatter plot
-plt.scatter(xs, ys, alpha=0.5)
-# Annotate the points
-# for x, y, countries in zip(xs, ys, countries):
-#    plt.annotate(countries, (x, y), fontsize=10, alpha=0.5)
-plt.show()

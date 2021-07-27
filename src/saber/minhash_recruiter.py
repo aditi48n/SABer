@@ -84,6 +84,11 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             mh_avg_df.columns = ['sag_id', 'contig_id', 'jacc_sim_avg']
             mh_max_df = minhash_recruit_df.groupby(['sag_id', 'contig_id'])['jacc_sim'].max().reset_index()
             mh_max_df.columns = ['sag_id', 'contig_id', 'jacc_sim_max']
+            mh_dfs = [mh_cnt_df, mh_avg_df, mh_max_df]
+            mh_merge_df = reduce(lambda left, right: pd.merge(left, right,
+                                                              on=['sag_id', 'contig_id']),
+                                 mh_dfs
+                                 )
             '''
             # Build subcontig count for each MG contig
             mg_contig_list = [x.rsplit('_', 1)[0] for x in mg_headers]
@@ -121,10 +126,10 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                      )
             mh_kmer_recruits_dict[kmer] = minhash_filter_df
             '''
-            mh_max_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
-                             index=False
-                             )
-            mh_kmer_recruits_dict[kmer] = mh_max_df
+            mh_merge_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
+                               index=False
+                               )
+            mh_kmer_recruits_dict[kmer] = mh_merge_df
     logging.info('MinHash Recruitment Algorithm Complete\n')
     return mh_kmer_recruits_dict
 

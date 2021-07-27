@@ -311,7 +311,7 @@ nthreads = int(sys.argv[8])
 #################################################
 
 minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
-minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.25]
+minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_avg'] >= 0.16]
 sag_mh_df = minhash_filter_df.loc[minhash_filter_df['sag_id'] == sag_id]
 if sag_mh_df.shape[0] != 0:
 

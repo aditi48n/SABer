@@ -1,6 +1,7 @@
 import argparse
 import logging
 import multiprocessing
+from functools import reduce
 from os.path import isfile, getsize
 from os.path import join as o_join
 

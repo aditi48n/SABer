@@ -73,18 +73,18 @@ def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, 
     # Prep MinHash
     # Filter out contigs that didn't meet MinHash recruit standards
     minhash_df = minhash_dict[201]
-    minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.90]
+    minhash_filter_df = minhash_df.copy()  # .loc[minhash_df['jacc_sim_max'] >= 0.90]
     minhash_dedup_df = minhash_filter_df[['sag_id', 'contig_id', 'jacc_sim_max']
-    ].loc[minhash_filter_df['jacc_sim_max'] >= 0.90].drop_duplicates(subset=['sag_id', 'contig_id'])
+    ].drop_duplicates(subset=['sag_id', 'contig_id'])
     mh_recruit_dict = build_uniq_dict(minhash_dedup_df, 'sag_id', nthreads,
                                       'MinHash Recruits')  # TODO: this might not need multithreading
     # Prep Abundance
-    # abund_dedup_df = abund_recruit_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
-    # ab_recruit_dict = build_uniq_dict(abund_recruit_df, 'sag_id', nthreads,
-    #                                  'Abundance Recruits')  # TODO: this might not need multithreading
-    mh_dedup_df = minhash_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
-    ab_recruit_dict = build_uniq_dict(minhash_df, 'sag_id', nthreads,
+    abund_dedup_df = abund_recruit_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
+    ab_recruit_dict = build_uniq_dict(abund_dedup_df, 'sag_id', nthreads,
                                       'Abundance Recruits')  # TODO: this might not need multithreading
+    # mh_dedup_df = minhash_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
+    # ab_recruit_dict = build_uniq_dict(minhash_df, 'sag_id', nthreads,
+    #                                  'Abundance Recruits')  # TODO: this might not need multithreading
     # Subset tetras matrix for each SAG
     sag_id_list = list(mh_recruit_dict.keys())
     sag_id_cnt = len(sag_id_list)

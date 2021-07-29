@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import logging
-import multiprocessing
 import sys
 
 import pandas as pd
@@ -206,6 +204,76 @@ def calc_stats(sag_id, level, include, gam, n, TP, FP, TN, FN, y_truth, y_pred):
 
     return stat_list
 
+
+# Build final table for testing
+minhash_recruits = sys.argv[1]
+nmf_recruits = sys.argv[2]
+tetra_dat = sys.argv[3]
+cov_dat = sys.argv[4]
+
+# load minhash file
+minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
+# load nmf recruits file
+nmf_df = pd.read_csv(nmf_recruits, sep='\t', header=0)
+# load nmf feature file
+tetra_feat_df = pd.read_csv(tetra_dat, sep='\t', header=0)
+tetra_feat_df['subcontig_id'] = tetra_feat_df['contig_id']
+tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df['contig_id']]
+# load covm file
+cov_df = pd.read_csv(cov_dat, sep='\t', header=0)
+cov_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
+cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df['subcontig_id']]
+cov_df.set_index('subcontig_id', inplace=True)
+pred_df_list = []
+for sag_id in minhash_df['sag_id'].unique():
+    print(sag_id)
+    # subset all tables before merging
+    mh_sag_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
+    nmf_rec_df = nmf_df.loc[nmf_df['sag_id'] == sag_id]  # this is the testing subset
+    sag_tetra_df = tetra_feat_df.loc[tetra_feat_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    mg_tetra_df = tetra_feat_df.loc[tetra_feat_df['contig_id'].isin(nmf_rec_df['contig_id'])]
+    sag_tetra_df.drop(columns=['contig_id'], inplace=True)
+    mg_tetra_df.drop(columns=['contig_id'], inplace=True)
+    sag_tetra_df.set_index('subcontig_id', inplace=True)
+    mg_tetra_df.set_index('subcontig_id', inplace=True)
+    sag_cov_df = cov_df.loc[cov_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    mg_cov_df = cov_df.loc[cov_df['contig_id'].isin(nmf_rec_df['contig_id'])]
+    sag_cov_df.drop(columns=['contig_id'], inplace=True)
+    mg_cov_df.drop(columns=['contig_id'], inplace=True)
+
+    # merge covM and NMF
+    sag_join_df = sag_tetra_df.join(sag_cov_df, lsuffix='_tetra', rsuffix='_covm')
+    mg_join_df = mg_tetra_df.join(mg_cov_df, lsuffix='_tetra', rsuffix='_covm')
+
+    # start ocsvm cross validation analysis
+    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 'scale', 0.1)
+    val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
+        normalize=True).reset_index(name='precent')
+    pos_perc = val_perc.loc[val_perc['pred'] == 1]
+    major_df = pos_perc.loc[pos_perc['precent'] >= 0.00]
+    major_pred = [1 if x in list(major_df['contig_id']) else -1
+                  for x in pred_df['contig_id']
+                  ]
+    pred_df['major_pred'] = major_pred
+    # pred_df.to_csv('~/Desktop/test_NMF/all_preds/' + sag_id + '_recruits.tsv',
+    #               sep='\t', index=False
+    #               )
+    pred_filter_df = pred_df.loc[pred_df['major_pred'] == 1]
+    merge_df = pd.concat([mh_sag_df[['sag_id', 'contig_id']],
+                          pred_filter_df[['sag_id', 'contig_id']]]
+                         ).drop_duplicates()
+    pred_df_list.append(merge_df)
+    print('Recruited', pred_filter_df.shape[0], 'of', pred_df.shape[0], 'subcontigs...')
+    print('Total of', pred_filter_df[['sag_id', 'contig_id']].drop_duplicates().shape[0],
+          'out of', pred_df[['sag_id', 'contig_id']].drop_duplicates().shape[0], 'contigs...')
+    print('Total of', merge_df.shape[0], 'contigs with minhash...')
+
+final_pred_df = pd.concat(pred_df_list)
+final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.allfeat_recruits.tsv',
+                     sep='\t', index=False
+                     )
+
+sys.exit()
 
 # Below is to run cross validation for all features table
 #################################################

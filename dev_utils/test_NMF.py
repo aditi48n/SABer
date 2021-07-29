@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import logging
-import multiprocessing
 import sys
 
 import pandas as pd
@@ -221,7 +219,6 @@ nmf_feat_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_
 sys.exit()
 '''
 
-'''
 # Build final table for testing
 minhash_recruits = sys.argv[1]
 nmf_dat = sys.argv[2]
@@ -253,7 +250,7 @@ for sag_id in minhash_df['sag_id'].unique():
     sag_join_df = sag_nmf_df.join(sag_cov_df, lsuffix='_nmf', rsuffix='_covm')
     mg_join_df = mg_nmf_df.join(mg_cov_df, lsuffix='_nmf', rsuffix='_covm')
     # start ocsvm cross validation analysis
-    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 10, 0.1)
+    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 1, 0.1)
     val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
         normalize=True).reset_index(name='precent')
     pos_perc = val_perc.loc[val_perc['pred'] == 1]
@@ -281,7 +278,7 @@ final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.abr_trim
                      sep='\t', index=False
                      )
 
-sys.exit()
+
 '''
 # Below is to run cross validation for  covM abundance and nmf tetra
 #################################################
@@ -376,7 +373,7 @@ if sag_mh_df.shape[0] != 0:
 
 else:
     print(sag_id, ' has no minhash recruits...')
-
+'''
 '''
 # Run Abundance after NMF tetra
 minhash_recruits = sys.argv[1]

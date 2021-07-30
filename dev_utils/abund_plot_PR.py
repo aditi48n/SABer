@@ -185,9 +185,12 @@ for sag_id in set(pred_df['sag_id']):
          'rank1_precision', 'rank2_MCC', 'rank2_sensitivity', 'rank2_precision', 'precision',
          'MCC', 'sensitivity'
          ]]
-    rank_df = rank_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+    rank_df = rank_df.sort_values(['rank1_precision', 'rank1_sensitivity',
                                    'rank2_precision', 'rank2_sensitivity'
-                                   ], ascending=[True, True, True, True, True, True])
+                                   ], ascending=[True, True, True, True])
+    # rank_df = rank_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+    #                               'rank2_precision', 'rank2_sensitivity'
+    #                               ], ascending=[True, True, True, True, True, True])
     top_ranks = rank_df[['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                          'rank2_precision', 'rank2_sensitivity']].iloc[0]
     sub_rank_df = rank_df.loc[((rank_df['rank1_MCC'] == top_ranks['rank1_MCC']) &
@@ -203,9 +206,12 @@ for sag_id in set(pred_df['sag_id']):
 concat_df = pd.concat(best_sub_list)
 # select the config that overfits the least
 concat_df['gamma_sorter'] = [gamma_dict[x] for x in concat_df['gamma']]
-concat_df = concat_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
                                    'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
-                                  ascending=[True, True, True, True, True, True, False, True])
+                                  ascending=[True, True, True, True, False, True])
+# concat_df = concat_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+#                                   'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
+#                                  ascending=[True, True, True, True, True, True, False, True])
 sag_dedup_df = concat_df.drop_duplicates(subset='sag_id', keep='first')
 
 keep_list = ['sag_id', 'level', 'inclusion', 'gamma', 'nu', 'precision', 'MCC', 'sensitivity']

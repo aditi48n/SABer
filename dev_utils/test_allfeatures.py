@@ -213,6 +213,8 @@ minhash_recruits = sys.argv[1]
 nmf_recruits = sys.argv[2]
 tetra_dat = sys.argv[3]
 cov_dat = sys.argv[4]
+src2sag_file = sys.argv[5]
+
 
 # load minhash file
 minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
@@ -228,8 +230,32 @@ cov_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
 cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df['subcontig_id']]
 cov_df.set_index('subcontig_id', inplace=True)
 pred_df_list = []
+
+# setup truth for error analysis
+# setup mapping to CAMI ref genomes
+src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
+src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
+mh_list = list(minhash_df['sag_id'].unique())
+cami_list = [str(x) for x in src2sag_df['CAMI_genomeID'].unique()]
+src2cami_dict = {}
+print('Mapping Sources to Synthetic SAGs...')
+for sag_id in tqdm(mh_list):
+    match_list = difflib.get_close_matches(str(sag_id), cami_list, n=1, cutoff=0)
+    src2cami_dict[sag_id] = match_list[0]
+
 for sag_id in minhash_df['sag_id'].unique():
     print(sag_id)
+    # Map Sources/SAGs to Strain IDs
+    sag2strain_dict = {}
+    src_id = src2cami_dict[sag_id]
+    strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
+    sag2strain_dict[sag_id] = strain_id
+    src2contig_df = src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src2cami_dict[sag_id]]
+    src2strain_df = src2sag_df.loc[src2sag_df['strain'] == sag2strain_dict[sag_id]]
+    src2contig_list = list(set(src2contig_df['@@SEQUENCEID'].values))
+    src2strain_list = list(set(src2strain_df['@@SEQUENCEID'].values))
+
+
     # subset all tables before merging
     mh_sag_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
     nmf_rec_df = nmf_df.loc[nmf_df['sag_id'] == sag_id]  # this is the testing subset
@@ -249,18 +275,21 @@ for sag_id in minhash_df['sag_id'].unique():
     mg_join_df = mg_tetra_df.join(mg_cov_df, lsuffix='_tetra', rsuffix='_covm')
 
     # start ocsvm cross validation analysis
-    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 0.01, 0.1)
+    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 'scale', 0.1)
     val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
         normalize=True).reset_index(name='precent')
     pos_perc = val_perc.loc[val_perc['pred'] == 1]
-    major_df = pos_perc.loc[pos_perc['precent'] >= 0.51]
-    major_pred = [1 if x in list(major_df['contig_id']) else -1
+    major_df = pos_perc.loc[pos_perc['precent'] >= 0.99]
+    major_pred = [1 if x in list(major_df['contig_id']) else 0
                   for x in pred_df['contig_id']
                   ]
     pred_df['major_pred'] = major_pred
-    # pred_df.to_csv('~/Desktop/test_NMF/all_preds/' + sag_id + '_recruits.tsv',
-    #               sep='\t', index=False
-    #               )
+    pred_df['exact_truth'] = [1 if x in src2contig_list else 0
+                                        for x in pred_df['contig_id']
+                                        ]
+    pred_df['strain_truth'] = [1 if x in src2strain_list else 0
+                                         for x in pred_df['contig_id']
+                                         ]
     pred_filter_df = pred_df.loc[pred_df['major_pred'] == 1]
     merge_df = pd.concat([mh_sag_df[['sag_id', 'contig_id']],
                           pred_filter_df[['sag_id', 'contig_id']]]
@@ -269,6 +298,7 @@ for sag_id in minhash_df['sag_id'].unique():
     print('Recruited', pred_filter_df.shape[0], 'of', pred_df.shape[0], 'subcontigs...')
     print('Total of', pred_filter_df[['sag_id', 'contig_id']].drop_duplicates().shape[0],
           'out of', pred_df[['sag_id', 'contig_id']].drop_duplicates().shape[0], 'contigs...')
+    print(pred_filter_df['major_pred'].sum(), pred_filter_df['exact_truth'].sum(), pred_filter_df['strain_truth'].sum())
     print('Total of', merge_df.shape[0], 'contigs with minhash...')
 
 final_pred_df = pd.concat(pred_df_list)
@@ -278,7 +308,6 @@ final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.allfeat_
 
 sys.exit()
 '''
-
 # Below is to run cross validation for all features table
 #################################################
 # Inputs
@@ -290,8 +319,9 @@ tetra_dat = sys.argv[4]
 cov_dat = sys.argv[5]
 nmf_output = sys.argv[6]
 best_output = sys.argv[7]
-src2sag_file = sys.argv[8]
-nthreads = int(sys.argv[9])
+src2contig_file = sys.argv[8]
+sag2cami_file = sys.argv[9]
+nthreads = int(sys.argv[10])
 
 # Example:
 # python
@@ -311,29 +341,33 @@ nthreads = int(sys.argv[9])
 minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
 sag_mh_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
 if sag_mh_df.shape[0] != 0:
-
     # setup mapping to CAMI ref genomes
-    src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
-    src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
-    sag2src_dict = {}
-    sag2strain_dict = {}
-    for src_id in set(src2sag_df['CAMI_genomeID']):
-        if src_id in sag_id:
-            if sag_id in sag2src_dict.keys():
-                if len(src_id) > len(sag2src_dict[sag_id]):
-                    sag2src_dict[sag_id] = src_id
-                    strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
-                    sag2strain_dict[sag_id] = strain_id
+    src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+    src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
+    sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
 
-            else:
-                sag2src_dict[sag_id] = src_id
-                strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
-                sag2strain_dict[sag_id] = strain_id
-    src2contig_df = src2sag_df.loc[src2sag_df['CAMI_genomeID'] == sag2src_dict[sag_id]]
-    src2strain_df = src2sag_df.loc[src2sag_df['strain'] == sag2strain_dict[sag_id]]
-    src2contig_list = list(set(src2contig_df['@@SEQUENCEID'].values))
-    src2strain_list = list(set(src2strain_df['@@SEQUENCEID'].values))
+    '''
+    mh_list = list(minhash_df['sag_id'].unique())
+    cami_list = [str(x) for x in src2contig_df['CAMI_genomeID'].unique()]
+    sag2cami_list = []
+    print('Mapping Sources to Synthetic SAGs...')
+    for sag_id in tqdm(mh_list):
+        match_list = difflib.get_close_matches(str(sag_id), cami_list, n=1, cutoff=0)
+        sag2cami_list.append([sag_id, match_list[0]])
+    sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
+    sag2cami_df.to_csv("~/Desktop/test_NMF/sag2cami_map.tsv", index=False, sep='\t')
+    print(sag2cami_df.head())
+    '''
+    # Map Sources/SAGs to Strain IDs
+    src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]
 
+    strain_id = str(int(list(src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id
+                                               ]['strain'])[0]))
+    src_sub_df = src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id]
+    strain_sub_df = src2contig_df.loc[src2contig_df['strain'] == strain_id]
+    src2contig_list = list(set(src_sub_df['@@SEQUENCEID'].values))
+    src2strain_list = list(set(strain_sub_df['@@SEQUENCEID'].values))
+    print(sag_id, src_id, strain_id)
     gamma_range = [10 ** k for k in range(-6, 6)]
     gamma_range.extend(['scale'])
     nu_range = [k / 10 for k in range(1, 10, 1)]
@@ -366,10 +400,6 @@ if sag_mh_df.shape[0] != 0:
     best_MCC = sort_score_df['MCC'].iloc[0]
     best_df = score_df.loc[score_df['MCC'] == best_MCC]
     best_df.to_csv(best_output, index=False, sep='\t')
-
-
-
-
 
 else:
     print(sag_id, ' has no minhash recruits...')

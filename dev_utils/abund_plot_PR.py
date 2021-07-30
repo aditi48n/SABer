@@ -6,6 +6,7 @@ matplotlib.rcParams['agg.path.chunksize'] = 2000000
 
 import matplotlib.pyplot as plt
 import seaborn as sns;
+from tqdm import tqdm
 
 sns.set(style="ticks", color_codes=True)
 pd.set_option('display.max_columns', None)
@@ -13,6 +14,7 @@ pd.set_option('mode.chained_assignment', None)
 sns.set_context("poster")
 sns.set_style('whitegrid')
 sns.set(font_scale=1.0)
+
 
 # TODO: build plot to investigate best hyperparams based on starting completeness
 pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.all_scores.tsv'
@@ -51,8 +53,8 @@ pred_df['nu_gamma'] = [str(x[0]) + '_' + str(x[1]) for x in
 print(pred_df.head())
 print(pred_df.shape)
 incl_dict = {'majority': 0, 'all': 1}
-lev_dict = {'strain': 0, 'exact': 1}
-gamma_dict = {'scale': 0, '1e-06': 1, '1e-05': 2, '0.0001': 3, '0.001': 4, '0.01': 5, '0.1': 6,
+lev_dict = {'strain': 1, 'exact': 0}
+gamma_dict = {'scale': 13, '1e-06': 1, '1e-05': 2, '0.0001': 3, '0.001': 4, '0.01': 5, '0.1': 6,
               '1': 7, '10': 8, '100': 9, '1000': 10, '10000': 11, '100000': 12
               }
 '''
@@ -164,8 +166,8 @@ top_df = pred_df.loc[((pred_df['level'] == top_level) &
 ]
 '''
 best_sub_list = []
-for sag_id in set(pred_df['sag_id']):
-    print(sag_id)
+for sag_id in tqdm(set(pred_df['sag_id'])):
+    # print(sag_id)
     sag_top_df = pred_df.loc[pred_df['sag_id'] == sag_id]
     sag_top_df['rank1_sensitivity'] = (sag_top_df['round1_sensitivity']).astype(float).rank(
         method='dense', ascending=False).astype(float)
@@ -185,12 +187,12 @@ for sag_id in set(pred_df['sag_id']):
          'rank1_precision', 'rank2_MCC', 'rank2_sensitivity', 'rank2_precision', 'precision',
          'MCC', 'sensitivity'
          ]]
-    rank_df = rank_df.sort_values(['rank1_precision', 'rank1_sensitivity',
-                                   'rank2_precision', 'rank2_sensitivity'
-                                   ], ascending=[True, True, True, True])
-    # rank_df = rank_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+    # rank_df = rank_df.sort_values(['rank1_precision', 'rank1_sensitivity',
     #                               'rank2_precision', 'rank2_sensitivity'
-    #                               ], ascending=[True, True, True, True, True, True])
+    #                               ], ascending=[True, True, True, True])
+    rank_df = rank_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+                                   'rank2_precision', 'rank2_sensitivity'
+                                   ], ascending=[True, True, True, True, True, True])
     top_ranks = rank_df[['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                          'rank2_precision', 'rank2_sensitivity']].iloc[0]
     sub_rank_df = rank_df.loc[((rank_df['rank1_MCC'] == top_ranks['rank1_MCC']) &
@@ -206,12 +208,12 @@ for sag_id in set(pred_df['sag_id']):
 concat_df = pd.concat(best_sub_list)
 # select the config that overfits the least
 concat_df['gamma_sorter'] = [gamma_dict[x] for x in concat_df['gamma']]
-concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
-                                   'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
-                                  ascending=[True, True, True, True, False, True])
-# concat_df = concat_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+# concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
 #                                   'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
-#                                  ascending=[True, True, True, True, True, True, False, True])
+#                                  ascending=[True, True, True, True, False, True])
+concat_df = concat_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
+                                   'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
+                                  ascending=[True, True, True, True, True, True, False, True])
 sag_dedup_df = concat_df.drop_duplicates(subset='sag_id', keep='first')
 
 keep_list = ['sag_id', 'level', 'inclusion', 'gamma', 'nu', 'precision', 'MCC', 'sensitivity']

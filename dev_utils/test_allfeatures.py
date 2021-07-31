@@ -338,36 +338,49 @@ nthreads = int(sys.argv[10])
 
 #################################################
 
+
+# setup mapping to CAMI ref genomes
 minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
+src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
+sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+'''
+# builds the sag to cami ID mapping file
+mh_list = list(minhash_df['sag_id'].unique())
+cami_list = [str(x) for x in src2contig_df['CAMI_genomeID'].unique()]
+sag2cami_list = []
+print('Mapping Sources to Synthetic SAGs...')
+for sag_id in mh_list:
+    match = difflib.get_close_matches(str(sag_id), cami_list, n=1, cutoff=0)[0]
+    m_len = len(match)
+    sub_sag_id = sag_id[:m_len]
+    if sub_sag_id != match:
+        match = difflib.get_close_matches(str(sub_sag_id), cami_list, n=1, cutoff=0)[0]
+        if match == sub_sag_id:
+            print("PASSED:", sag_id, sub_sag_id, match)
+        else:
+            m1_len = len(match)
+            sub_sag_id = sag_id[:m_len]
+            sub_sub_id = sub_sag_id[:m1_len].split('.')[0]
+            match = difflib.get_close_matches(str(sub_sub_id), cami_list, n=1, cutoff=0)[0]
+    sag2cami_list.append([sag_id, match])
+sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
+sag2cami_df.to_csv("~/Desktop/test_NMF/sag2cami_map.tsv", index=False, sep='\t')
+'''
+
+# Run GridCV on the [All Hz + Cov] features
 sag_mh_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
 if sag_mh_df.shape[0] != 0:
-    # setup mapping to CAMI ref genomes
-    src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
-    src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
-    sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
-
-    '''
-    mh_list = list(minhash_df['sag_id'].unique())
-    cami_list = [str(x) for x in src2contig_df['CAMI_genomeID'].unique()]
-    sag2cami_list = []
-    print('Mapping Sources to Synthetic SAGs...')
-    for sag_id in tqdm(mh_list):
-        match_list = difflib.get_close_matches(str(sag_id), cami_list, n=1, cutoff=0)
-        sag2cami_list.append([sag_id, match_list[0]])
-    sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
-    sag2cami_df.to_csv("~/Desktop/test_NMF/sag2cami_map.tsv", index=False, sep='\t')
-    print(sag2cami_df.head())
-    '''
     # Map Sources/SAGs to Strain IDs
     src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]
-
-    strain_id = str(int(list(src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id
-                                               ]['strain'])[0]))
+    strain_id = list(src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id
+                                       ]['strain'])[0]
     src_sub_df = src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id]
     strain_sub_df = src2contig_df.loc[src2contig_df['strain'] == strain_id]
     src2contig_list = list(set(src_sub_df['@@SEQUENCEID'].values))
     src2strain_list = list(set(strain_sub_df['@@SEQUENCEID'].values))
     print(sag_id, src_id, strain_id)
+
     gamma_range = [10 ** k for k in range(-6, 6)]
     gamma_range.extend(['scale'])
     nu_range = [k / 10 for k in range(1, 10, 1)]
@@ -382,12 +395,11 @@ if sag_mh_df.shape[0] != 0:
     results = pool.imap_unordered(recruitSubs, arg_list)
     score_list = []
     for i, output in enumerate(results, 1):
-        print('\rRecruiting with NMF Tetra Model: {}/{}'.format(i, len(arg_list)))
+        print('\rRecruiting with All Tetra Model: {}/{}'.format(i, len(arg_list)))
         score_list.append(output[0])
         score_list.append(output[1])
         score_list.append(output[2])
         score_list.append(output[3])
-
     logging.info('\n')
     pool.close()
     pool.join()
@@ -400,6 +412,5 @@ if sag_mh_df.shape[0] != 0:
     best_MCC = sort_score_df['MCC'].iloc[0]
     best_df = score_df.loc[score_df['MCC'] == best_MCC]
     best_df.to_csv(best_output, index=False, sep='\t')
-
 else:
     print(sag_id, ' has no minhash recruits...')

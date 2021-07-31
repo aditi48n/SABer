@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import logging
+import multiprocessing
 import sys
 
 import pandas as pd
@@ -218,7 +220,7 @@ nmf_feat_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_
 
 sys.exit()
 '''
-
+'''
 # Build final table for testing
 minhash_recruits = sys.argv[1]
 nmf_dat = sys.argv[2]
@@ -277,9 +279,8 @@ final_pred_df = pd.concat(pred_df_list)
 final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.abr_trimmed_recruits.tsv',
                      sep='\t', index=False
                      )
-
-
 '''
+
 # Below is to run cross validation for  covM abundance and nmf tetra
 #################################################
 # Inputs
@@ -290,8 +291,9 @@ nmf_dat = sys.argv[3]
 cov_dat = sys.argv[4]
 nmf_output = sys.argv[5]
 best_output = sys.argv[6]
-src2sag_file = sys.argv[7]
-nthreads = int(sys.argv[8])
+src2contig_file = sys.argv[7]
+sag2cami_file = sys.argv[8]
+nthreads = int(sys.argv[9])
 
 # Example:
 # python
@@ -307,32 +309,23 @@ nthreads = int(sys.argv[8])
 
 #################################################
 
+# setup mapping to CAMI ref genomes
 minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
-minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_avg'] >= 0.16]
+src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
+sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+
 sag_mh_df = minhash_filter_df.loc[minhash_filter_df['sag_id'] == sag_id]
 if sag_mh_df.shape[0] != 0:
-
-    # setup mapping to CAMI ref genomes
-    src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
-    src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
-    sag2src_dict = {}
-    sag2strain_dict = {}
-    for src_id in set(src2sag_df['CAMI_genomeID']):
-        if src_id in sag_id:
-            if sag_id in sag2src_dict.keys():
-                if len(src_id) > len(sag2src_dict[sag_id]):
-                    sag2src_dict[sag_id] = src_id
-                    strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
-                    sag2strain_dict[sag_id] = strain_id
-
-            else:
-                sag2src_dict[sag_id] = src_id
-                strain_id = list(src2sag_df.loc[src2sag_df['CAMI_genomeID'] == src_id]['strain'])[0]
-                sag2strain_dict[sag_id] = strain_id
-    src2contig_df = src2sag_df.loc[src2sag_df['CAMI_genomeID'] == sag2src_dict[sag_id]]
-    src2strain_df = src2sag_df.loc[src2sag_df['strain'] == sag2strain_dict[sag_id]]
-    src2contig_list = list(set(src2contig_df['@@SEQUENCEID'].values))
-    src2strain_list = list(set(src2strain_df['@@SEQUENCEID'].values))
+    # Map Sources/SAGs to Strain IDs
+    src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]
+    strain_id = list(src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id
+                                       ]['strain'])[0]
+    src_sub_df = src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id]
+    strain_sub_df = src2contig_df.loc[src2contig_df['strain'] == strain_id]
+    src2contig_list = list(set(src_sub_df['@@SEQUENCEID'].values))
+    src2strain_list = list(set(strain_sub_df['@@SEQUENCEID'].values))
+    print(sag_id, src_id, strain_id)
 
     gamma_range = [10 ** k for k in range(-6, 6)]
     gamma_range.extend(['scale'])
@@ -353,7 +346,6 @@ if sag_mh_df.shape[0] != 0:
         score_list.append(output[1])
         score_list.append(output[2])
         score_list.append(output[3])
-
     logging.info('\n')
     pool.close()
     pool.join()
@@ -366,69 +358,5 @@ if sag_mh_df.shape[0] != 0:
     best_MCC = sort_score_df['MCC'].iloc[0]
     best_df = score_df.loc[score_df['MCC'] == best_MCC]
     best_df.to_csv(best_output, index=False, sep='\t')
-
-
-
-
-
 else:
     print(sag_id, ' has no minhash recruits...')
-'''
-'''
-# Run Abundance after NMF tetra
-minhash_recruits = sys.argv[1]
-nmf_recruits = sys.argv[2]
-covm_table = sys.argv[3]
-
-# load minhash file
-minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
-minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.90]
-# load nmf file
-nmf_df = pd.read_csv(nmf_recruits, sep='\t', header=0)
-# load covM table
-cov_df = pd.read_csv(covm_table, sep='\t', header=0)
-cov_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
-cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df['subcontig_id']]
-
-pred_df_list = []
-for sag_id in minhash_filter_df['sag_id'].unique():
-    print(sag_id)
-    sag_mh_df = minhash_filter_df.loc[minhash_filter_df['sag_id'] == sag_id]
-    sag_cov_df = cov_df.loc[cov_df['contig_id'].isin(sag_mh_df['contig_id'])]
-    mg_cov_df = cov_df.loc[~cov_df['contig_id'].isin(sag_mh_df['contig_id'])]
-    sag_cov_df.drop(columns=['contig_id'], inplace=True)
-    mg_cov_df.drop(columns=['contig_id'], inplace=True)
-    sag_cov_df.set_index('subcontig_id', inplace=True)
-    mg_cov_df.set_index('subcontig_id', inplace=True)
-
-    # start ocsvm cross validation analysis
-    pred_df = runOCSVM(sag_cov_df, mg_cov_df, sag_id, 'scale', 0.5)
-    val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
-        normalize=True).reset_index(name='precent')
-    pos_perc = val_perc.loc[val_perc['pred'] == 1]
-    major_df = pos_perc.loc[pos_perc['precent'] >= 0.51]
-    major_pred = [1 if x in list(major_df['contig_id']) else -1
-                  for x in pred_df['contig_id']
-                  ]
-    pred_df['major_pred'] = major_pred
-    #pred_df.to_csv('~/Desktop/test_NMF/nmf_preds/' + sag_id + '_recruits.tsv',
-    #               sep='\t', index=False
-    #               )
-    pred_filter_df = pred_df.loc[pred_df['major_pred'] == 1]
-    merge_df = pd.concat([sag_mh_df[['sag_id', 'contig_id']],
-                         pred_filter_df[['sag_id', 'contig_id']]]
-                         ).drop_duplicates()
-    pred_df_list.append(merge_df)
-    print('Recruited', pred_filter_df.shape[0], 'subcontigs...')
-    print('Total of', pred_filter_df[['sag_id', 'contig_id']].drop_duplicates().shape[0],
-          'contigs...')
-
-    print('Total of', merge_df.shape[0], 'contigs with minhash...')
-
-final_pred_df = pd.concat(pred_df_list)
-final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.tetra_trimmed_recruits.tsv',
-                     sep='\t', index=False
-                     )
-
-sys.exit()
-'''

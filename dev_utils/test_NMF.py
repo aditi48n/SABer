@@ -315,7 +315,7 @@ src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
 src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
 sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
 
-sag_mh_df = minhash_filter_df.loc[minhash_filter_df['sag_id'] == sag_id]
+sag_mh_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
 if sag_mh_df.shape[0] != 0:
     # Map Sources/SAGs to Strain IDs
     src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]

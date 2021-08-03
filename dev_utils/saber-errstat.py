@@ -96,46 +96,36 @@ def cnt_contig_bp(fasta_file):
 def collect_error(p):
     error_list = []
     tp_list = []
-    sag_id, tax_mg_df, sag_sub_df, algo_list, level_list = p
-    sag_key_list = [str(s) for s in set(tax_mg_df['CAMI_genomeID']) if str(s) in sag_id]
-    sag_key = max(sag_key_list, key=len)
+    sag_id, src_id, tax_mg_df, sag_sub_df, algo_list, level_list = p
     for algo in algo_list:
         algo_sub_df = sag_sub_df.loc[sag_sub_df[algo] == 1]
         algo_include_contigs = pd.DataFrame(algo_sub_df['contig_id'], columns=['contig_id'])
         for col in level_list:
-            col_key = tax_mg_df.loc[tax_mg_df['CAMI_genomeID'] == sag_key, col].iloc[0]
+            col_key = tax_mg_df.loc[tax_mg_df['CAMI_genomeID'] == src_id, col].iloc[0]
             cami_include_ids = pd.DataFrame(
                 tax_mg_df.loc[tax_mg_df[col] == col_key]['CAMI_genomeID'].unique(),
                 columns=['CAMI_genomeID']
             )
-            # mg_include_contigs = sag_sub_df.loc[sag_sub_df['CAMI_genomeID'].isin(
-            #                                    cami_include_ids)]['@@SEQUENCEID']
             mg_include_contigs = tax_mg_df.merge(cami_include_ids, how='inner',
                                                  on='CAMI_genomeID'
                                                  )['@@SEQUENCEID']
-            sag_key_df = pd.DataFrame([sag_key], columns=['CAMI_genomeID'])
-            # sag_include_contigs = sag_sub_df.loc[sag_sub_df['CAMI_genomeID'].isin(
-            #                                    cami_include_ids)]['@@SEQUENCEID']
+            sag_key_df = pd.DataFrame([src_id], columns=['CAMI_genomeID'])
             sag_include_contigs = tax_mg_df.merge(sag_key_df, how='inner',
                                                   on='CAMI_genomeID')['@@SEQUENCEID']
             if col == 'CAMI_genomeID':
                 col = 'exact'
-                col_key = sag_key
+                col_key = src_id
             err_list = [sag_id, algo, col, 0, 0, 0, 0]
-            # for contig_id, contig_count in zip(tax_mg_df['@@SEQUENCEID'], tax_mg_df['bp_cnt']):
-            # Pos_cnt_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(algo_include_contigs)]
             Pos_cnt_df = tax_mg_df.merge(algo_include_contigs, how='inner', right_on='contig_id',
                                          left_on='@@SEQUENCEID'
                                          )
             Neg_cnt_df = tax_mg_df.loc[~tax_mg_df['@@SEQUENCEID'].isin(Pos_cnt_df['@@SEQUENCEID'])]
 
-            # TP_cnt_df = Pos_cnt_df.loc[Pos_cnt_df['@@SEQUENCEID'].isin(mg_include_contigs)]
             TP_cnt_df = Pos_cnt_df.merge(mg_include_contigs, how='inner', right_on='@@SEQUENCEID',
                                          left_on='@@SEQUENCEID'
                                          )
             FP_cnt_df = Pos_cnt_df.loc[~Pos_cnt_df['@@SEQUENCEID'].isin(mg_include_contigs)]
 
-            # FN_cnt_df = Neg_cnt_df.loc[Neg_cnt_df['@@SEQUENCEID'].isin(sag_include_contigs)]
             FN_cnt_df = Neg_cnt_df.merge(sag_include_contigs, how='inner', right_on='@@SEQUENCEID',
                                          left_on='@@SEQUENCEID'
                                          )
@@ -198,13 +188,13 @@ err_path = saberout_path + '/error_analysis'
 if not path.exists(err_path):
     makedirs(err_path)
 
-tax_mg_df.to_csv(saberout_path + 'error_analysis/src2sag_map.tsv', sep='\t', index=False)
-
 # count all bp's for Source genomes, Source MetaG, MockSAGs
 # count all bp's for each read in metaG
 src_metag_cnt_dict = cnt_contig_bp(src_metag_file)
 # Add to tax DF
 tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
+sag2cami_df = pd.read_csv(saberout_path + 'error_analysis/sag2cami_map.tsv', sep='\t', header=0)
+tax_mg_df.to_csv(saberout_path + 'error_analysis/src2contig_map.tsv', sep='\t', index=False)
 
 if isfile(saberout_path + 'error_analysis/src_mock_df.tsv'):
     src_mock_err_df = pd.read_csv(saberout_path + 'error_analysis/src_mock_df.tsv',
@@ -338,7 +328,14 @@ pool = multiprocessing.Pool(processes=nthreads)
 arg_list = []
 for sag_id in tqdm(piv_table_df['sag_id'].unique()):
     sag_sub_df = piv_table_df.loc[piv_table_df['sag_id'] == sag_id]
-    arg_list.append([sag_id, tax_mg_df, sag_sub_df, algo_list, level_list])
+    src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]
+    arg_list.append([sag_id, src_id, tax_mg_df, sag_sub_df, algo_list, level_list])
+    print(sag_id, src_id)
+    print(sag_sub_df.head())
+    print(tax_mg_df.head())
+    print(algo_list[:5])
+    print(level_list[:5])
+    sys.exit()
 results = pool.imap_unordered(collect_error, arg_list)
 
 tot_error_list = []

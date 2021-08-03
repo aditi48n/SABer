@@ -15,35 +15,24 @@ sns.set_context("poster")
 sns.set_style('whitegrid')
 sns.set(font_scale=1.0)
 
-
 # TODO: build plot to investigate best hyperparams based on starting completeness
 pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.all_scores.tsv'
-src2sag_file = '/home/ryan/Desktop/test_NMF/src2sag_map.tsv'
+src2contig_file = '/home/ryan/Desktop/test_NMF/src2contig_map.tsv'
 abund_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_20.tsv'
+sag2cami_file = '/home/ryan/Desktop/test_NMF/sag2cami_map.tsv'
 
 pred_df = pd.read_csv(pred_file, header=0, sep='\t')
-src2sag_df = pd.read_csv(src2sag_file, header=0, sep='\t')
+src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
 abund_df = pd.read_csv(abund_file, header=0, sep='\t')
-# abund_df['contig_id'] = [x.rsplit('_', 1)[0] for x in abund_df['contigName']]
-# count_df = abund_df.groupby(['contig_id'])['contigName'].count().reset_index()
+sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+
 count_df = abund_df.groupby(['contig_id'])['subcontig_id'].count().reset_index()
 
-src2sag_df = src2sag_df[src2sag_df['CAMI_genomeID'].notna()]
-src2sag_df = pd.merge(src2sag_df, count_df, left_on='@@SEQUENCEID', right_on='contig_id', how='left')
-# src_count_df = src2sag_df.groupby(['CAMI_genomeID'])['contigName'].sum().reset_index()
-src_count_df = src2sag_df.groupby(['CAMI_genomeID'])['subcontig_id'].sum().reset_index()
+src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
+src2contig_df = pd.merge(src2contig_df, count_df, left_on='@@SEQUENCEID', right_on='contig_id', how='left')
+src_count_df = src2contig_df.groupby(['CAMI_genomeID'])['subcontig_id'].sum().reset_index()
 src_count_df.columns = ['CAMI_genomeID', 'subcontig_count']
-sag2src_dict = {}
-for sag_id in set(pred_df['sag_id']):
-    for src_id in set(src2sag_df['CAMI_genomeID']):
-        if src_id in sag_id:
-            if sag_id in sag2src_dict.keys():
-                if len(src_id) > len(sag2src_dict[sag_id]):
-                    sag2src_dict[sag_id] = src_id
-
-            else:
-                sag2src_dict[sag_id] = src_id
-pred_df['CAMI_genomeID'] = [sag2src_dict[x] for x in pred_df['sag_id']]
+pred_df = pd.merge(pred_df, sag2cami_df, on='sag_id', how='left')
 pred_df = pd.merge(pred_df, src_count_df, on='CAMI_genomeID', how='left')
 pred_df = pred_df.dropna()
 pred_df = pred_df.loc[((pred_df['TP'] > 0) | (pred_df['FP'] > 0))]
@@ -187,12 +176,14 @@ for sag_id in tqdm(set(pred_df['sag_id'])):
          'rank1_precision', 'rank2_MCC', 'rank2_sensitivity', 'rank2_precision', 'precision',
          'MCC', 'sensitivity'
          ]]
-    # rank_df = rank_df.sort_values(['rank1_precision', 'rank1_sensitivity',
-    #                               'rank2_precision', 'rank2_sensitivity'
-    #                               ], ascending=[True, True, True, True])
+    rank_df = rank_df.sort_values(['rank1_precision', 'rank1_sensitivity',
+                                   'rank2_precision', 'rank2_sensitivity'
+                                   ], ascending=[True, True, True, True])
+    '''
     rank_df = rank_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                                    'rank2_precision', 'rank2_sensitivity'
                                    ], ascending=[True, True, True, True, True, True])
+    '''
     top_ranks = rank_df[['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                          'rank2_precision', 'rank2_sensitivity']].iloc[0]
     sub_rank_df = rank_df.loc[((rank_df['rank1_MCC'] == top_ranks['rank1_MCC']) &
@@ -208,12 +199,14 @@ for sag_id in tqdm(set(pred_df['sag_id'])):
 concat_df = pd.concat(best_sub_list)
 # select the config that overfits the least
 concat_df['gamma_sorter'] = [gamma_dict[x] for x in concat_df['gamma']]
-# concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
-#                                   'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
-#                                  ascending=[True, True, True, True, False, True])
+concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
+                                   'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
+                                  ascending=[True, True, True, True, False, True])
+'''
 concat_df = concat_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                                    'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
                                   ascending=[True, True, True, True, True, True, False, True])
+'''
 sag_dedup_df = concat_df.drop_duplicates(subset='sag_id', keep='first')
 
 keep_list = ['sag_id', 'level', 'inclusion', 'gamma', 'nu', 'precision', 'MCC', 'sensitivity']

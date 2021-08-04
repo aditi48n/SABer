@@ -16,7 +16,7 @@ sns.set_style('whitegrid')
 sns.set(font_scale=1.0)
 
 # TODO: build plot to investigate best hyperparams based on starting completeness
-pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.all_scores.tsv'
+pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_scores.tsv'
 src2contig_file = '/home/ryan/Desktop/test_NMF/src2contig_map.tsv'
 abund_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_20.tsv'
 sag2cami_file = '/home/ryan/Desktop/test_NMF/sag2cami_map.tsv'
@@ -46,24 +46,6 @@ lev_dict = {'strain': 1, 'exact': 0}
 gamma_dict = {'scale': 13, '1e-06': 1, '1e-05': 2, '0.0001': 3, '0.001': 4, '0.01': 5, '0.1': 6,
               '1': 7, '10': 8, '100': 9, '1000': 10, '10000': 11, '100000': 12
               }
-'''
-for level in lev_dict:
-    lev_df = pred_df.loc[pred_df['level'] == level]
-    for inclusion in incl_dict:
-        incl_df = lev_df.loc[lev_df['inclusion'] == inclusion]
-        for nu in incl_df['nu'].unique():
-            print(level, inclusion, nu)
-            nu_df = incl_df.loc[incl_df['nu'] == nu]
-            mean_df = nu_df.groupby(['gamma'])['sensitivity', 'precision'].mean().reset_index()
-            g = sns.relplot(data=mean_df, x='sensitivity', y='precision', col='gamma', col_wrap=4,
-                            kind='line'
-                            )
-            plt.savefig('PR_plots/PRs/' + level + '_' + inclusion + '_' + str(nu) + '_PR_curve.png')
-            plt.clf()
-            plt.close()
-
-sys.exit()
-'''
 
 pred_df['round1_sensitivity'] = pred_df['sensitivity'].round(1)
 pred_df['round1_precision'] = pred_df['precision'].round(1)
@@ -75,85 +57,6 @@ pred_df['round2_MCC'] = pred_df['MCC'].round(2)
 flierprops = dict(markerfacecolor='0.75', markersize=5, markeredgecolor='w',
                   linestyle='none')
 
-'''
-pred_df = pred_df.sort_values(['round1_sensitivity', 'round1_precision'], ascending=[False, False])
-PR_df = pred_df.drop_duplicates(subset=['sag_id'], keep='first')
-PR_df = PR_df[['sag_id', 'round1_sensitivity', 'round1_precision']]
-PR_df.columns = ['sag_id', 'best_sensitivity', 'best_precision']
-merge_df = pd.merge(pred_df, PR_df, on=['sag_id'])
-filter_df = merge_df.loc[((merge_df['round1_sensitivity'] >= merge_df['best_sensitivity']) &
-                          (merge_df['round1_precision'] >= merge_df['best_precision'])
-                          )]
-
-filter_df['inclusion_sorter'] = [incl_dict[x] for x in filter_df['inclusion']]
-filter_df['level_sorter'] = [lev_dict[x] for x in filter_df['level']]
-filter_df['gamma_sorter'] = [gamma_dict[x] for x in filter_df['gamma']]
-filter_df = filter_df.sort_values(['nu', 'gamma_sorter', 'inclusion_sorter', 'level_sorter'],
-                                  ascending=[False, True, True, True]
-                                  )
-num_1_df = filter_df.drop_duplicates(subset=['sag_id'], keep='first')
-
-keep_list = ['sag_id', 'level', 'inclusion', 'gamma', 'nu', 'precision', 'MCC', 'sensitivity']
-pred_stack_df = num_1_df[keep_list].set_index(['sag_id', 'level', 'inclusion',
-                                               'gamma', 'nu']).stack().reset_index()
-pred_stack_df.columns = ['sag_id', 'level', 'inclusion',
-                         'gamma', 'nu', 'metric', 'score'
-                         ]
-
-pred_stack_df['combo'] = [x[0] + '_' + x[1] for x in zip(pred_stack_df['level'],
-                                                         pred_stack_df['inclusion'])
-                          ]
-
-mean_df = pred_stack_df.groupby(['level', 'inclusion', 'metric']
-                                )['score'].mean().unstack('metric').reset_index()
-mean_df['round2_sensitivity'] = mean_df['sensitivity'].round(2)
-mean_df['round2_precision'] = mean_df['precision'].round(2)
-mean_df['round2_MCC'] = mean_df['MCC'].round(2)
-
-mean_df = mean_df.sort_values(['round2_sensitivity', 'round2_precision'], ascending=[False, False])
-mean_df.to_csv('PR_plots/Mean_stats.tsv', sep='\t', index=False)
-
-ax = sns.catplot(x="metric", y="score", hue="level", kind='box',
-                 data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
-                 flierprops=flierprops)
-plt.savefig('PR_plots/level_boxplot.png', bbox_inches='tight', dpi=300)
-plt.clf()
-plt.close()
-
-ax = sns.catplot(x="metric", y="score", hue="inclusion", kind='box',
-                 data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
-                 flierprops=flierprops)
-plt.savefig('PR_plots/inclusion_boxplot.png', bbox_inches='tight', dpi=300)
-plt.clf()
-plt.close()
-
-ax = sns.catplot(x="metric", y="score", hue="combo", kind='box',
-                 data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
-                 flierprops=flierprops)
-plt.savefig('PR_plots/combo_boxplot.png', bbox_inches='tight', dpi=300)
-plt.clf()
-plt.close()
-
-count_df = num_1_df[['level', 'inclusion', 'sag_id']
-].groupby(['level', 'inclusion']
-          ).count().reset_index()
-count_df.columns = ['level', 'inclusion', 'count']
-count_df['combo'] = [x[0] + '_' + x[1] for x in zip(count_df['level'],
-                                                    count_df['inclusion'])
-                     ]
-
-count_df = count_df.sort_values(['count'], ascending=[False])
-g = sns.barplot(data=count_df, x="count", y="combo")
-plt.savefig('PR_plots/combo_barplot.png', bbox_inches='tight', dpi=300)
-plt.clf()
-plt.close()
-
-top_level = count_df['level'].iloc[0]
-top_inclusion = count_df['inclusion'].iloc[0]
-top_df = pred_df.loc[((pred_df['level'] == top_level) &
-                      (pred_df['inclusion'] == top_inclusion))
-]
-'''
 best_sub_list = []
 for sag_id in tqdm(set(pred_df['sag_id'])):
     # print(sag_id)
@@ -176,6 +79,7 @@ for sag_id in tqdm(set(pred_df['sag_id'])):
          'rank1_precision', 'rank2_MCC', 'rank2_sensitivity', 'rank2_precision', 'precision',
          'MCC', 'sensitivity'
          ]]
+    '''
     rank_df = rank_df.sort_values(['rank1_precision', 'rank1_sensitivity',
                                    'rank2_precision', 'rank2_sensitivity'
                                    ], ascending=[True, True, True, True])
@@ -183,7 +87,7 @@ for sag_id in tqdm(set(pred_df['sag_id'])):
     rank_df = rank_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                                    'rank2_precision', 'rank2_sensitivity'
                                    ], ascending=[True, True, True, True, True, True])
-    '''
+
     top_ranks = rank_df[['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                          'rank2_precision', 'rank2_sensitivity']].iloc[0]
     sub_rank_df = rank_df.loc[((rank_df['rank1_MCC'] == top_ranks['rank1_MCC']) &
@@ -199,6 +103,7 @@ for sag_id in tqdm(set(pred_df['sag_id'])):
 concat_df = pd.concat(best_sub_list)
 # select the config that overfits the least
 concat_df['gamma_sorter'] = [gamma_dict[x] for x in concat_df['gamma']]
+'''
 concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
                                    'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
                                   ascending=[True, True, True, True, False, True])
@@ -206,7 +111,7 @@ concat_df = concat_df.sort_values(['rank1_precision', 'rank1_sensitivity',
 concat_df = concat_df.sort_values(['rank1_MCC', 'rank1_sensitivity', 'rank1_precision', 'rank2_MCC',
                                    'rank2_precision', 'rank2_sensitivity', 'nu', 'gamma_sorter'],
                                   ascending=[True, True, True, True, True, True, False, True])
-'''
+
 sag_dedup_df = concat_df.drop_duplicates(subset='sag_id', keep='first')
 
 keep_list = ['sag_id', 'level', 'inclusion', 'gamma', 'nu', 'precision', 'MCC', 'sensitivity']
@@ -224,7 +129,7 @@ pred_stack_df = pred_stack_df.sort_values(['nu', 'gamma_sorter'], ascending=[Tru
 ax = sns.catplot(x="metric", y="score", hue="gamma", kind='box',
                  data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
                  flierprops=flierprops)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/gamma_boxplot.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/gamma_boxplot.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
@@ -232,7 +137,7 @@ plt.close()
 ax = sns.catplot(x="metric", y="score", hue="nu", kind='box',
                  data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
                  flierprops=flierprops)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/nu_boxplot.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/nu_boxplot.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
@@ -252,9 +157,9 @@ for level in lev_dict:
         count_df.columns = ['level', 'inclusion', 'nu', 'gamma', 'count']
         count_df = count_df.sort_values(['count'], ascending=[False])
         count_df.to_csv(
-            '/home/ryan/Desktop/test_NMF/PR_plots_all/' + level + '_' + inclusion + '_top_ranked_params.tsv',
+            '/home/ryan/Desktop/test_NMF/PR_plots/' + level + '_' + inclusion + '_top_ranked_params.tsv',
             index=False, sep='\t'
-            )
+        )
         top_level = count_df['level'].iloc[0]
         top_inclusion = count_df['inclusion'].iloc[0]
         top_nu = count_df['nu'].iloc[0]
@@ -265,7 +170,7 @@ for level in lev_dict:
         nu_order = list(sorted(set(count_df['nu'])))
         g = sns.FacetGrid(count_df, col="gamma", col_wrap=4)
         g.map(sns.barplot, "nu", "count", order=nu_order, ci=None)
-        plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/' + level + '_' + inclusion + '_nu_gamma_facetplot.png')
+        plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/' + level + '_' + inclusion + '_nu_gamma_facetplot.png')
         plt.clf()
         plt.close()
 
@@ -283,11 +188,11 @@ grp_metrics_df = top_config_df[['level', 'inclusion', 'nu_gamma', 'nu', 'gamma',
                                                  MCC_mean=('MCC', 'mean'),
                                                  MCC_cnt=('MCC', 'count')).reset_index()
 
-grp_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots_all/top_config_stats.tsv',
+grp_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots/top_config_stats.tsv',
                       sep='\t', index=False)
 
 best_metrics_df = grp_metrics_df.loc[grp_metrics_df['MCC_cnt'] == grp_metrics_df['MCC_cnt'].max()]
-best_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots_all/best_config_stats.tsv',
+best_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots/best_config_stats.tsv',
                        sep='\t', index=False)
 best_nu = best_metrics_df['nu'].iloc[0]
 best_gamma = best_metrics_df['gamma'].iloc[0]
@@ -311,7 +216,7 @@ text_str = ''.join(['Mean:\n  P=', str(round(mean_P, 2)), '\n  R=', str(round(me
                     ])
 for ax in g.axes.flat:
     ax.text(7, 200, text_str, fontsize=9)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/best_config_histo_precision.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/best_config_histo_precision.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
@@ -322,7 +227,7 @@ text_str = ''.join(['Mean:\n  P=', str(round(mean_P, 2)), '\n  R=', str(round(me
                     ])
 for ax in g.axes.flat:
     ax.text(7, 100, text_str, fontsize=9)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/best_config_histo_sensitivity.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/best_config_histo_sensitivity.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()

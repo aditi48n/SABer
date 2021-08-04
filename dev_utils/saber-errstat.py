@@ -296,14 +296,8 @@ for k in stage_dict:
         else:
             in_file_list = glob.glob(joinpath(saberout_path, v))
             for in_file in in_file_list:
-                # print(in_file)
-                # base = basename(in_file)
-                # print(base)
-                # alg = 'minhash_' + str(base.split('.')[-3])
-                # print(alg)
                 concat_df = pd.read_csv(in_file, sep='\t', header=0)
                 concat_df = concat_df[['sag_id', 'contig_id']]
-                # concat_df['algorithm'] = alg
                 concat_df['algorithm'] = k
                 concat_df.drop_duplicates(subset=['sag_id', 'contig_id'], inplace=True)
                 concat_df_list.append(concat_df)
@@ -318,7 +312,6 @@ piv_table_df.reset_index(inplace=True)
 piv_table_df.columns = [''.join(col).replace('predict', '') for col in
                         piv_table_df.columns.values
                         ]
-
 algo_list = list(final_concat_df['algorithm'].unique())
 level_list = ['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain',
               'CAMI_genomeID'

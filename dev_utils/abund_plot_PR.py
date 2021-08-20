@@ -16,7 +16,7 @@ sns.set_style('whitegrid')
 sns.set(font_scale=1.0)
 
 # TODO: build plot to investigate best hyperparams based on starting completeness
-pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_scores.tsv'
+pred_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.all_scores.tsv'
 src2contig_file = '/home/ryan/Desktop/test_NMF/src2contig_map.tsv'
 abund_file = '/home/ryan/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_20.tsv'
 sag2cami_file = '/home/ryan/Desktop/test_NMF/sag2cami_map.tsv'
@@ -129,7 +129,7 @@ pred_stack_df = pred_stack_df.sort_values(['nu', 'gamma_sorter'], ascending=[Tru
 ax = sns.catplot(x="metric", y="score", hue="gamma", kind='box',
                  data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
                  flierprops=flierprops)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/gamma_boxplot.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/gamma_boxplot.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
@@ -137,7 +137,7 @@ plt.close()
 ax = sns.catplot(x="metric", y="score", hue="nu", kind='box',
                  data=pred_stack_df, aspect=2, palette=sns.light_palette("black"),
                  flierprops=flierprops)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/nu_boxplot.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/nu_boxplot.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
@@ -157,7 +157,7 @@ for level in lev_dict:
         count_df.columns = ['level', 'inclusion', 'nu', 'gamma', 'count']
         count_df = count_df.sort_values(['count'], ascending=[False])
         count_df.to_csv(
-            '/home/ryan/Desktop/test_NMF/PR_plots/' + level + '_' + inclusion + '_top_ranked_params.tsv',
+            '/home/ryan/Desktop/test_NMF/PR_plots_all/' + level + '_' + inclusion + '_top_ranked_params.tsv',
             index=False, sep='\t'
         )
         top_level = count_df['level'].iloc[0]
@@ -170,7 +170,7 @@ for level in lev_dict:
         nu_order = list(sorted(set(count_df['nu'])))
         g = sns.FacetGrid(count_df, col="gamma", col_wrap=4)
         g.map(sns.barplot, "nu", "count", order=nu_order, ci=None)
-        plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/' + level + '_' + inclusion + '_nu_gamma_facetplot.png')
+        plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/' + level + '_' + inclusion + '_nu_gamma_facetplot.png')
         plt.clf()
         plt.close()
 
@@ -188,11 +188,11 @@ grp_metrics_df = top_config_df[['level', 'inclusion', 'nu_gamma', 'nu', 'gamma',
                                                  MCC_mean=('MCC', 'mean'),
                                                  MCC_cnt=('MCC', 'count')).reset_index()
 
-grp_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots/top_config_stats.tsv',
+grp_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots_all/top_config_stats.tsv',
                       sep='\t', index=False)
 
 best_metrics_df = grp_metrics_df.loc[grp_metrics_df['MCC_cnt'] == grp_metrics_df['MCC_cnt'].max()]
-best_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots/best_config_stats.tsv',
+best_metrics_df.to_csv('/home/ryan/Desktop/test_NMF/PR_plots_all/best_config_stats.tsv',
                        sep='\t', index=False)
 best_nu = best_metrics_df['nu'].iloc[0]
 best_gamma = best_metrics_df['gamma'].iloc[0]
@@ -216,7 +216,7 @@ text_str = ''.join(['Mean:\n  P=', str(round(mean_P, 2)), '\n  R=', str(round(me
                     ])
 for ax in g.axes.flat:
     ax.text(7, 200, text_str, fontsize=9)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/best_config_histo_precision.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/best_config_histo_precision.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()
@@ -227,7 +227,7 @@ text_str = ''.join(['Mean:\n  P=', str(round(mean_P, 2)), '\n  R=', str(round(me
                     ])
 for ax in g.axes.flat:
     ax.text(7, 100, text_str, fontsize=9)
-plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots/best_config_histo_sensitivity.png',
+plt.savefig('/home/ryan/Desktop/test_NMF/PR_plots_all/best_config_histo_sensitivity.png',
             bbox_inches='tight', dpi=300)
 plt.clf()
 plt.close()

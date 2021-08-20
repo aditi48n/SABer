@@ -50,102 +50,118 @@ def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, 
 
     logging.info('Starting Tetranucleotide Recruitment\n')
     mg_id = mg_sub_file[0]
-    # Build/Load tetramers for SAGs and MG subset by ara recruits
-    if isfile(o_join(tra_path, mg_id + '.tetras.tsv')):
-        logging.info('Loading tetramer Hz matrix for %s\n' % mg_id)
-        mg_tetra_df = pd.read_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
-                                  sep='\t', index_col=0, header=0
-                                  )
-        mg_headers = mg_tetra_df.index.values
+    if isfile(o_join(tra_path, mg_id + '.comb.tra_trimmed_recruits.tsv')):
+        logging.info('Tetranucleotide Recruitment Algorithm Complete\n')
+        gmm_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.gmm.tra_trimmed_recruits.tsv'), sep='\t',
+                                    header=0
+                                    )
+        svm_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.svm.tra_trimmed_recruits.tsv'), sep='\t',
+                                    header=0
+                                    )
+        iso_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.iso.tra_trimmed_recruits.tsv'), sep='\t',
+                                    header=0
+                                    )
+        comb_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.comb.tra_trimmed_recruits.tsv'), sep='\t',
+                                     header=0
+                                     )
     else:
-        logging.info('Calculating tetramer Hz matrix for %s\n' % mg_id)
-        mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
-        mg_headers = tuple(mg_subcontigs.keys())
-        mg_subs = tuple([r.seq for r in mg_subcontigs])
-        mg_tetra_df = s_utils.tetra_cnt(mg_subcontigs)
-        mg_tetra_df.to_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
-                           sep='\t'
-                           )
-    contig_ids = list(zip(*mg_tetra_df.index.str.rsplit("_", n=1, expand=True).to_list()))[0]
-    mg_tetra_df['contig_id'] = contig_ids
-    mg_tetra_df.index.names = ['subcontig_id']
-    std_tetra_dict = build_uniq_dict(mg_tetra_df, 'contig_id', nthreads, 'TetraHz')
-    # Prep MinHash
-    # Filter out contigs that didn't meet MinHash recruit standards
-    minhash_df = minhash_dict[201]
-    minhash_filter_df = minhash_df.copy()  # .loc[minhash_df['jacc_sim_max'] >= 0.90]
-    minhash_dedup_df = minhash_filter_df[['sag_id', 'contig_id', 'jacc_sim_max']
-    ].drop_duplicates(subset=['sag_id', 'contig_id'])
-    mh_recruit_dict = build_uniq_dict(minhash_dedup_df, 'sag_id', nthreads,
-                                      'MinHash Recruits')  # TODO: this might not need multithreading
-    # Prep Abundance
-    abund_dedup_df = abund_recruit_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
-    ab_recruit_dict = build_uniq_dict(abund_dedup_df, 'sag_id', nthreads,
-                                      'Abundance Recruits')  # TODO: this might not need multithreading
-    # mh_dedup_df = minhash_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
-    # ab_recruit_dict = build_uniq_dict(minhash_df, 'sag_id', nthreads,
-    #                                  'Abundance Recruits')  # TODO: this might not need multithreading
-    # Subset tetras matrix for each SAG
-    sag_id_list = list(mh_recruit_dict.keys())
-    sag_id_cnt = len(sag_id_list)
-    gmm_df_list = []
-    svm_df_list = []
-    iso_df_list = []
-    comb_df_list = []
-    sag_chunks = [list(x) for x in np.array_split(np.array(list(sag_id_list)), nthreads * 2)
-                  if len(x) != 0
-                  ]
-    s_counter = 0
-    r_counter = 0
-    for i, sag_id_chunk in enumerate(sag_chunks, 1):
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for j, sag_id in enumerate(sag_id_chunk, 1):  # TODO: reduce RAM usage
-            s_counter += 1
-            logging.info('\rPrepping to Run TetraHz ML-Ensemble: Block {} - {}/{}'.format(i, s_counter, sag_id_cnt))
-            if ((sag_id in list(mh_recruit_dict.keys())) & (sag_id in list(ab_recruit_dict.keys()))):
-                minhash_sag_df = mh_recruit_dict.pop(sag_id)
-                abund_sag_df = ab_recruit_dict.pop(sag_id)
-                if ((minhash_sag_df.shape[0] != 0) & (abund_sag_df.shape[0] != 0)):
-                    sag_id, sag_tetra_df, mg_tetra_filter_df = subset_tetras([std_tetra_dict,
-                                                                              minhash_sag_df,
-                                                                              abund_sag_df, sag_id
-                                                                              ])
-                    arg_list.append([force, mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path])
-        arg_list = tuple(arg_list)
-        results = pool.imap_unordered(ensemble_recruiter, arg_list)
-        logging.info('\n')
-        for k, output in enumerate(results, 1):  # TODO: maybe check if files exist before running this, like minhash
-            r_counter += 1
-            logging.info('\rRecruiting with TetraHz ML-Ensemble: Block {} - {}/{}'.format(i, r_counter, sag_id_cnt))
-            comb_recruits_df, gmm_recruits_df, iso_recruits_df, svm_recruits_df = output
-            if isinstance(gmm_recruits_df, pd.DataFrame):
-                gmm_df_list.append(gmm_recruits_df)
-            if isinstance(svm_recruits_df, pd.DataFrame):
-                svm_df_list.append(svm_recruits_df)
-            if isinstance(iso_recruits_df, pd.DataFrame):
-                iso_df_list.append(iso_recruits_df)
-            if isinstance(comb_recruits_df, pd.DataFrame):
-                comb_df_list.append(comb_recruits_df)
-        logging.info('\n')
-        pool.close()
-        pool.join()
-    gmm_concat_df = pd.concat(gmm_df_list)
-    svm_concat_df = pd.concat(svm_df_list)
-    iso_concat_df = pd.concat(iso_df_list)
-    comb_concat_df = pd.concat(comb_df_list)
-    gmm_concat_df.to_csv(o_join(tra_path, mg_id + '.gmm.tra_trimmed_recruits.tsv'), sep='\t',
-                         index=False
-                         )
-    svm_concat_df.to_csv(o_join(tra_path, mg_id + '.svm.tra_trimmed_recruits.tsv'), sep='\t',
-                         index=False
-                         )
-    iso_concat_df.to_csv(o_join(tra_path, mg_id + '.iso.tra_trimmed_recruits.tsv'), sep='\t',
-                         index=False
-                         )
-    comb_concat_df.to_csv(o_join(tra_path, mg_id + '.comb.tra_trimmed_recruits.tsv'), sep='\t',
-                          index=False
-                          )
+        # Build/Load tetramers for SAGs and MG subset by ara recruits
+        if isfile(o_join(tra_path, mg_id + '.tetras.tsv')):
+            logging.info('Loading tetramer Hz matrix for %s\n' % mg_id)
+            mg_tetra_df = pd.read_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
+                                      sep='\t', index_col=0, header=0
+                                      )
+            mg_headers = mg_tetra_df.index.values
+        else:
+            logging.info('Calculating tetramer Hz matrix for %s\n' % mg_id)
+            mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
+            mg_headers = tuple(mg_subcontigs.keys())
+            mg_subs = tuple([r.seq for r in mg_subcontigs])
+            mg_tetra_df = s_utils.tetra_cnt(mg_subcontigs)
+            mg_tetra_df.to_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
+                               sep='\t'
+                               )
+        contig_ids = list(zip(*mg_tetra_df.index.str.rsplit("_", n=1, expand=True).to_list()))[0]
+        mg_tetra_df['contig_id'] = contig_ids
+        mg_tetra_df.index.names = ['subcontig_id']
+        std_tetra_dict = build_uniq_dict(mg_tetra_df, 'contig_id', nthreads, 'TetraHz')
+        # Prep MinHash
+        # Filter out contigs that didn't meet MinHash recruit standards
+        minhash_df = minhash_dict[201]
+        minhash_filter_df = minhash_df.copy()  # .loc[minhash_df['jacc_sim_max'] >= 0.90]
+        minhash_dedup_df = minhash_filter_df[['sag_id', 'contig_id', 'jacc_sim_max']
+        ].drop_duplicates(subset=['sag_id', 'contig_id'])
+        mh_recruit_dict = build_uniq_dict(minhash_dedup_df, 'sag_id', nthreads,
+                                          'MinHash Recruits')  # TODO: this might not need multithreading
+        # Prep Abundance
+        abund_dedup_df = abund_recruit_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
+        ab_recruit_dict = build_uniq_dict(abund_dedup_df, 'sag_id', nthreads,
+                                          'Abundance Recruits')  # TODO: this might not need multithreading
+        # mh_dedup_df = minhash_df[['sag_id', 'contig_id']].drop_duplicates(subset=['sag_id', 'contig_id'])
+        # ab_recruit_dict = build_uniq_dict(minhash_df, 'sag_id', nthreads,
+        #                                  'Abundance Recruits')  # TODO: this might not need multithreading
+        # Subset tetras matrix for each SAG
+        sag_id_list = list(mh_recruit_dict.keys())
+        sag_id_cnt = len(sag_id_list)
+        gmm_df_list = []
+        svm_df_list = []
+        iso_df_list = []
+        comb_df_list = []
+        sag_chunks = [list(x) for x in np.array_split(np.array(list(sag_id_list)), nthreads * 2)
+                      if len(x) != 0
+                      ]
+        s_counter = 0
+        r_counter = 0
+        for i, sag_id_chunk in enumerate(sag_chunks, 1):
+            pool = multiprocessing.Pool(processes=nthreads)
+            arg_list = []
+            for j, sag_id in enumerate(sag_id_chunk, 1):  # TODO: reduce RAM usage
+                s_counter += 1
+                logging.info('\rPrepping to Run TetraHz ML-Ensemble: Block {} - {}/{}'.format(i, s_counter, sag_id_cnt))
+                if ((sag_id in list(mh_recruit_dict.keys())) & (sag_id in list(ab_recruit_dict.keys()))):
+                    minhash_sag_df = mh_recruit_dict.pop(sag_id)
+                    abund_sag_df = ab_recruit_dict.pop(sag_id)
+                    if ((minhash_sag_df.shape[0] != 0) & (abund_sag_df.shape[0] != 0)):
+                        sag_id, sag_tetra_df, mg_tetra_filter_df = subset_tetras([std_tetra_dict,
+                                                                                  minhash_sag_df,
+                                                                                  abund_sag_df, sag_id
+                                                                                  ])
+                        arg_list.append([force, mg_headers, mg_tetra_filter_df, sag_id, sag_tetra_df, tra_path])
+            arg_list = tuple(arg_list)
+            results = pool.imap_unordered(ensemble_recruiter, arg_list)
+            logging.info('\n')
+            for k, output in enumerate(results,
+                                       1):  # TODO: maybe check if files exist before running this, like minhash
+                r_counter += 1
+                logging.info('\rRecruiting with TetraHz ML-Ensemble: Block {} - {}/{}'.format(i, r_counter, sag_id_cnt))
+                comb_recruits_df, gmm_recruits_df, iso_recruits_df, svm_recruits_df = output
+                if isinstance(gmm_recruits_df, pd.DataFrame):
+                    gmm_df_list.append(gmm_recruits_df)
+                if isinstance(svm_recruits_df, pd.DataFrame):
+                    svm_df_list.append(svm_recruits_df)
+                if isinstance(iso_recruits_df, pd.DataFrame):
+                    iso_df_list.append(iso_recruits_df)
+                if isinstance(comb_recruits_df, pd.DataFrame):
+                    comb_df_list.append(comb_recruits_df)
+            logging.info('\n')
+            pool.close()
+            pool.join()
+        gmm_concat_df = pd.concat(gmm_df_list)
+        svm_concat_df = pd.concat(svm_df_list)
+        iso_concat_df = pd.concat(iso_df_list)
+        comb_concat_df = pd.concat(comb_df_list)
+        gmm_concat_df.to_csv(o_join(tra_path, mg_id + '.gmm.tra_trimmed_recruits.tsv'), sep='\t',
+                             index=False
+                             )
+        svm_concat_df.to_csv(o_join(tra_path, mg_id + '.svm.tra_trimmed_recruits.tsv'), sep='\t',
+                             index=False
+                             )
+        iso_concat_df.to_csv(o_join(tra_path, mg_id + '.iso.tra_trimmed_recruits.tsv'), sep='\t',
+                             index=False
+                             )
+        comb_concat_df.to_csv(o_join(tra_path, mg_id + '.comb.tra_trimmed_recruits.tsv'), sep='\t',
+                              index=False
+                              )
 
     tetra_df_dict = {'gmm': gmm_concat_df, 'svm': svm_concat_df, 'iso': iso_concat_df,
                      'comb': comb_concat_df

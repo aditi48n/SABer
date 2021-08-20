@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import logging
-import multiprocessing
 import sys
 
 import pandas as pd
@@ -218,7 +216,7 @@ def calc_stats(sag_id, level, include, gam, n, TP, FP, TN, FN, y_truth, y_pred):
     return stat_list
 
 
-'''
+
 # Build final table for testing
 minhash_recruits = sys.argv[1]
 nmf_recruits = sys.argv[2]
@@ -262,7 +260,7 @@ for sag_id in minhash_df['sag_id'].unique():
     mg_join_df = mg_tetra_df.join(mg_cov_df, lsuffix='_tetra', rsuffix='_covm')
 
     # start ocsvm cross validation analysis
-    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 'scale', 0.1)
+    pred_df = runOCSVM(sag_join_df, mg_join_df, sag_id, 0.1, 0.1)
     val_perc = pred_df.groupby('contig_id')['pred'].value_counts(
         normalize=True).reset_index(name='precent')
     pos_perc = val_perc.loc[val_perc['pred'] == 1]
@@ -287,7 +285,7 @@ final_pred_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.allfeat_
                      )
 
 sys.exit()
-'''
+
 # Below is to run cross validation for all features table
 #################################################
 # Inputs

@@ -140,7 +140,8 @@ def get_SAGs(sag_path):
         logging.info('Directory specified, looking for SAGs\n')
         sag_list = [os.path.join(sag_path, f) for f in
                     os.listdir(sag_path) if ((f.split('.')[-1] == 'fasta' or
-                                              f.split('.')[-1] == 'fna') and 'Sample' not in f)
+                                              f.split('.')[-1] == 'fna' or
+                                              f.split('.')[-1] == 'fa') and 'Sample' not in f)
                     ]
         logging.info('Found %s SAGs in directory\n'
                      % str(len(sag_list))
@@ -170,11 +171,15 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
             headers, subs = kmer_slide(contigs, int(max_contig_len),
                                        int(overlap_len)
                                        )
-            with open(sub_file, 'w') as sub_out:
-                sub_out.write('\n'.join(['\n'.join(['>' + rec[0], rec[1]]) for rec in
-                                         zip(headers, subs)]) + '\n'
-                              )
-        sub_list.append((samp_id, sub_file))
+            if len(subs) != 0:
+                with open(sub_file, 'w') as sub_out:
+                    sub_out.write('\n'.join(['\n'.join(['>' + rec[0], rec[1]]) for rec in
+                                             zip(headers, subs)]) + '\n'
+                                  )
+                sub_list.append((samp_id, sub_file))
+        else:
+            sub_list.append((samp_id, sub_file))
+
     logging.info('\n')
     if ((seq_type == 'SAGs') & (len(sub_list) == 1)):
         sub_list = tuple(sub_list)

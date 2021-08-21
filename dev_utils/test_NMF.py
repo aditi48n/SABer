@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import logging
+# from sklearn.decomposition import NMF
+import multiprocessing
 import sys
 
 import pandas as pd
@@ -12,7 +15,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 def recruitSubs(p):
-    sag_id, mh_sag_df, nmf_table, cov_table, gamma, nu, \
+    sag_id, mh_df, nmf_table, cov_table, gamma, nu, \
     src2contig_list, src2strain_list, contig_bp_df = p
 
     # load nmf file
@@ -24,20 +27,31 @@ def recruitSubs(p):
     cov_df.set_index('subcontig_id', inplace=True)
 
     # start ocsvm cross validation analysis
-    sag_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(mh_sag_df['contig_id'])]
-    mg_nmf_df = nmf_feat_df.loc[~nmf_feat_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    sag_mh_df = mh_df.loc[mh_df['sag_id'] == sag_id]
+    mg_mh_df = mh_df.loc[mh_df['sag_id'] != sag_id]
+    sag_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    mg_nmf_df = nmf_feat_df.loc[nmf_feat_df['contig_id'].isin(mg_mh_df['contig_id'])]
     sag_nmf_df.drop(columns=['contig_id'], inplace=True)
     mg_nmf_df.drop(columns=['contig_id'], inplace=True)
-    sag_cov_df = cov_df.loc[cov_df['contig_id'].isin(mh_sag_df['contig_id'])]
-    mg_cov_df = cov_df.loc[~cov_df['contig_id'].isin(mh_sag_df['contig_id'])]
+    sag_cov_df = cov_df.loc[cov_df['contig_id'].isin(sag_mh_df['contig_id'])]
+    mg_cov_df = cov_df.loc[cov_df['contig_id'].isin(mg_mh_df['contig_id'])]
     sag_cov_df.drop(columns=['contig_id'], inplace=True)
     mg_cov_df.drop(columns=['contig_id'], inplace=True)
 
     # merge covM and NMF
     sag_join_df = sag_nmf_df.join(sag_cov_df, lsuffix='_nmf', rsuffix='_covm')
     mg_join_df = mg_nmf_df.join(mg_cov_df, lsuffix='_nmf', rsuffix='_covm')
+    sag_join_df['contig_id'] = [x.rsplit('_', 1)[0] for x in sag_join_df.index.values]
+    mg_join_df['contig_id'] = [x.rsplit('_', 1)[0] for x in mg_join_df.index.values]
+    # add minhash
+    sag_merge_df = sag_join_df.merge(sag_mh_df, on='contig_id', how='left')
+    mg_merge_df = mg_join_df.merge(mg_mh_df, on='contig_id', how='left')
+    sag_merge_df.drop(columns=['contig_id', 'sag_id'], inplace=True)
+    mg_merge_df.drop(columns=['contig_id', 'sag_id'], inplace=True)
+    sag_merge_df.set_index(sag_join_df.index.values, inplace=True)
+    mg_merge_df.set_index(mg_join_df.index.values, inplace=True)
 
-    final_pass_df = runOCSVM(sag_join_df, mg_join_df, sag_id, gamma, nu)
+    final_pass_df = runOCSVM(sag_merge_df, mg_merge_df, sag_id, gamma, nu)
 
     complete_df = pd.DataFrame(mg_nmf_df.index.values, columns=['subcontig_id'])
     complete_df['sag_id'] = sag_id
@@ -267,6 +281,98 @@ def filter_pred(p_df, perc):
     return p_filter_df
 
 
+# Below is to run cross validation for  covM abundance and nmf tetra
+#################################################
+# Inputs
+#################################################
+sag_id = sys.argv[1]
+mh_dat = sys.argv[2]
+tetra_dat = sys.argv[3]
+cov_dat = sys.argv[4]
+nmf_output = sys.argv[5]
+best_output = sys.argv[6]
+src2contig_file = sys.argv[7]
+sag2cami_file = sys.argv[8]
+subcontig_file = sys.argv[9]
+denov_map = sys.argv[10]
+nthreads = int(sys.argv[11])
+
+# Example:
+# python
+# dev_utils/test_NMF.py
+# CH_30130
+# ~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.mhr_nmf_20.tsv
+# ~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.tetra_nmf_20.tsv
+# ~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.covM.scaled.tsv
+# ~/Desktop/test_NMF/minhash_features/nmf_preds/CH_30130.nmf_scores.tsv
+# ~/Desktop/test_NMF/minhash_features/nmf_preds/CH_30130.nmf_best.tsv
+# ~/Desktop/test_NMF/src2contig_map.tsv ~/Desktop/test_NMF/sag2cami_map.tsv
+# ~/Desktop/test_NMF/subcontig_list.tsv ~/Desktop/test_NMF/minhash_features/denovo_id_map.tsv
+# 6
+
+#################################################
+
+# setup mapping to CAMI ref genomes
+minhash_df = pd.read_csv(mh_dat, sep='\t', header=0)
+src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
+sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+subcontig_df = pd.read_csv(subcontig_file, sep='\t', header=0)
+contig_df = subcontig_df.drop(['subcontig_id'], axis=1).drop_duplicates()
+contig_bp_df = contig_df.merge(src2contig_df[['@@SEQUENCEID', 'bp_cnt']].rename(
+    columns={'@@SEQUENCEID': 'contig_id'}), on='contig_id', how='left'
+)
+denovo_map_df = pd.read_csv(denov_map, header=0, sep='\t')
+
+sag_mh_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
+if sag_mh_df.shape[0] != 0:
+    # Map Sources/SAGs to Strain IDs
+    dev_id = list(denovo_map_df.loc[denovo_map_df['sag_id'] == sag_id
+                                    ]['contig_id'])[0]
+    src_id = list(src2contig_df.loc[src2contig_df['@@SEQUENCEID'] == dev_id
+                                    ]['CAMI_genomeID'])[0]
+    strain_id = list(src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id
+                                       ]['strain'])[0]
+    src_sub_df = src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id]
+    strain_sub_df = src2contig_df.loc[src2contig_df['strain'] == strain_id]
+    src2contig_list = list(set(src_sub_df['@@SEQUENCEID'].values))
+    src2strain_list = list(set(strain_sub_df['@@SEQUENCEID'].values))
+    print(sag_id, src_id, strain_id)
+    gamma_range = [10 ** k for k in range(-6, 6)]
+    gamma_range.extend(['scale'])
+    nu_range = [k / 10 for k in range(1, 10, 1)]
+
+    pool = multiprocessing.Pool(processes=nthreads)
+    arg_list = []
+    for gam in gamma_range:
+        for n in nu_range:
+            arg_list.append([sag_id, minhash_df, tetra_dat, cov_dat,
+                             gam, n, src2contig_list, src2strain_list, contig_bp_df
+                             ])
+    results = pool.imap_unordered(recruitSubs, arg_list)
+    score_list = []
+    for i, output in enumerate(results, 1):
+        print('\rRecruiting with NMF Tetra Model: {}/{}'.format(i, len(arg_list)))
+        score_list.append(output[0])
+        score_list.append(output[1])
+        score_list.append(output[2])
+        score_list.append(output[3])
+    logging.info('\n')
+    pool.close()
+    pool.join()
+    score_df = pd.DataFrame(score_list, columns=['sag_id', 'level', 'inclusion', 'gamma', 'nu',
+                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 ])
+    score_df.to_csv(nmf_output, index=False, sep='\t')
+    sort_score_df = score_df.sort_values(['MCC'], ascending=[False])
+    best_MCC = sort_score_df['MCC'].iloc[0]
+    best_df = score_df.loc[score_df['MCC'] == best_MCC]
+    best_df.to_csv(best_output, index=False, sep='\t')
+else:
+    print(sag_id, ' has no minhash recruits...')
+
+'''
 # Build final table for testing
 minhash_recruits = sys.argv[1]
 nmf_dat = sys.argv[2]
@@ -341,7 +447,8 @@ inter_final_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_int
                       sep='\t', index=False
                       )
 sys.exit()
-
+'''
+'''
 # Below is to run cross validation for  covM abundance and nmf tetra
 #################################################
 # Inputs
@@ -427,10 +534,30 @@ if sag_mh_df.shape[0] != 0:
     best_df.to_csv(best_output, index=False, sep='\t')
 else:
     print(sag_id, ' has no minhash recruits...')
-
 '''
+'''
+# Build NMF tables
+denovo_map_df = pd.read_csv('~/Desktop/test_NMF/minhash_features/denovo_id_map.tsv', header=0,
+                            sep='\t'
+                            )
+# Convert MinHash into NMF feature table
+mh_piv_df = minhash_df.pivot(index='sag_id', columns='contig_id', values='jacc_sim_avg')
+mh_piv_df.fillna(0.0, inplace=True)
+# Create an NMF instance: model
+model = NMF(n_components=20)
+model.fit(mh_piv_df)
+nmf_features = model.transform(mh_piv_df)
+# Print the NMF features
+nmf_comp_df = pd.DataFrame(model.components_)
+nmf_feat_df = pd.DataFrame(nmf_features)
+nmf_feat_df['sag_id'] = mh_piv_df.index.values
+nmf_merge_df = nmf_feat_df.merge(denovo_map_df, on='sag_id', how='left')
+nmf_merge_df.to_csv('~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.mhr_nmf_20.tsv',
+                   sep='\t', index=False
+                   )
+
 # build nmf table from tetra CLR transformed relative abund tetra table
-tetra_df = pd.read_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.tetras.tsv',
+tetra_df = pd.read_csv('~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.tetras.tsv',
                        sep='\t', header=0, index_col='contig_id'
                        )
 shifted_df = tetra_df + -tetra_df.min().min()
@@ -443,7 +570,7 @@ nmf_comp_df = pd.DataFrame(model.components_)
 nmf_feat_df = pd.DataFrame(nmf_features)
 nmf_feat_df['subcontig_id'] = index = shifted_df.index.values
 nmf_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in nmf_feat_df['subcontig_id']]
-nmf_feat_df.to_csv('~/Desktop/test_NMF/CAMI_high_GoldStandardAssembly.nmf_trans_40.tsv',
+nmf_feat_df.to_csv('~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.tetra_nmf_20.tsv',
                    sep='\t', index=False
                    )
 

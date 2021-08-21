@@ -14,7 +14,7 @@ def run_combine_recruits(xpg_path, mg_file, tetra_df_dict,
     mg_contigs = tuple([(r.name, r.seq) for r in mg_contigs_dict])
     tetra_df = tetra_df_dict['comb']
     # Merge MinHash and GMM Tetra (passed first by ABR)
-    minhash_df = minhash_dict[201]
+    minhash_df = minhash_dict[51]
     minhash_filter_df = minhash_df.loc[minhash_df['jacc_sim_max'] >= 0.90]
     mh_gmm_merge_df = minhash_filter_df[['sag_id', 'contig_id']
     ].merge(tetra_df[['sag_id', 'contig_id']],

@@ -136,7 +136,7 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
 #################################################
 # Inputs
 #################################################
-minhash_recruits = sys.argv[1]
+mh_dat = sys.argv[1]
 nmf_recruits = sys.argv[2]
 all_recruits = sys.argv[3]
 src2contig_file = sys.argv[4]
@@ -144,45 +144,47 @@ sag2cami_file = sys.argv[5]
 subcontig_file = sys.argv[6]
 output_file = sys.argv[7]
 output2_file = sys.argv[8]
-nthreads = int(sys.argv[9])
+denov_map = sys.argv[9]
+nthreads = int(sys.argv[10])
 #################################################
 
 
 # setup mapping to CAMI ref genomes
-minhash_df = pd.read_csv(minhash_recruits, sep='\t', header=0)
+minhash_df = pd.read_csv(mh_dat, sep='\t', header=0)
 nmf_tetra_df = pd.read_csv(nmf_recruits, sep='\t', header=0)
 all_tetra_df = pd.read_csv(all_recruits, sep='\t', header=0)
 src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
-src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()]
+src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()
+].rename(columns={'@@SEQUENCEID': 'contig_id'})
 sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
 subcontig_df = pd.read_csv(subcontig_file, sep='\t', header=0)
 contig_df = subcontig_df.drop(['subcontig_id'], axis=1).drop_duplicates()
-contig_bp_df = contig_df.merge(src2contig_df[['@@SEQUENCEID', 'bp_cnt']].rename(
-    columns={'@@SEQUENCEID': 'contig_id'}), on='contig_id', how='left'
-)
-
+contig_bp_df = contig_df.merge(src2contig_df[['contig_id', 'bp_cnt']], on='contig_id', how='left')
+denovo_map_df = pd.read_csv(denov_map, header=0, sep='\t')
+# subset to only genomes
+denovo2src_df = src2contig_df.merge(denovo_map_df, on='contig_id', how='left')
+# subset to only minhash recruits
+mh_list = list(minhash_df['sag_id'].unique())
+mh_denovo_df = denovo2src_df.query('sag_id == @mh_list')
 # setup multithreading pool
 pool = multiprocessing.Pool(processes=nthreads)
 arg_list = []
-for sag_id in tqdm(sag2cami_df['sag_id'].unique()):
+zip_list = list(zip(list(mh_denovo_df['sag_id']), list(mh_denovo_df['CAMI_genomeID']),
+                    list(mh_denovo_df['strain'])
+                    ))
+for sag_id, src_id, strain_id in tqdm(zip_list):
     # subset recruit dataframes
-    sag_mh_df = minhash_df.loc[minhash_df['sag_id'] == sag_id]
-    if sag_mh_df.shape[0] != 0:
-        sag_nmf_df = nmf_tetra_df.loc[nmf_tetra_df['sag_id'] == sag_id]
-        sag_all_df = all_tetra_df.loc[all_tetra_df['sag_id'] == sag_id]
-        # Map Sources/SAGs to Strain IDs
-        src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]
-        strain_id = list(src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id
-                                           ]['strain'])[0]
-        src_sub_df = src2contig_df.loc[src2contig_df['CAMI_genomeID'] == src_id]
-        strain_sub_df = src2contig_df.loc[src2contig_df['strain'] == strain_id]
-        src2contig_list = list(set(src_sub_df['@@SEQUENCEID'].values))
-        src2strain_list = list(set(strain_sub_df['@@SEQUENCEID'].values))
-        arg_list.append([sag_id, sag_mh_df[['sag_id', 'contig_id']], sag_nmf_df, sag_all_df, contig_bp_df,
-                         src2contig_list, src2strain_list
-                         ])
-    # else:
-    #    print(sag_id, ' has no minhash recruits...')
+    sag_mh_df = minhash_df.query('sag_id == @sag_id')
+    sag_nmf_df = nmf_tetra_df.query('sag_id == @sag_id')
+    sag_all_df = all_tetra_df.query('sag_id == @sag_id')
+    # Map Sources/SAGs to Strain IDs
+    src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+    strain_sub_df = src2contig_df.query('strain == @strain_id')
+    src2contig_list = list(set(src_sub_df['contig_id'].values))
+    src2strain_list = list(set(strain_sub_df['contig_id'].values))
+    arg_list.append([sag_id, sag_mh_df[['sag_id', 'contig_id']], sag_nmf_df, sag_all_df,
+                     contig_bp_df, src2contig_list, src2strain_list
+                     ])
 
 results = pool.imap_unordered(EArecruit, arg_list)
 score_list = []

@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import sys
 from functools import reduce
 
 import pandas as pd
@@ -127,11 +126,13 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
 
 # setup mapping to CAMI ref genomes
 cluster_df = pd.read_csv(
-    '/home/ryan/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardAssembly.no_noise.tsv',
+    '/home/ryan/Desktop/test_NMF/minhash_features/'
+    'CAMI_high_GoldStandardAssembly.leaf.mahalanobis_cleaned.tsv',
     sep='\t', header=0
 )
-# cluster_df['supercluster'] = cluster_df['label'].astype(str) + '|' + \
-#                               cluster_df['clean_label'].astype(str)
+cluster_df['supercluster'] = cluster_df['best_label'].astype(str) + '|' + \
+                             cluster_df['best_clean_label'].astype(str)
+
 cluster_trim_df = cluster_df.query('best_label != -1')
 
 src2contig_df = pd.read_csv('/home/ryan/Desktop/test_NMF/src2contig_map.tsv', header=0, sep='\t')
@@ -192,25 +193,13 @@ sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensi
                                      )
 score_tax_df = sort_score_df.merge(clust_tax_df, on='best_label', how='left')
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.best_label.errstat.tsv', index=False, sep='\t')
+                    'umap.best_label.100.100.leaf.errstat.tsv', index=False, sep='\t')
 score_tax_df = sort_score_df.groupby(['level', 'algorithm'])[
     ['precision', 'sensitivity', 'MCC', 'AUC', 'F1']].mean().reset_index()
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.best_label.errstat.mean.tsv', index=False, sep='\t')
+                    'umap.best_label.100.100.leaf.errstat.mean.tsv', index=False, sep='\t')
 
 #####################################################################################################################
-
-sys.exit()
-
-cluster_trim_df = cluster_df.query('label != -1')
-
-src2contig_df = pd.read_csv('/home/ryan/Desktop/test_NMF/src2contig_map.tsv', header=0, sep='\t')
-# src2contig_df = src2contig_df[src2contig_df['CAMI_genomeID'].notna()
-#                                ].rename(columns={'@@SEQUENCEID': 'contig_id'})
-src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-
-clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID', 'strain', 'bp_cnt']],
-                                     on='contig_id', how='left')
 
 # Add taxonomy to each cluster
 clust_tax = []
@@ -262,8 +251,8 @@ sort_score_df = score_df.sort_values(['supercluster', 'level', 'precision', 'sen
                                      )
 score_tax_df = sort_score_df.merge(clust_tax_df, on='supercluster', how='left')
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.clean_cluster.errstat.tsv', index=False, sep='\t')
+                    'umap.clean_cluster.mahalanobis.leaf.errstat.tsv', index=False, sep='\t')
 score_tax_df = sort_score_df.groupby(['level', 'algorithm'])[
     ['precision', 'sensitivity', 'MCC', 'AUC', 'F1']].mean().reset_index()
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.clean_cluster.errstat.mean.tsv', index=False, sep='\t')
+                    'umap.clean_cluster.mahalanobis.leaf.errstat.mean.tsv', index=False, sep='\t')

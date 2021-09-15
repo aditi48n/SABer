@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import sys
 from functools import reduce
 
 import pandas as pd
@@ -127,11 +128,12 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
 # setup mapping to CAMI ref genomes
 cluster_df = pd.read_csv(
     '/home/ryan/Desktop/test_NMF/minhash_features/'
-    'CAMI_high_GoldStandardAssembly.leaf.mahalanobis_cleaned.tsv',
+    'CAMI_high_GoldStandardAssembly.no_noise.tsv',
     sep='\t', header=0
 )
-cluster_df['supercluster'] = cluster_df['best_label'].astype(str) + '|' + \
-                             cluster_df['best_clean_label'].astype(str)
+
+# cluster_df['supercluster'] = cluster_df['best_label'].astype(str) + '|' + \
+#                             cluster_df['clean_label'].astype(str)
 
 cluster_trim_df = cluster_df.query('best_label != -1')
 
@@ -193,14 +195,14 @@ sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensi
                                      )
 score_tax_df = sort_score_df.merge(clust_tax_df, on='best_label', how='left')
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.best_label.100.100.leaf.errstat.tsv', index=False, sep='\t')
+                    'umap.best_label.100.100.eom.max.errstat.tsv', index=False, sep='\t')
 score_tax_df = sort_score_df.groupby(['level', 'algorithm'])[
     ['precision', 'sensitivity', 'MCC', 'AUC', 'F1']].mean().reset_index()
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.best_label.100.100.leaf.errstat.mean.tsv', index=False, sep='\t')
+                    'umap.best_label.100.100.eom.max.errstat.mean.tsv', index=False, sep='\t')
 
+sys.exit()
 #####################################################################################################################
-
 # Add taxonomy to each cluster
 clust_tax = []
 for clust in clust2src_df['supercluster'].unique():
@@ -251,8 +253,8 @@ sort_score_df = score_df.sort_values(['supercluster', 'level', 'precision', 'sen
                                      )
 score_tax_df = sort_score_df.merge(clust_tax_df, on='supercluster', how='left')
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.clean_cluster.mahalanobis.leaf.errstat.tsv', index=False, sep='\t')
+                    'umap.clean_cluster.100.100.mhr_clean.eom.max.errstat.tsv', index=False, sep='\t')
 score_tax_df = sort_score_df.groupby(['level', 'algorithm'])[
     ['precision', 'sensitivity', 'MCC', 'AUC', 'F1']].mean().reset_index()
 score_tax_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                    'umap.clean_cluster.mahalanobis.leaf.errstat.mean.tsv', index=False, sep='\t')
+                    'umap.clean_cluster.100.100.mhr_clean.eom.max.errstat.mean.tsv', index=False, sep='\t')

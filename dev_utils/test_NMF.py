@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import collections as coll
 # from sklearn.decomposition import NMF
 import sys
 
@@ -287,14 +288,34 @@ tetra_dat = sys.argv[2]
 cov_dat = sys.argv[3]
 
 # load minhash file
+print('Loading Minhash...')
 minhash_df = pd.read_csv(mh_dat, sep='\t', header=0)
-denovo_map_df = pd.read_csv('~/Desktop/test_NMF/minhash_features/denovo_id_map.tsv',
-                            header=0, sep='\t'
-                            )
-mh_map_df = minhash_df.merge(denovo_map_df, on='sag_id', how='left')
-mh_map_df.columns = ['sag_id', 'contig_id_query', 'subcontig_recruits', 'jacc_sim_avg',
-                     'jacc_sim_max', 'contig_id'
-                     ]
+
+# denovo_map_df = pd.read_csv('~/Desktop/test_NMF/minhash_features/denovo_id_map.tsv',
+#                            header=0, sep='\t'
+#                            )
+# mh_map_df = minhash_df.merge(denovo_map_df, on='sag_id', how='left')
+# mh_map_df.columns = ['sag_id', 'contig_id_query', 'subcontig_recruits', 'jacc_sim_avg',
+#                     'jacc_sim_max', 'contig_id'
+#                     ]
+'''
+# stack sourmash pairwise table
+chunksize = 1000
+stack_list = []
+for minhash_df in pd.read_csv(mh_dat, sep=',', header=0, dtype=float, chunksize=chunksize):
+    mh_stack_df = minhash_df.stack().reset_index()
+    mh_stack_df.columns = ['row_index', 'contig_id_query', 'jaccard']
+    mh_stack_df['contig_id_ref'] = [minhash_df.columns[ri] for ri in mh_stack_df['row_index']]
+    mh_filter_df = mh_stack_df.query('jaccard != 0')
+    print(mh_filter_df.head())
+    stack_list.append(mh_filter_df)
+mh_concat_df = pd.concat(stack_list)
+mh_concat_df.to_csv('~/Desktop/test_NMF/minhash_features/'
+                   'CAMI_high_GoldStandardAssembly.51.stack.tsv',
+                   sep='\t', index=False
+                   )
+'''
+
 '''
 # Convert CovM to UMAP feature table
 cov_df = pd.read_csv('~/Desktop/test_NMF/minhash_features/'
@@ -354,6 +375,7 @@ nmf_merge_df.to_csv('~/Desktop/test_NMF/minhash_features/CAMI_high_GoldStandardA
 '''
 
 # load nmf file
+print('Loading Tetra and Abundance...')
 nmf_feat_df = pd.read_csv(tetra_dat, sep='\t', header=0, index_col='subcontig_id')
 nmf_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in nmf_feat_df.index.values]
 # load covm file
@@ -366,7 +388,8 @@ merge_df.drop(columns=['contig_id_nmf', 'contig_id_covm'], inplace=True)
 nmf_feat_df.drop(columns=['contig_id'], inplace=True)
 cov_df.drop(columns=['contig_id'], inplace=True)
 
-clusterer = hdbscan.HDBSCAN(min_cluster_size=100, cluster_selection_method='leaf',
+print('Performing HDBSCAN Clustering...')
+clusterer = hdbscan.HDBSCAN(min_cluster_size=100, cluster_selection_method='eom',
                             prediction_data=True, cluster_selection_epsilon=0,
                             min_samples=100
                             ).fit(merge_df.values)
@@ -381,51 +404,43 @@ cluster_df = pd.DataFrame(zip(merge_df.index.values, cluster_labels, cluster_pro
                                    'outlier_score']
                           )
 cluster_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cluster_df['subcontig_id']]
-print(cluster_df.head())
+
 cluster_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                   'CAMI_high_GoldStandardAssembly.hdbscan.tsv',
                   sep='\t', index=False
                   )
 
 '''
+print('Loading HDBSCAN Clusters...')
 cluster_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                          'CAMI_high_GoldStandardAssembly.hdbscan.tsv',
                          header=0, sep='\t'
                          )
 '''
 
+print('Denoising/cleaning Clusters...')
 ns_ratio_list = []
 for contig in tqdm(list(cluster_df['contig_id'].unique())):
     sub_df = cluster_df.query('contig_id == @contig')
     noise_cnt = sub_df.query('label == -1').shape[0]
     signal_cnt = sub_df.query('label != -1').shape[0]
     ns_ratio = (noise_cnt / (noise_cnt + signal_cnt)) * 100
-    prob_df = sub_df.groupby(['label'])[['probabilities', 'outlier_score'
-                                         ]].mean().reset_index()
+    prob_df = sub_df.groupby(['label'])[['probabilities']].max().reset_index()
     best_ind = prob_df['probabilities'].argmax()
     best_label = prob_df['label'].iloc[best_ind]
     best_prob = prob_df['probabilities'].iloc[best_ind]
-    best_out = prob_df['outlier_score'].iloc[best_ind]
-    ns_ratio_list.append([contig, noise_cnt, signal_cnt, ns_ratio, best_label,
-                          best_prob, best_out
-                          ])
+    ns_ratio_list.append([contig, best_label])
 
-ns_ratio_df = pd.DataFrame(ns_ratio_list, columns=['contig_id', 'noise', 'signal',
-                                                   'ns_ratio', 'best_label', 'best_prob',
-                                                   'best_out'
-                                                   ])
+ns_ratio_df = pd.DataFrame(ns_ratio_list, columns=['contig_id', 'best_label'])
 cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
-no_noise_df = cluster_ns_df.query('best_prob >= 0.51 and best_out < 0.51')
-noise_df = cluster_ns_df.query('best_prob < 0.51')
+no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
+noise_df = cluster_ns_df.query('best_label == -1')  # 'best_prob < 0.51')
 no_noise_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                    'CAMI_high_GoldStandardAssembly.no_noise.tsv',
                    sep='\t', index=False
                    )
-noise_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                'CAMI_high_GoldStandardAssembly.noise.tsv',
-                sep='\t', index=False
-                )
 '''
+print('Loading No Noise Clusters...')
 no_noise_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                          'CAMI_high_GoldStandardAssembly.no_noise.tsv',
                          header=0, sep='\t'
@@ -435,34 +450,72 @@ noise_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                          'CAMI_high_GoldStandardAssembly.noise.tsv',
                          header=0, sep='\t'
                          )
+'''
 
-'''
-'''
+### START HERE ### - recruit best-hit MHR to clusters?
+passed_contigs = list(no_noise_df['contig_id'].unique())
+noise_fix_list = []
 for contig in noise_df['contig_id'].unique():
     sub_noise_df = noise_df.query('contig_id == @contig')
-    min_sub_df = mh_map_df.query('contig_id == @contig and contig_id_query != @contig')
-    contig_query_list = list(min_sub_df['contig_id_query'])
-    nn_sub_df = noise_df.query('contig_id in @contig_query_list and best_label != -1')
-    print(contig, min_sub_df.shape[0], min_sub_df['jacc_sim_avg'].max(),
-          min_sub_df['jacc_sim_max'].max()
-          )
-    print(nn_sub_df['best_label'])
-'''
+    sub_mh_df = minhash_df.query('contig_id_query == @contig and '
+                                 'contig_id_ref != @contig and '
+                                 'contig_id_ref in @passed_contigs'
+                                 )
+    if sub_mh_df.shape[0] != 0:
+        best_jacc = sub_mh_df['jaccard'].max()
+        best_ref = coll.Counter(sub_mh_df.query('jaccard >= @best_jacc'
+                                                )['contig_id_ref'].values
+                                )
+        good_labels = []
+        if len(best_ref) == 1:
+            best_ref = best_ref.most_common()[0][0]
+            good_label = no_noise_df.query('contig_id == @best_ref')['best_label'].values
+            good_labels.extend(good_label)
+        else:
+            for ref in best_ref:
+                good_label = no_noise_df.query('contig_id == @ref')['best_label'].values
+                good_labels.extend(good_label)
+        cnt_labels = coll.Counter(good_labels)
+        best_label = cnt_labels.most_common()[0][0]
+        noise_fix_list.append([contig, best_label])
 
-print(set(no_noise_df['label']).intersection(set(noise_df['label'])))
-print('noise subcontigs:', noise_df.shape[0])
-print('cluster subcontigs:', no_noise_df.shape[0])
-print('noise contigs:', len(noise_df['contig_id'].unique()))
-print('cluster contigs:', len(no_noise_df['contig_id'].unique()))
-print('noise clusters:', len(noise_df['label'].unique()))
-print('cluster clusters:', len(no_noise_df['label'].unique()))
-print('noise best clusters:', len(noise_df['label'].unique()))
-print('cluster best clusters:', len(no_noise_df['label'].unique()))
+noise_fix_df = pd.DataFrame(noise_fix_list, columns=['contig_id', 'best_label'])
+fix_list = list(noise_fix_df['contig_id'])
+noise_sub_df = noise_df.query('contig_id in @fix_list')
+noise_sub_df.drop(columns=['best_label'], inplace=True)
+noise_fix_df = noise_sub_df.merge(noise_fix_df, on='contig_id', how='left')
+print(no_noise_df.head())
+print(noise_fix_df.head())
+print(no_noise_df.shape)
+print(noise_fix_df.shape)
+concat_fix_df = pd.concat([no_noise_df, noise_fix_df])
 
+nofix_noise_df = noise_df.query('contig_id not in @fix_list')
+
+concat_fix_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
+                     'CAMI_high_GoldStandardAssembly.with_fix.tsv',
+                     sep='\t', index=False
+                     )
+
+nofix_noise_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
+                      'CAMI_high_GoldStandardAssembly.noise.tsv',
+                      sep='\t', index=False
+                      )
+
+print(set(concat_fix_df['label']).intersection(set(nofix_noise_df['label'])))
+print('noise subcontigs:', nofix_noise_df.shape[0])
+print('cluster subcontigs:', concat_fix_df.shape[0])
+print('noise contigs:', len(nofix_noise_df['contig_id'].unique()))
+print('cluster contigs:', len(concat_fix_df['contig_id'].unique()))
+print('noise clusters:', len(nofix_noise_df['label'].unique()))
+print('cluster clusters:', len(concat_fix_df['label'].unique()))
+print('noise best clusters:', len(nofix_noise_df['label'].unique()))
+print('cluster best clusters:', len(concat_fix_df['label'].unique()))
+
+sys.exit()
 covm_tetra_feat_df = merge_df.copy()
 covm_tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in covm_tetra_feat_df.index.values]
 subclust_list = []
-
 for ind, cluster in tqdm(enumerate(no_noise_df['best_label'].unique())):
     if cluster != -1:
         sub_best_df = no_noise_df.query('best_label == @cluster')
@@ -479,6 +532,7 @@ for ind, cluster in tqdm(enumerate(no_noise_df['best_label'].unique())):
                                         min_samples=c_size, metric='mahalanobis',
                                         V=sub_covm_tetra_df.cov()
                                         ).fit(sub_covm_tetra_df)
+
             cluster_labels = clusterer.labels_
             cluster_probs = clusterer.probabilities_
             cluster_outlier = clusterer.outlier_scores_
@@ -487,7 +541,7 @@ for ind, cluster in tqdm(enumerate(no_noise_df['best_label'].unique())):
                                        columns=['subcontig_id', 'clean_label', 'clean_probs',
                                                 'clean_outs']
                                        )
-            merge_sub_clust_df = sub_best_df.merge(subclust_df, on='subcontig_id', how='left')
+            merge_sub_clust_df = sub_best_df.merge(subclust_df, on='contig_id', how='left')
             if ((len(merge_sub_clust_df['clean_label'].unique()) == 1) |
                     ((len(merge_sub_clust_df['clean_label'].unique()) == 2) &
                      (-1 in merge_sub_clust_df['clean_label'].unique()))

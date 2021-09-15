@@ -36,10 +36,6 @@ class SABerArgumentParser(argparse.ArgumentParser):
         return args
 
     def add_recruit_args(self):
-        self.reqs.add_argument("-s", "--sag", required=True, dest="sag_path",
-                               help="Path to reference SAG FASTA file or directory "
-                                    "containing only FASTA files."
-                               )
         self.reqs.add_argument("-m", "--metag", required=True, dest="mg_file",
                                help="Path to a metagenome assembly [FASTA format only]."
                                )
@@ -50,6 +46,10 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                )
         self.reqs.add_argument("-o", "--output-dir", required=True, dest="save_path",
                                help="Path to directory for all outputs."
+                               )
+        self.reqs.add_argument("--trusted-contigs", required=True, dest="sag_path",
+                               help="Path to reference FASTA file or directory "
+                                    "containing only FASTA files."
                                )
         self.optopt.add_argument("--max_contig_len", required=False, default=10000,
                                  dest="max_contig_len",

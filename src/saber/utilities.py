@@ -166,8 +166,6 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
         if os.path.exists(os.path.join(subcontig_path, samp_id + '.subcontigs.fasta')) == False:
             # get contigs from fasta file
             contigs = get_seqs(in_fasta)
-            # remove any that are smaller that the max_contig_len
-            # trim_contigs = [x for x in contigs if len(x[1]) >= int(max_contig_len)]
             headers, subs = kmer_slide(contigs, int(max_contig_len),
                                        int(overlap_len)
                                        )
@@ -193,9 +191,6 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
 
 
 def kmer_slide(scd_db, n, o_lap):
-    # TODO: this funtion doesn't seem to be working
-    #  1) does it return reads if they start less than the subseq/o_lap
-    #  2) is the o_lap function working correctly?
     all_sub_seqs = []
     all_sub_headers = []
     for k in scd_db:
@@ -209,14 +204,16 @@ def kmer_slide(scd_db, n, o_lap):
                            ]
             all_sub_seqs.extend(sub_list)
             all_sub_headers.extend(sub_headers)
-
+        else:
+            all_sub_seqs.extend([seq])
+            all_sub_headers.extend([header + '_' + 0])
     return tuple(all_sub_headers), tuple(all_sub_seqs)
 
 
 def sliding_window(seq, win_size, o_lap):
-    "Fragments the seq into subseqs of length l_max and overlap of o_lap."
+    "Fragments the seq into subseqs of length win_size and overlap of o_lap."
     "Leftover tail overlaps with tail-1"
-    "Currently, if a seq is < l_max, it returns the full seq"
+    "Currently, if a seq is < win_size, it returns the full seq"
     seq_frags = []
     # Verify the inputs
     try:
@@ -234,30 +231,8 @@ def sliding_window(seq, win_size, o_lap):
             seq_frags.append(seq[i:i + win_size])
             i = i + win_size - o_lap
         seq_frags.append(seq[-win_size:])
-        '''
-        for i in range(len(seq) - o_lap):
-            if i + win_size < len(seq):
-                seq_frags.append(seq[i:i+win_size])
-            else:
-                seq_frags.append(seq[-win_size:]) # add the end subcontig just in case
-                break
-        '''
     elif win_size > len(seq):
         seq_frags.append(seq)
-    '''
-    if (l_max != 0) and (len(seq) > l_max):
-        offset = l_max - o_lap
-        for i in range(0, len(seq), offset):
-            if i + l_max < len(seq):
-                frag = seq[i:i + l_max]
-                seq_frags.append(frag)
-            else:
-                frag = seq[-l_max:]
-                seq_frags.append(frag)
-                break
-    # else:
-    #    seq_frags.append(seq)
-    '''
 
     return seq_frags
 

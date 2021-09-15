@@ -453,9 +453,10 @@ noise_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
 '''
 
 ### START HERE ### - recruit best-hit MHR to clusters?
+print('Adding back singletons...')
 passed_contigs = list(no_noise_df['contig_id'].unique())
 noise_fix_list = []
-for contig in noise_df['contig_id'].unique():
+for contig in tqdm(noise_df['contig_id'].unique()):
     sub_noise_df = noise_df.query('contig_id == @contig')
     sub_mh_df = minhash_df.query('contig_id_query == @contig and '
                                  'contig_id_ref != @contig and '

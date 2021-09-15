@@ -23,7 +23,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     mg_id = mg_sub_file[0]
     mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
     mg_headers = tuple(mg_subcontigs.keys())
-    kmer_list = [21, 31]  # [51, 71, 91, 101, 121, 151, 201]
+    kmer_list = [201]  # [51, 71, 91, 101, 121, 151, 201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
         print(kmer)

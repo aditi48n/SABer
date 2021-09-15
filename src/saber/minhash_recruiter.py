@@ -23,7 +23,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     mg_id = mg_sub_file[0]
     mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
     mg_headers = tuple(mg_subcontigs.keys())
-    kmer_list = [201]  # [51, 71, 91, 101, 121, 151, 201]
+    kmer_list = [201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
         print(kmer)
@@ -31,7 +31,8 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                 (force is False)
         ):
             logging.info('MinHash already done, moving on (use --force to re-run)\n')
-            mh_max_df = pd.read_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), header=0,
+            mh_max_df = pd.read_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
+                                           '.mhr_trimmed_recruits.tsv'), header=0,
                                     sep='\t'
                                     )
             mh_kmer_recruits_dict[kmer] = mh_max_df
@@ -54,15 +55,17 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                     arg_list.append([sbt_args, mhr_path, sag_id_list, sub_sag_sig_dict, kmer])
                 results = pool.imap_unordered(compare_sag_sbt, arg_list)
                 logging.info('Querying {} Signature Blocks against SBT\n'.format(len(chunk_list)))
-                logging.info('WARNING: This can be VERY time consuming, be patient\n'.format(len(chunk_list)))
+                logging.info('WARNING: This can be VERY time consuming, '
+                             'be patient\n'.format(len(chunk_list))
+                             )
                 df_cnt = 0
-                logging.info('Signatures Queried Against SBT: {}/{}\r'.format(df_cnt,
-                                                                              len(sag_sig_dict.keys()))
+                logging.info('Signatures Queried Against SBT: {}/{}'
+                             '\r'.format(df_cnt, len(sag_sig_dict.keys()))
                              )
                 for i, search_df in enumerate(results):
                     df_cnt += len(search_df)
-                    logging.info('Signatures Queried Against SBT: {}/{}\r'.format(df_cnt,
-                                                                                  len(sag_sig_dict.keys()))
+                    logging.info('Signatures Queried Against SBT: {}/{}'
+                                 '\r'.format(df_cnt, len(sag_sig_dict.keys()))
                                  )
                     minhash_pass_list.extend(search_df)
                 logging.info('\n')
@@ -77,17 +80,21 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
             # recruit_list = list(minhash_df['subcontig_id'].loc[minhash_df['jacc_sim'] >= 0.10])
             minhash_recruit_df = minhash_df.copy()  # .loc[minhash_df['subcontig_id'].isin(recruit_list)]
-            minhash_recruit_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_subcontig_recruits.tsv'),
+            minhash_recruit_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
+                                             '.mhr_subcontig_recruits.tsv'),
                                       sep='\t',
                                       index=False
                                       )
             logging.info('Compiling all MinHash Recruits\n')
             # Count # of subcontigs recruited to each SAG via sourmash
-            mh_cnt_df = minhash_recruit_df.groupby(['sag_id', 'contig_id'])['subcontig_id'].count().reset_index()
+            mh_cnt_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
+                                                   )['q_subcontig_id'].count().reset_index()
             mh_cnt_df.columns = ['sag_id', 'contig_id', 'subcontig_recruits']
-            mh_avg_df = minhash_recruit_df.groupby(['sag_id', 'contig_id'])['jacc_sim'].mean().reset_index()
+            mh_avg_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
+                                                   )['jacc_sim'].mean().reset_index()
             mh_avg_df.columns = ['sag_id', 'contig_id', 'jacc_sim_avg']
-            mh_max_df = minhash_recruit_df.groupby(['sag_id', 'contig_id'])['jacc_sim'].max().reset_index()
+            mh_max_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
+                                                   )['jacc_sim'].max().reset_index()
             mh_max_df.columns = ['sag_id', 'contig_id', 'jacc_sim_max']
             mh_dfs = [mh_cnt_df, mh_avg_df, mh_max_df]
             mh_merge_df = reduce(lambda left, right: pd.merge(left, right,
@@ -138,7 +145,8 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             #                    index=False
             #                    )
             # mh_kmer_recruits_dict[kmer] = mh_filter_df
-            mh_merge_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
+            mh_merge_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
+                                      '.mhr_trimmed_recruits.tsv'), sep='\t',
                                index=False
                                )
             mh_kmer_recruits_dict[kmer] = mh_merge_df
@@ -177,16 +185,21 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
             sbt_out = mg_sbt.search(sig, threshold=0.000000000001)
             sbt_out_cont = mg_sbt.search(sig, threshold=0.000000000001, do_containment=True)
             sbt_out.extend(sbt_out_cont)
+            r_subcontig = sig.name()
+            r_contig = r_subcontig.rsplit('_', 1)[0]
             for similarity, t_sig, filename in sbt_out:
                 q_subcontig = t_sig.name()
                 q_contig = q_subcontig.rsplit('_', 1)[0]
-                search_list.append([sag_id, q_subcontig, q_contig, similarity])
-        search_df = pd.DataFrame(search_list, columns=['sag_id', 'subcontig_id', 'contig_id',
+                search_list.append([sag_id, r_subcontig, r_contig, q_subcontig,
+                                    q_contig, similarity
+                                    ])
+        search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_subcontig_id', 'r_contig_id',
+                                                       'q_subcontig_id', 'q_contig_id',
                                                        'jacc_sim'
                                                        ])
         search_df['jacc_sim'] = search_df['jacc_sim'].astype(float)
         search_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
-        search_df.drop_duplicates(subset='subcontig_id', inplace=True)
+        # search_df.drop_duplicates(subset='subcontig_id', inplace=True)
         search_file = o_join(mhr_path, sag_id + '.' + str(kmer) + '.mhr_recruits.tsv')
         search_df.to_csv(search_file, sep='\t',
                          index=False

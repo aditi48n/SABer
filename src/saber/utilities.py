@@ -206,7 +206,7 @@ def kmer_slide(scd_db, n, o_lap):
             all_sub_headers.extend(sub_headers)
         else:
             all_sub_seqs.extend([seq])
-            all_sub_headers.extend([header + '_' + 0])
+            all_sub_headers.extend([header + '_0'])
     return tuple(all_sub_headers), tuple(all_sub_seqs)
 
 

@@ -39,7 +39,7 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
                                  )
         # Recruit subcontigs using OC-SVM
         # minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
-        mh_recruits_df = minhash_dict[51]
+        mh_recruits_df = minhash_dict[201]
         # Filter out contigs that didn't meet MinHash recruit standards
         mh_perfect_df = mh_recruits_df.loc[mh_recruits_df['jacc_sim_max'] >= 0.90]
         logging.info("Starting one-class SVM analysis\n")

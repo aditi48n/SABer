@@ -320,15 +320,11 @@ level_list = ['domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'
 pool = multiprocessing.Pool(processes=nthreads)
 arg_list = []
 for sag_id in tqdm(piv_table_df['sag_id'].unique()):
-    sag_sub_df = piv_table_df.loc[piv_table_df['sag_id'] == sag_id]
-    src_id = list(sag2cami_df.loc[sag2cami_df['sag_id'] == sag_id]['CAMI_genomeID'])[0]
+    sag_sub_df = piv_table_df.query('sag_id == @sag_id')
+    src_id = list(sag2cami_df.query('sag_id == @sag_id')['CAMI_genomeID'])[0]
     arg_list.append([sag_id, src_id, tax_mg_df, sag_sub_df, algo_list, level_list])
     print(sag_id, src_id)
-    print(sag_sub_df.head())
-    print(tax_mg_df.head())
-    print(algo_list[:5])
-    print(level_list[:5])
-    sys.exit()
+
 results = pool.imap_unordered(collect_error, arg_list)
 
 tot_error_list = []
@@ -354,7 +350,7 @@ final_err_df.to_csv(err_path + '/All_error_count.tsv', index=False, sep='\t')
 
 calc_stats_df = calc_err(final_err_df)
 stat_list = ['precision', 'sensitivity', 'F1_score', 'MCC']
-calc_stats_df = calc_stats_df.loc[calc_stats_df['statistic'].isin(stat_list)]
+calc_stats_df = calc_stats_df.query('statistic in @stat_list')
 calc_stats_df.to_csv(err_path + '/All_stats_count.tsv', index=False, sep='\t')
 
 print(calc_stats_df.head())
@@ -381,9 +377,9 @@ val_df_list = []
 outlier_list = []
 
 for algo in set(unstack_df['algorithm']):
-    algo_df = unstack_df.loc[unstack_df['algorithm'] == algo]
+    algo_df = unstack_df.query('algorithm == @algo')
     for level in set(algo_df['level']):
-        level_df = algo_df.loc[algo_df['level'] == level].set_index(
+        level_df = algo_df.query('level == @level').set_index(
             ['sag_id', 'algorithm', 'level']
         )
         for stat in ['F1_score', 'MCC', 'Precision', 'Sensitivity']:
@@ -418,8 +414,7 @@ for algo in set(unstack_df['algorithm']):
             stat_df.reset_index(inplace=True)
             stat_df.columns = ['sag_id', 'algorithm', 'level', 'score', 'statistic']
             stat_df = stat_df[['sag_id', 'algorithm', 'level', 'statistic', 'score']]
-            outlier_df = stat_df.loc[(stat_df['score'] < lower_bound) &
-                                     (stat_df['score'] < 0.99)]
+            outlier_df = stat_df.query('score < @lower_bound and score < 0.99')
             outlier_list.append(outlier_df)
 
 concat_val_df = pd.concat(val_df_list)

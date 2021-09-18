@@ -1,7 +1,6 @@
 import argparse
 import logging
 import multiprocessing
-from functools import reduce
 from os.path import isfile, getsize
 from os.path import join as o_join
 
@@ -23,7 +22,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     mg_id = mg_sub_file[0]
     mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
     mg_headers = tuple(mg_subcontigs.keys())
-    kmer_list = [201]
+    kmer_list = [51]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
         print(kmer)
@@ -81,11 +80,12 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             # recruit_list = list(minhash_df['subcontig_id'].loc[minhash_df['jacc_sim'] >= 0.10])
             minhash_recruit_df = minhash_df.copy()  # .loc[minhash_df['subcontig_id'].isin(recruit_list)]
             minhash_recruit_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
-                                             '.mhr_subcontig_recruits.tsv'),
+                                             '.mhr_contig_recruits.tsv'),
                                       sep='\t',
                                       index=False
                                       )
             logging.info('Compiling all MinHash Recruits\n')
+            '''
             # Count # of subcontigs recruited to each SAG via sourmash
             mh_cnt_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
                                                    )['q_subcontig_id'].count().reset_index()
@@ -101,9 +101,10 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                                               on=['sag_id', 'contig_id']),
                                  mh_dfs
                                  )
-            mh_filter_df = mh_merge_df.loc[((mh_merge_df['jacc_sim_avg'] >= 0.36) |
-                                            (mh_merge_df['jacc_sim_max'] >= 0.73))
-            ]
+            '''
+            mh_trim_df = minhash_recruit_df[['sag_id', 'q_contig_id', 'jacc_sim']]
+            mh_trim_df.columns = ['sag_id', 'contig_id', 'jacc_sim']
+            mh_filter_df = mh_trim_df.loc[mh_trim_df['jacc_sim'] >= 0.99]
             '''
             # Build subcontig count for each MG contig
             mg_contig_list = [x.rsplit('_', 1)[0] for x in mg_headers]
@@ -141,15 +142,11 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                      )
             mh_kmer_recruits_dict[kmer] = minhash_filter_df
             '''
-            # mh_filter_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
-            #                    index=False
-            #                    )
-            # mh_kmer_recruits_dict[kmer] = mh_filter_df
-            mh_merge_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
-                                      '.mhr_trimmed_recruits.tsv'), sep='\t',
-                               index=False
-                               )
-            mh_kmer_recruits_dict[kmer] = mh_merge_df
+            mh_filter_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
+                                index=False
+                                )
+            mh_kmer_recruits_dict[kmer] = mh_filter_df
+
     logging.info('MinHash Recruitment Algorithm Complete\n')
     return mh_kmer_recruits_dict
 
@@ -185,21 +182,26 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
             sbt_out = mg_sbt.search(sig, threshold=0.000000000001)
             sbt_out_cont = mg_sbt.search(sig, threshold=0.000000000001, do_containment=True)
             sbt_out.extend(sbt_out_cont)
-            r_subcontig = sig.name()
-            r_contig = r_subcontig.rsplit('_', 1)[0]
+            # r_subcontig = sig.name()
+            # r_contig = r_subcontig.rsplit('_', 1)[0]
+            r_contig = sig.name()
             for similarity, t_sig, filename in sbt_out:
-                q_subcontig = t_sig.name()
-                q_contig = q_subcontig.rsplit('_', 1)[0]
-                search_list.append([sag_id, r_subcontig, r_contig, q_subcontig,
-                                    q_contig, similarity
-                                    ])
-        search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_subcontig_id', 'r_contig_id',
-                                                       'q_subcontig_id', 'q_contig_id',
+                # q_subcontig = t_sig.name()
+                # q_contig = q_subcontig.rsplit('_', 1)[0]
+                q_contig = t_sig.name()
+                # search_list.append([sag_id, r_subcontig, r_contig, q_subcontig,
+                #                    q_contig, similarity
+                #                    ])
+                search_list.append([sag_id, r_contig, q_contig, similarity])
+        search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_contig_id', 'q_contig_id',
                                                        'jacc_sim'
                                                        ])
+        # search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_subcontig_id', 'r_contig_id',
+        #                                               'q_subcontig_id', 'q_contig_id',
+        #                                               'jacc_sim'
+        #                                               ])
         search_df['jacc_sim'] = search_df['jacc_sim'].astype(float)
         search_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
-        # search_df.drop_duplicates(subset='subcontig_id', inplace=True)
         search_file = o_join(mhr_path, sag_id + '.' + str(kmer) + '.mhr_recruits.tsv')
         search_df.to_csv(search_file, sep='\t',
                          index=False
@@ -382,7 +384,7 @@ def sag_recruit_checker(mhr_path, sag_sub_files, kmer):
 
 def build_signature(p):
     header, seq, kmer = p
-    mg_minhash = sourmash.MinHash(n=100, ksize=kmer, scaled=0)
+    mg_minhash = sourmash.MinHash(ksize=kmer, scaled=1000, n=0)
     mg_minhash.add_sequence(str(seq), force=True)
     mg_sig = sourmash.SourmashSignature(mg_minhash, name=header)
 

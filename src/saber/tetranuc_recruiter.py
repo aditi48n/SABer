@@ -87,7 +87,7 @@ def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, 
         std_tetra_dict = build_uniq_dict(mg_tetra_df, 'contig_id', nthreads, 'TetraHz')
         # Prep MinHash
         # Filter out contigs that didn't meet MinHash recruit standards
-        minhash_df = minhash_dict[201]
+        minhash_df = minhash_dict[51]
         minhash_filter_df = minhash_df.copy()  # .loc[minhash_df['jacc_sim_max'] >= 0.90]
         minhash_dedup_df = minhash_filter_df[['sag_id', 'contig_id', 'jacc_sim_max']
         ].drop_duplicates(subset=['sag_id', 'contig_id'])

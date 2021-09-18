@@ -83,11 +83,13 @@ def recruit(sys_args):
                                              recruit_s.max_contig_len,
                                              recruit_s.overlap_len
                                              )
+    sag_sub_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in sag_list])
     mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
                                            save_dirs_dict['subcontigs'],
                                            recruit_s.max_contig_len,
                                            recruit_s.overlap_len
                                            )
+    mg_sub_file = [recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0], recruit_s.mg_file]
     # Run MinHash recruiting algorithm
     minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],
                                                 save_dirs_dict['minhash_recruits'],

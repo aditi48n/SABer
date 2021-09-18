@@ -41,7 +41,7 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
         # minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
         mh_recruits_df = minhash_dict[51]
         # Filter out contigs that didn't meet MinHash recruit standards
-        mh_perfect_df = mh_recruits_df.loc[mh_recruits_df['jacc_sim_max'] >= 0.90]
+        # mh_perfect_df = mh_recruits_df.loc[mh_recruits_df['jacc_sim_max'] >= 0.90]
         logging.info("Starting one-class SVM analysis\n")
         covm_df = abund_recruiter(abr_path, mg_covm_out, mh_recruits_df, mh_recruits_df,
                                   nu, gamma, nthreads
@@ -59,7 +59,7 @@ def abund_recruiter(abr_path, mg_covm_out, minhash_all_df, minhash_df, nu, gamma
     arg_list = []
     # Prep MinHash
     # minhash_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
-    minhash_dedup_df = minhash_df[['sag_id', 'contig_id', 'jacc_sim_max']]
+    minhash_dedup_df = minhash_df[['sag_id', 'contig_id', 'jacc_sim']]
     mh_recruit_dict = tra.build_uniq_dict(minhash_dedup_df, 'sag_id', nthreads,
                                           'MinHash Recruits')  # TODO: this might not need multithreading
     for i, sag_id in enumerate(list(mh_recruit_dict.keys()), 1):

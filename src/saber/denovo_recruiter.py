@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 
-import sys
 from pathlib import Path
 
-import hdbscan
 import pandas as pd
 import umap
 from tqdm import tqdm
 
-tetra_dat = sys.argv[1]
-cov_dat = sys.argv[2]
-mh_dat = sys.argv[3]
+# tetra_dat = sys.argv[1]
+# cov_dat = sys.argv[2]
+# mh_dat = sys.argv[3]
 
 # Convert CovM to UMAP feature table
 cov_file = Path('/home/ryan/Desktop/test_NMF/minhash_features/'
@@ -52,7 +50,7 @@ if not tetra_file.is_file():
                         'CAMI_high_GoldStandardAssembly.tetra_umap40.manhattan.tsv',
                         sep='\t', index=False
                         )
-
+'''
 # load nmf file
 print('Loading Tetra and Abundance...')
 nmf_feat_df = pd.read_csv(tetra_file, sep='\t', header=0, index_col='subcontig_id')
@@ -125,58 +123,57 @@ noise_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                          'CAMI_high_GoldStandardAssembly.noise.tsv',
                          header=0, sep='\t'
                          )
-'''
+
 # Group clustered and noise contigs by trusted contigs
 print('Re-grouping with Trusted Contigs...')
 n_list = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 for n in n_list:
     print(n)
-    mh_dat = '/home/ryan/Desktop/test_NMF/minhash_features/CH.201.mhr_recruits.' + n + '.tsv'
+    mh_dat = '/home/ryan/Desktop/test_NMF/minhash_features/CH.201.mhr_contigs.' + n + '.tsv'
     mh_trusted_df = pd.read_csv(mh_dat, sep='\t', header=0)
-    # mh_trusted_df = mh_trusted_df.query('jacc_sim_max >= 0.51')
+    mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
     trust_recruit_list = []
     label_max_list = []
     contig_max_list = []
     for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
         # Subset trusted contigs by SAG
-        sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id')
+        sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0')
         trusted_contigs_list = sub_trusted_df['contig_id'].unique()
         # Gather trusted contigs subset from cluster and noise DFs
-        sub_denovo_df = no_noise_df.query('contig_id in @trusted_contigs_list')
+        sub_denovo_df = no_noise_df.query('contig_id in @trusted_contigs_list and '
+                                          'probabilities >= 1.0'
+                                          )
         sub_noise_df = noise_df.query('contig_id in @trusted_contigs_list')
         # Gather all contigs associated with trusted clusters
         trust_clust_list = list(sub_denovo_df['best_label'].unique())
         sub_label_df = no_noise_df.query('best_label in @trust_clust_list')
         # Get average max jaccard for each cluster
         label_mh_df = sub_label_df.merge(sub_trusted_df, on='contig_id', how='left')
-        label_max_df = label_mh_df.groupby(['best_label'])[['jacc_sim_max']].mean().reset_index()
+        label_max_df = label_mh_df.groupby(['best_label'])[['jacc_sim']].mean().reset_index()
         label_max_df['sag_id'] = sag_id
         label_max_list.append(label_max_df)
         # Get max jaccard for noise labeled contigs
         if sub_noise_df.shape[0] != 0:
             noise_mh_df = sub_noise_df.merge(sub_trusted_df, on='contig_id', how='left')
-            noise_max_df = noise_mh_df.groupby(['contig_id'])[['jacc_sim_max']].mean().reset_index()
+            noise_max_df = noise_mh_df.groupby(['contig_id'])[['jacc_sim']].mean().reset_index()
             noise_max_df['sag_id'] = sag_id
             contig_max_list.append(noise_max_df)
 
-    sag_label_df = pd.concat(label_max_list).sort_values(by='jacc_sim_max', ascending=False
+    sag_label_df = pd.concat(label_max_list).sort_values(by='jacc_sim', ascending=False
                                                          ).drop_duplicates(subset='best_label')
-    sag_contig_df = pd.concat(contig_max_list).sort_values(by='jacc_sim_max', ascending=False
+    sag_contig_df = pd.concat(contig_max_list).sort_values(by='jacc_sim', ascending=False
                                                            ).drop_duplicates(subset='contig_id')
-    # Only use jarccard >= 0.51
-    sag_label_filter_df = sag_label_df.query('jacc_sim_max >= 0.51')
-    sag_contig_filter_df = sag_contig_df.query('jacc_sim_max >= 0.51')
 
-    sag_denovo_df = sag_label_filter_df.merge(no_noise_df, on='best_label', how='left')
-    sag_noise_df = sag_contig_filter_df.merge(noise_df, on='contig_id', how='left')
+    sag_denovo_df = sag_label_df.merge(no_noise_df, on='best_label', how='left')
+    sag_noise_df = sag_contig_df.merge(noise_df, on='contig_id', how='left')
 
     print('Building Trusted Clusters...')
     for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
         trust_cols = ['sag_id', 'contig_id']
-        sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id')[trust_cols]
+        sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0')[trust_cols]
         sub_denovo_df = sag_denovo_df.query('sag_id == @sag_id')[trust_cols]
         sub_noise_df = sag_noise_df.query('sag_id == @sag_id')[trust_cols]
-        trust_cat_df = pd.concat([sub_denovo_df, sub_noise_df]
+        trust_cat_df = pd.concat([sub_trusted_df, sub_denovo_df, sub_noise_df]
                                  ).drop_duplicates()
         trust_recruit_list.append(trust_cat_df)
 

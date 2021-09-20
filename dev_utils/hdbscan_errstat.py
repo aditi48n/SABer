@@ -140,6 +140,32 @@ clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID'
                                                     'strain', 'bp_cnt']],
                                      on='contig_id', how='left'
                                      )
+
+'''
+# split up the SAG MHR by genome into 10 sets
+mh_recruits_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
+                          'CAMI_high_GoldStandardAssembly.201.mhr_contig_recruits.tsv',
+                          header=0, sep='\t')
+sag2cami_df = pd.read_csv('/home/ryan/Desktop/test_NMF/sag2cami_map.tsv', header=0, sep='\t')
+mh_cami_df = mh_recruits_df.merge(sag2cami_df, on='sag_id', how='left')
+print(mh_cami_df.head())
+split_dat_dict = {0: [], 1: [], 2: [], 3: [], 4: [],
+                  5: [], 6: [], 7: [], 8: [], 9: []
+                  }
+for cami in mh_cami_df['CAMI_genomeID'].unique():
+    sub_cami_df = mh_cami_df.query('CAMI_genomeID == @cami')
+    sag_list = set(sub_cami_df['sag_id'].unique())
+    for i, sag_id in enumerate(sag_list):
+        split_dat_dict[i].append(sag_id)
+
+for k, v in split_dat_dict.items():
+    sub_mh_df = mh_recruits_df.query('sag_id in @v')
+    sub_mh_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
+                     'CH.201.mhr_contigs.' + str(k) + '.tsv', index=False, sep='\t'
+                     )
+sys.exit()
+'''
+
 # Add taxonomy to each cluster
 clust_tax = []
 for clust in clust2src_df['best_label'].unique():
@@ -343,25 +369,3 @@ final_stat_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                      'CH.trusted_clusters.errstat.mean.tsv', index=False, sep='\t'
                      )
 
-'''
-# split up the SAG MHR by genome into 10 sets
-mh_recruits_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                          'CAMI_high_GoldStandardAssembly.201.mhr_trimmed_recruits.tsv',
-                          header=0, sep='\t')
-mh_cami_df = mh_recruits_df.merge(sag2cami_df, on='sag_id', how='left')
-print(mh_cami_df.head())
-split_dat_dict = {0: [], 1: [], 2: [], 3: [], 4: [],
-                  5: [], 6: [], 7: [], 8: [], 9: []
-                  }
-for cami in mh_cami_df['CAMI_genomeID'].unique():
-    sub_cami_df = mh_cami_df.query('CAMI_genomeID == @cami')
-    sag_list = set(sub_cami_df['sag_id'].unique())
-    for i, sag_id in enumerate(sag_list):
-        split_dat_dict[i].append(sag_id)
-
-for k, v in split_dat_dict.items():
-    sub_mh_df = mh_recruits_df.query('sag_id in @v')
-    sub_mh_df.to_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
-                     'CH.201.mhr_recruits.' + str(k) + '.tsv', index=False, sep='\t'
-                     )
-'''

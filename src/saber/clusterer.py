@@ -18,7 +18,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
         clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
-                                          n_components=int(cov_emb.shape[1]),
+                                          n_components=int(cov_df.shape[1]),
                                           random_state=42, metric='manhattan'
                                           ).fit_transform(cov_df)
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
@@ -139,7 +139,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         sag_contig_best_df = sag_contig_df.sort_values(by='jacc_sim', ascending=False
                                                        ).drop_duplicates(subset='contig_id')
         sag_label_list = []
-        for row in sag_label_best_df.iterrows():
+        for index, row in sag_label_best_df.iterrows():
             best_label = row['best_label']
             jacc_sim = row['jacc_sim']
             sub_sag_label_df = sag_label_df.query('best_label == @best_label and '
@@ -148,10 +148,10 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
             sag_label_list.append(sub_sag_label_df)
 
         sag_contig_list = []
-        for row in sag_contig_best_df.iterrows():
-            best_label = row['best_label']
+        for index, row in sag_contig_best_df.iterrows():
+            sag_id = row['sag_id']
             jacc_sim = row['jacc_sim']
-            sub_sag_contig_df = sag_contig_df.query('best_label == @best_label and '
+            sub_sag_contig_df = sag_contig_df.query('sag_id == @sag_id and '
                                                     'jacc_sim == @jacc_sim'
                                                     )
             sag_contig_list.append(sub_sag_contig_df)

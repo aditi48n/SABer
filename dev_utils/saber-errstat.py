@@ -155,8 +155,6 @@ mg_contig_map = sys.argv[3]  # joinpath(synsrc_path, 'gsa_mapping_pool.binning')
 src_metag_file = sys.argv[4]
 nthreads = int(sys.argv[5])
 ##################################################################################################
-
-
 # Map genome id and contig id to taxid for error analysis
 sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
 sag_taxmap_df['sp_taxid'] = [int(x) for x in sag_taxmap_df['@@TAXID']]

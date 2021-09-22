@@ -27,60 +27,26 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # res_values = method(rvalues)
 
 
-def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, minhash_dict,
+def run_tetra_recruiter(tra_path, mg_sub_file, abund_recruit_df, minhash_dict,
                         per_pass, nthreads, force
                         ):
-    """Returns dataframe of subcontigs recruited via tetranucleotide Hz
-
-    Parameters:
-    tra_path (str): string of global path to tetrenucleotide output directory
-    sag_sub_files (list): list containing sublists with two values: [sag_id, sag_path]
-                          where sag_id (str) is a unique ID for a SAG and sag_path is
-                          the global path the the SAG subcontig fasta file
-    mg_sub_file (list): list containing two values: mg_id and mg_file. (same as sag_sub_files)
-    rpkm_max_df (df): dataframe containing the abundance recruits from the previous step.
-    per_pass (float): percent of agreement for subcontig classification to pass the complete
-                          contig (default is 0.01)
-
-    """
-    # TODO: 1. Think about using Minimum Description Length (MDL) instead of AIC/BIC
-    #        2. [Normalized Maximum Likelihood or Fish Information Approximation]
-    #        3. Can TetraNuc Hz be calc'ed for each sample? Does that improve things?
-    #            (think about http://merenlab.org/2020/01/02/visualizing-metagenomic-bins/#introduction)
-
-    logging.info('Starting Tetranucleotide Recruitment\n')
+    logging.info('Starting Tetranucleotide Data Transformation\n')
     mg_id = mg_sub_file[0]
-    if isfile(o_join(tra_path, mg_id + '.comb.tra_trimmed_recruits.tsv')):
-        logging.info('Tetranucleotide Recruitment Algorithm Complete\n')
-        gmm_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.gmm.tra_trimmed_recruits.tsv'), sep='\t',
-                                    header=0
-                                    )
-        svm_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.svm.tra_trimmed_recruits.tsv'), sep='\t',
-                                    header=0
-                                    )
-        iso_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.iso.tra_trimmed_recruits.tsv'), sep='\t',
-                                    header=0
-                                    )
-        comb_concat_df = pd.read_csv(o_join(tra_path, mg_id + '.comb.tra_trimmed_recruits.tsv'), sep='\t',
-                                     header=0
-                                     )
+    if isfile(o_join(tra_path, mg_id + '.tetras.tsv')):
+        logging.info('Loading tetramer Hz matrix for %s\n' % mg_id)
+        mg_tetra_file = o_join(tra_path, mg_id + '.tetras.tsv')
     else:
-        # Build/Load tetramers for SAGs and MG subset by ara recruits
-        if isfile(o_join(tra_path, mg_id + '.tetras.tsv')):
-            logging.info('Loading tetramer Hz matrix for %s\n' % mg_id)
-            mg_tetra_df = pd.read_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
-                                      sep='\t', index_col=0, header=0
-                                      )
-            mg_headers = mg_tetra_df.index.values
-        else:
-            logging.info('Calculating tetramer Hz matrix for %s\n' % mg_id)
-            mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
-            mg_headers = tuple(mg_subcontigs.keys())
-            mg_subs = tuple([r.seq for r in mg_subcontigs])
-            mg_tetra_df = s_utils.tetra_cnt(mg_subcontigs)
-            mg_tetra_df.to_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
-                               sep='\t'
-                               )
+        logging.info('Calculating tetramer Hz matrix for %s\n' % mg_id)
+        mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
+        mg_headers = tuple(mg_subcontigs.keys())
+        mg_subs = tuple([r.seq for r in mg_subcontigs])
+        mg_tetra_df = s_utils.tetra_cnt(mg_subcontigs)
+        mg_tetra_df.to_csv(o_join(tra_path, mg_id + '.tetras.tsv'),
+                           sep='\t'
+                           )
+        mg_tetra_file = o_join(tra_path, mg_id + '.tetras.tsv')
+    return mg_tetra_file
+    '''
         contig_ids = list(zip(*mg_tetra_df.index.str.rsplit("_", n=1, expand=True).to_list()))[0]
         mg_tetra_df['contig_id'] = contig_ids
         mg_tetra_df.index.names = ['subcontig_id']
@@ -168,6 +134,7 @@ def run_tetra_recruiter(tra_path, sag_sub_files, mg_sub_file, abund_recruit_df, 
                      }
 
     return tetra_df_dict
+    '''
 
 
 def ensemble_recruiter(p):

@@ -1,4 +1,3 @@
-import argparse
 import logging
 import multiprocessing
 from os.path import isfile, getsize
@@ -10,7 +9,6 @@ import sourmash
 from sourmash.lca import LCA_Database
 from sourmash.sbtmh import SigLeaf
 
-import logger as s_log
 import utilities as s_utils
 
 pd.set_option('display.max_columns', None)
@@ -25,13 +23,12 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     kmer_list = [201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
-        print(kmer)
         if ((isfile(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'))) &
                 (force is False)
         ):
-            logging.info('MinHash already done, moving on (use --force to re-run)\n')
+            logging.info('MinHash already done\n')
             mh_max_df = pd.read_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
-                                           '.mhr_trimmed_recruits.tsv'), header=0,
+                                           '.mhr_contig_recruits.tsv'), header=0,
                                     sep='\t'
                                     )
             mh_kmer_recruits_dict[kmer] = mh_max_df
@@ -47,7 +44,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                 chunk_list = [list(x) for x in np.array_split(np.array(list(sag_sig_dict.keys())),
                                                               nthreads * 10) if len(list(x)) != 0
                               ]  # TODO: might be a better way to chunk up the list?
-                logging.info('Built {} Blocks of SAG Signature Sets\n'.format(len(chunk_list)))
+                logging.info('Built {} Blocks of Trusted Contigs Signature Sets\n'.format(len(chunk_list)))
                 arg_list = []
                 for i, sag_id_list in enumerate(chunk_list):
                     sub_sag_sig_dict = {k: sag_sig_dict[k] for k in sag_id_list}
@@ -84,7 +81,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                       sep='\t',
                                       index=False
                                       )
-            logging.info('Compiling all MinHash Recruits\n')
+            # logging.info('Compiling all MinHash Recruits\n')
             '''
             # Count # of subcontigs recruited to each SAG via sourmash
             mh_cnt_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
@@ -102,9 +99,9 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                  mh_dfs
                                  )
             '''
-            mh_trim_df = minhash_recruit_df[['sag_id', 'q_contig_id', 'jacc_sim']]
-            mh_trim_df.columns = ['sag_id', 'contig_id', 'jacc_sim']
-            mh_filter_df = mh_trim_df.loc[mh_trim_df['jacc_sim'] >= 0.99]
+            # mh_trim_df = minhash_recruit_df[['sag_id', 'q_contig_id', 'jacc_sim']]
+            # mh_trim_df.columns = ['sag_id', 'contig_id', 'jacc_sim']
+            # mh_filter_df = mh_trim_df.loc[mh_trim_df['jacc_sim'] >= 0.99]
             '''
             # Build subcontig count for each MG contig
             mg_contig_list = [x.rsplit('_', 1)[0] for x in mg_headers]
@@ -142,10 +139,10 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                      )
             mh_kmer_recruits_dict[kmer] = minhash_filter_df
             '''
-            mh_filter_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
-                                index=False
-                                )
-            mh_kmer_recruits_dict[kmer] = mh_filter_df
+            # mh_filter_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
+            #                    index=False
+            #                    )
+            mh_kmer_recruits_dict[kmer] = minhash_recruit_df
 
     logging.info('MinHash Recruitment Algorithm Complete\n')
     return mh_kmer_recruits_dict
@@ -161,7 +158,7 @@ def build_sag_sig_dict(build_list, nthreads, sig_path, kmer):
     sag_sig_dict = {}
     for i, sag_sig_rec in enumerate(results):
         sag_id, sag_sig_list = sag_sig_rec
-        logging.info('Loading/Building SAGs Signatures: {}/{}\r'.format(i + 1, len(build_list)))
+        logging.info('Loading/Building Trusted Contig Signatures: {}/{}\r'.format(i + 1, len(build_list)))
         sag_sig_dict[sag_id] = sag_sig_list
     logging.info('\n')
     pool.close()
@@ -315,9 +312,9 @@ def load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer):
 
 def load_sag_sigs(p):
     sag_file, sag_id, sig_path, kmer = p
-    if isfile(o_join(sig_path, sag_id + '.' + str(kmer) + '.SAG.sig')):
+    if isfile(o_join(sig_path, sag_id + '.' + str(kmer) + '.TC.sig')):
         sag_sig_list = tuple(sourmash.signature.load_signatures(o_join(sig_path,
-                                                                       sag_id + '.' + str(kmer) + '.SAG.sig')
+                                                                       sag_id + '.' + str(kmer) + '.TC.sig')
                                                                 ))
     else:
         sag_sig_list = build_sag_sigs(sag_file, sag_id, sig_path, kmer)
@@ -331,7 +328,7 @@ def build_sag_sigs(sag_file, sag_id, sig_path, kmer):
     for i, sag_head in enumerate(sag_headers):
         sag_sig = build_signature([sag_head, str(sag_subcontigs[sag_head].seq), kmer])
         sag_sig_list.append(sag_sig)
-    with open(o_join(sig_path, sag_id + '.' + str(kmer) + '.SAG.sig'), 'w') as sag_out:
+    with open(o_join(sig_path, sag_id + '.' + str(kmer) + '.TC.sig'), 'w') as sag_out:
         sourmash.signature.save_signatures(sag_sig_list, fp=sag_out)
     sag_sig_list = tuple(sag_sig_list)
     return sag_sig_list
@@ -377,7 +374,7 @@ def sag_recruit_checker(mhr_path, sag_sub_files, kmer):
         else:
             build_list.append(sag_rec)
             b += 1
-        logging.info('Checking for previously completed SAGs: {}/{} done\r'.format(l, b))
+        logging.info('Checking for previously completed Trusted Contigs: {}/{} done\r'.format(l, b))
     logging.info('\n')
     return build_list, minhash_pass_list
 
@@ -397,11 +394,12 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
+'''
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='uses MinHash Signatures to recruit metaG reads to SAGs')
+        description='uses MinHash Signatures to recruit metaG reads to Trusted Contigs')
     parser.add_argument("-s", "--sag", required=True, dest="sag_path",
-                        help="Path to reference SAG FASTA file or directory "
+                        help="Path to reference Trusted Contig FASTA file or directory "
                              "containing only FASTA files."
                         )
     parser.add_argument("-m", "--metag", required=True, dest="mg_file",
@@ -438,7 +436,7 @@ if __name__ == '__main__':
     overlap_len = args.overlap_len
     nthreads = int(args.threads)
     force = args.force
-
+    
     # Build save dir structure
     save_dirs_dict = s_utils.check_out_dirs(save_path)
     # Find the SAGs!
@@ -464,3 +462,4 @@ if __name__ == '__main__':
     run_minhash_recruiter(save_dirs_dict['signatures'], save_dirs_dict['minhash_recruits'],
                           sag_sub_files, mg_sub_file, nthreads, force
                           )
+'''

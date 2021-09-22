@@ -7,6 +7,7 @@ from pip._internal.operations import freeze
 # import saber
 import abundance_recruiter as abr
 import classy as s_class
+import clusterer as clst
 import compile_recruits as com
 import logger as s_log
 import minhash_recruiter as mhr
@@ -54,13 +55,13 @@ def recruit(sys_args):
     :param sys_args: List of arguments parsed from the command-line.
     :return: None
     """
-    parser = s_args.SABerArgumentParser(description="Recruit environmental reads to reference SAG(s).")
+    parser = s_args.SABerArgumentParser(description="Recruit environmental reads to reference contigs.")
     parser.add_recruit_args()
     args = parser.parse_args(sys_args)
 
     s_log.prep_logging("SABer_log.txt", args.verbose)
     recruit_s = s_class.SABerBase("recruit")
-    recruit_s.sag_path = args.sag_path
+    recruit_s.trust_path = args.trust_path
     recruit_s.mg_file = args.mg_file
     recruit_s.mg_raw_file_list = args.mg_raw_file_list
     recruit_s.save_path = args.save_path
@@ -74,46 +75,50 @@ def recruit(sys_args):
     recruit_s.force = args.force
     # Build save dir structure
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
-    # Find the SAGs!
-    sag_list = s_utils.get_SAGs(recruit_s.sag_path)
 
-    # Build subcontiges for SAGs and MG
-    sag_sub_files = s_utils.build_subcontigs('SAGs', sag_list,
-                                             save_dirs_dict['subcontigs'],
-                                             recruit_s.max_contig_len,
-                                             recruit_s.overlap_len
-                                             )
-    sag_sub_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in sag_list])
+    # Build subcontigs for MG
+    mg_file = tuple([recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0],
+                     recruit_s.mg_file])  # TODO: needs to support multiple MetaGs
     mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
                                            save_dirs_dict['subcontigs'],
                                            recruit_s.max_contig_len,
                                            recruit_s.overlap_len
                                            )
-    mg_sub_file = [recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0], recruit_s.mg_file]
-    # Run MinHash recruiting algorithm
-    minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],
-                                                save_dirs_dict['minhash_recruits'],
-                                                sag_sub_files, mg_sub_file,
-                                                # recruit_s.jacc_thresh, recruit_s.mh_per_pass,
-                                                recruit_s.nthreads, recruit_s.force
-                                                )
-    # Abundance Recruit Module
-    abund_df = abr.runAbundRecruiter(save_dirs_dict['subcontigs'],
-                                     save_dirs_dict['abund_recruits'], mg_sub_file,
-                                     recruit_s.mg_raw_file_list, minhash_df_dict,
-                                     0.1, 10,
-                                     recruit_s.nthreads, recruit_s.force
-                                     )
-    # Tetranucleotide Hz Recruit Module
-    tetra_df_dict = tra.run_tetra_recruiter(save_dirs_dict['tetra_recruits'],
-                                            sag_sub_files, mg_sub_file, abund_df,
-                                            minhash_df_dict, recruit_s.gmm_per_pass, recruit_s.nthreads,
-                                            recruit_s.force
-                                            )
+
+    # Build minhash signatures if there are trusted contigs
+    if recruit_s.trust_path:
+        # Find the Trusted Contigs (TCs)
+        tc_list = s_utils.get_SAGs(
+            recruit_s.trust_path)  # TODO: needs to support a single multi-FASTA and multiple FASTAs
+        trust_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in tc_list])
+        # Run MinHash recruiting algorithm
+        minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],  # TODO: expose some params for users
+                                                    save_dirs_dict['minhash_recruits'],
+                                                    trust_files, mg_file,
+                                                    # recruit_s.jacc_thresh, recruit_s.mh_per_pass,
+                                                    recruit_s.nthreads, recruit_s.force
+                                                    )
+    else:
+        minhash_df_dict = False
+
+    # Build abundance tables
+    abund_file = abr.runAbundRecruiter(save_dirs_dict['subcontigs'],
+                                       save_dirs_dict['abund_recruits'], mg_sub_file,
+                                       recruit_s.mg_raw_file_list, None,
+                                       None, None,
+                                       recruit_s.nthreads, recruit_s.force
+                                       )
+    # Build tetra hz tables
+    tetra_file = tra.run_tetra_recruiter(save_dirs_dict['tetra_recruits'],
+                                         mg_sub_file, None, None, None, None,
+                                         None
+                                         )
+    # Run HDBSCAN Cluster and Trusted Cluster Cleaning
+    mg_id = mg_sub_file[0]
+    clusters = clst.runClusterer(mg_id, save_dirs_dict['clusters'], abund_file, tetra_file,
+                                 minhash_df_dict, recruit_s.nthreads
+                                 )
     # Collect and join all recruits
-    com.run_combine_recruits(save_dirs_dict['xPGs'],
-                             recruit_s.mg_file, tetra_df_dict, minhash_df_dict, sag_list
-                             )
-    # Re-assemble SAG with MG recruits
+    com.run_combine_recruits(save_dirs_dict['xPGs'], recruit_s.mg_file, clusters)
 
     return

@@ -47,9 +47,9 @@ class SABerArgumentParser(argparse.ArgumentParser):
         self.reqs.add_argument("-o", "--output-dir", required=True, dest="save_path",
                                help="Path to directory for all outputs."
                                )
-        self.reqs.add_argument("--trusted-contigs", required=True, dest="sag_path",
-                               help="Path to reference FASTA file or directory "
-                                    "containing only FASTA files."
+        self.reqs.add_argument("-s", "--trusted-contigs", required=False, dest="trust_path",
+                               default=False, help="Path to reference FASTA file or directory "
+                                                   "containing only FASTA files."
                                )
         self.optopt.add_argument("--max_contig_len", required=False, default=10000,
                                  dest="max_contig_len",

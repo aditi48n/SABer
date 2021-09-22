@@ -122,7 +122,8 @@ def check_out_dirs(save_path):
         os.makedirs(save_path)
 
     sd_list = ['subcontigs', 'signatures', 'minhash_recruits',
-               'abund_recruits', 'tetra_recruits', 'xPGs'
+               'abund_recruits', 'tetra_recruits', 'xPGs',
+               'clusters'
                ]
     sd_dict = {}
     for sd in sd_list:
@@ -137,13 +138,13 @@ def check_out_dirs(save_path):
 def get_SAGs(sag_path):
     # Find the SAGs!
     if os.path.isdir(sag_path):
-        logging.info('Directory specified, looking for SAGs\n')
+        logging.info('Directory specified, looking for Trusted Contigs\n')
         sag_list = [os.path.join(sag_path, f) for f in
                     os.listdir(sag_path) if ((f.split('.')[-1] == 'fasta' or
                                               f.split('.')[-1] == 'fna' or
                                               f.split('.')[-1] == 'fa') and 'Sample' not in f)
                     ]
-        logging.info('Found %s SAGs in directory\n'
+        logging.info('Found %s Trusted Contig files in directory\n'
                      % str(len(sag_list))
                      )
 

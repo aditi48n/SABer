@@ -50,7 +50,7 @@ if not tetra_file.is_file():
                         'CAMI_high_GoldStandardAssembly.tetra_umap40.manhattan.tsv',
                         sep='\t', index=False
                         )
-'''
+
 # load nmf file
 print('Loading Tetra and Abundance...')
 nmf_feat_df = pd.read_csv(tetra_file, sep='\t', header=0, index_col='subcontig_id')
@@ -123,7 +123,7 @@ noise_df = pd.read_csv('/home/ryan/Desktop/test_NMF/minhash_features/'
                          'CAMI_high_GoldStandardAssembly.noise.tsv',
                          header=0, sep='\t'
                          )
-
+'''
 # Group clustered and noise contigs by trusted contigs
 print('Re-grouping with Trusted Contigs...')
 n_list = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']

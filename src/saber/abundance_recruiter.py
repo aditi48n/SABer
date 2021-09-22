@@ -21,22 +21,22 @@ from sklearn.ensemble import IsolationForest
 def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
                       minhash_dict, nu, gamma, nthreads, force
                       ):
-    logging.info('Starting Abundance Recruitment\n')
+    logging.info('Starting Abundance Data Transformation\n')
     mg_id = mg_sub_file[0]
-    if ((isfile(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'))) &
+    if ((isfile(o_join(abr_path, mg_id + '.covM.scaled.tsv'))) &
             (force is False)
     ):
         logging.info('Loading Abundance matrix for %s\n' % mg_id)
-        covm_df = pd.read_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'), header=0,
-                              sep='\t'
-                              )
+        mg_covm_out = o_join(abr_path, mg_id + '.covM.scaled.tsv')
     else:
-        logging.info('Building %s abundance table\n' % mg_id)
+        logging.info('Building %s abundance matrix\n' % mg_id)
         mg_sub_path = o_join(subcontig_path, mg_id + '.subcontigs.fasta')
         # Process raw metagenomes to calculate abundances
         mg_covm_out = procMetaGs(abr_path, mg_id, mg_sub_path, mg_raw_file_list,
                                  subcontig_path, nthreads
                                  )
+    return mg_covm_out
+    '''
         # Recruit subcontigs using OC-SVM
         # minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
         mh_recruits_df = minhash_dict[201]
@@ -49,8 +49,9 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
         covm_df.to_csv(o_join(abr_path, mg_id + '.abr_trimmed_recruits.tsv'),
                        sep='\t', index=False
                        )
-
+    
     return covm_df
+    '''
 
 
 def abund_recruiter(abr_path, mg_covm_out, minhash_all_df, minhash_df, nu, gamma, nthreads):

@@ -383,8 +383,28 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         ocsvm_clust_df.to_csv(ocsvm_out_file, sep='\t', index=False)
     elif ocsvm_out_file.is_file():
         print('OC-SVM Clusters already exist...')
-        tc_ocsvm_df = pd.read_csv(ocsvm_out_file, sep='\t', header=0)
+        ocsvm_clust_df = pd.read_csv(ocsvm_out_file, sep='\t', header=0)
     else:
-        tc_ocsvm_df = False
+        ocsvm_clust_df = False
 
-    return no_noise_df, trust_recruit_df, ocsvm_clust_df
+    # Find intersection of HDBSCAN and OC-SVM
+    inter_out_file = Path(o_join(clst_path, mg_id + '.inter_clusters.tsv'))
+    if minhash_dict and not inter_out_file.is_file():
+        print('Combining Recruits from HDBSCAN and OC-SVM...')
+        inter_clust_list = []
+        for best_label in tqdm(trust_recruit_df['best_label'].unique()):
+            sub_scan_df = trust_recruit_df.query('best_label == @best_label')
+            sub_svm_df = ocsvm_clust_df.query('best_label == @best_label')
+            intersect = set(sub_scan_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
+            best_inter_list = [(best_label, x) for x in intersect]
+            best_inter_df = pd.DataFrame(best_inter_list, columns=['best_label', 'contig_id'])
+            inter_clust_list.append(best_inter_df)
+        inter_clust_df = pd.concat(inter_clust_list)
+        inter_clust_df.to_csv(inter_out_file, sep='\t', index=False)
+    elif inter_out_file.is_file():
+        print('Combined Clusters already exist...')
+        inter_clust_df = pd.read_csv(inter_out_file, sep='\t', header=0)
+    else:
+        inter_clust_df = False
+
+    return no_noise_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df

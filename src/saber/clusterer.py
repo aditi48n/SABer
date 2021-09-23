@@ -136,13 +136,13 @@ def recruitOCSVM(p):
     mg_feat_df = merge_df.copy()  # .query('contig_id in @sub_contig_list')
     mg_feat_df.drop(columns=['contig_id'], inplace=True)
     tc_feat_df.drop(columns=['contig_id'], inplace=True)
+    major_df = False
     if (tc_feat_df.shape[0] != 0) & (mg_feat_df.shape[0] != 0):
         # Run KMEANS first
         kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
         kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
                                       columns=['sag_id', 'subcontig_id', 'contig_id']
                                       )
-
         nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
         ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, None, None)
         val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
@@ -150,13 +150,8 @@ def recruitOCSVM(p):
         pos_perc = val_perc.loc[val_perc['pred'] == 1]
         major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
         major_df['sag_id'] = sag_id
-        major_pred = [1 if x in list(major_df['contig_id']) else -1
-                      for x in ocsvm_recruit_df['contig_id']
-                      ]
-        # ocsvm_recruit_df['majority_pred'] = major_pred
 
     return major_df
-
 
 def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
                  nthreads
@@ -352,7 +347,8 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         ocsvm_recruit_list = []
         results = pool.imap_unordered(recruitOCSVM, arg_list)
         for i, output in tqdm(enumerate(results, 1)):
-            ocsvm_recruit_list.append(output)
+            if isinstance(output, pd.DataFrame):
+                ocsvm_recruit_list.append(output)
         pool.close()
         pool.join()
         ocsvm_contig_df = pd.concat(ocsvm_recruit_list)

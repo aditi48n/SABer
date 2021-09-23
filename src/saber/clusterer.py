@@ -1,24 +1,173 @@
 #!/usr/bin/env python
 
+import multiprocessing
 from os.path import join as o_join
 from pathlib import Path
 
 import hdbscan
 import pandas as pd
 import umap
+from sklearn import svm
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.ensemble import IsolationForest
 from tqdm import tqdm
+
+
+def runOCSVM(tc_df, mg_df, tc_id, gamma, nu):
+    # fit OCSVM
+    clf = svm.OneClassSVM()  # nu=nu, gamma=gamma)
+    clf.fit(tc_df.values)
+    mg_pred = clf.predict(mg_df.values)
+    contig_id_list = [x.rsplit('_', 1)[0] for x in mg_df.index.values]
+    pred_df = pd.DataFrame(zip(mg_df.index.values, contig_id_list, mg_pred),
+                           columns=['subcontig_id', 'contig_id', 'pred']
+                           )
+    pred_df['nu'] = 'default'  # nu
+    pred_df['gamma'] = 'default'  # gamma
+    pred_df['sag_id'] = tc_id
+    pred_df = pred_df[['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id', 'pred']]
+
+    return pred_df
+
+
+def runISOF(sag_df, mg_df, sag_id, contam=0, estim=10, max_samp='auto'):
+    # fit IsoForest
+    clf = IsolationForest(random_state=42, contamination=contam, n_estimators=estim,
+                          max_samples=max_samp
+                          )
+    clf.fit(sag_df.values)
+    sag_pred = clf.predict(sag_df.values)
+    sag_score = clf.decision_function(sag_df.values)
+    sag_pred_df = pd.DataFrame(data=sag_pred, index=sag_df.index.values,
+                               columns=['anomaly'])
+    sag_pred_df.loc[sag_pred_df['anomaly'] == 1, 'anomaly'] = 0
+    sag_pred_df.loc[sag_pred_df['anomaly'] == -1, 'anomaly'] = 1
+    sag_pred_df['scores'] = sag_score
+    lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=0.5)
+
+    mg_pred = clf.predict(mg_df.values)
+    mg_score = clf.decision_function(mg_df.values)
+    contig_id_list = [x.rsplit('_', 1)[0] for x in mg_df.index.values]
+    pred_df = pd.DataFrame(zip(mg_df.index.values, contig_id_list, mg_pred),
+                           columns=['subcontig_id', 'contig_id', 'anomaly']
+                           )
+    pred_df.loc[pred_df['anomaly'] == 1, 'anomaly'] = 0
+    pred_df.loc[pred_df['anomaly'] == -1, 'anomaly'] = 1
+    pred_df['scores'] = mg_score
+    pred_df['iqr_anomaly'] = 0
+    pred_df['iqr_anomaly'] = (pred_df['scores'] < lower_bound) | \
+                             (pred_df['scores'] > upper_bound)
+    pred_df['iqr_anomaly'] = pred_df['iqr_anomaly'].astype(int)
+    pred_df['sag_id'] = sag_id
+    pred_df['pred'] = pred_df['iqr_anomaly'] == 0
+    pred_df['pred'] = pred_df['pred'].astype(int)
+
+    return pred_df
+
+
+def iqr_bounds(scores, k=1.5):
+    q1 = scores.quantile(0.25)
+    q3 = scores.quantile(0.75)
+    iqr = q3 - q1
+    lower_bound = (q1 - k * iqr)
+    upper_bound = (q3 + k * iqr)
+    return lower_bound, upper_bound
+
+
+def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
+    temp_cat_df = std_merge_df.copy()
+    last_len = 0
+    while temp_cat_df.shape[0] != last_len:
+        last_len = temp_cat_df.shape[0]
+        clusters = 10 if last_len >= 10 else last_len
+        kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=42).fit(temp_cat_df.values)
+        clust_labels = kmeans.labels_
+        clust_df = pd.DataFrame(zip(temp_cat_df.index.values, clust_labels),
+                                columns=['subcontig_id', 'kmeans_clust']
+                                )
+        recruit_clust_df = clust_df.loc[clust_df['subcontig_id'].isin(list(recruit_contigs_df.index))]
+        subset_clust_df = clust_df.loc[clust_df['kmeans_clust'].isin(
+            list(recruit_clust_df['kmeans_clust'].unique())
+        )]
+        subset_clust_df['kmeans_pred'] = 1
+        temp_cat_df = temp_cat_df.loc[temp_cat_df.index.isin(list(subset_clust_df['subcontig_id']))]
+    cat_clust_df = subset_clust_df.copy()  # pd.concat(block_list)
+    std_id_df = pd.DataFrame(std_merge_df.index.values, columns=['subcontig_id'])
+    std_id_df['contig_id'] = [x.rsplit('_', 1)[0] for x in std_id_df['subcontig_id']]
+    cat_clust_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cat_clust_df['subcontig_id']]
+    sub_std_df = std_id_df.loc[std_id_df['contig_id'].isin(list(cat_clust_df['contig_id']))]
+    std_clust_df = sub_std_df.merge(cat_clust_df, on=['subcontig_id', 'contig_id'], how='outer')
+    std_clust_df.fillna(-1, inplace=True)
+    pred_df = std_clust_df[['subcontig_id', 'contig_id', 'kmeans_pred']]
+    val_perc = pred_df.groupby('contig_id')['kmeans_pred'
+    ].value_counts(normalize=True).reset_index(name='percent')
+    pos_perc = val_perc.loc[val_perc['kmeans_pred'] == 1]
+    major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+    major_pred_df = pred_df.loc[pred_df['contig_id'].isin(major_df['contig_id'])]
+    std_clust_pred_df = std_clust_df.merge(major_pred_df, on=['subcontig_id', 'contig_id'],
+                                           how='left'
+                                           )
+    filter_clust_pred_df = std_clust_pred_df.loc[std_clust_pred_df['kmeans_pred_x'] == 1]
+    kmeans_pass_list = []
+    for md_nm in major_pred_df['subcontig_id']:
+        kmeans_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
+    return kmeans_pass_list, filter_clust_pred_df
+
+
+def recruitOCSVM(p):
+    merge_df, mh_trusted_df, no_noise_df, noise_df, sag_id = p
+    # Subset trusted contigs by SAG
+    sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0')
+    trusted_contigs_list = sub_trusted_df['contig_id'].unique()
+    # Gather trusted contigs subset from cluster and noise DFs
+    sub_denovo_df = no_noise_df.query('contig_id in @trusted_contigs_list and '
+                                      'probabilities >= 1.0'
+                                      )
+    sub_noise_df = noise_df.query('contig_id in @trusted_contigs_list')
+    # Gather all contigs associated with trusted clusters
+    trust_clust_list = list(sub_denovo_df['best_label'].unique())
+    sub_label_df = no_noise_df.query('best_label in @trust_clust_list')
+    sub_contig_list = list(set(list(sub_label_df['contig_id']) +
+                               list(sub_noise_df['contig_id']))
+                           )
+    tc_contig_list = list(sub_trusted_df['contig_id'].unique())
+    merge_df['contig_id'] = [x.rsplit('_', 1)[0] for x in merge_df.index.values]
+    tc_feat_df = merge_df.query('contig_id in @tc_contig_list')
+    mg_feat_df = merge_df.copy()  # .query('contig_id in @sub_contig_list')
+    mg_feat_df.drop(columns=['contig_id'], inplace=True)
+    tc_feat_df.drop(columns=['contig_id'], inplace=True)
+    if (tc_feat_df.shape[0] != 0) & (mg_feat_df.shape[0] != 0):
+        # Run KMEANS first
+        kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
+        kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
+                                      columns=['sag_id', 'subcontig_id', 'contig_id']
+                                      )
+
+        nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
+        ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, None, None)
+        val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
+            normalize=True).reset_index(name='percent')
+        pos_perc = val_perc.loc[val_perc['pred'] == 1]
+        major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
+        major_df['sag_id'] = sag_id
+        major_pred = [1 if x in list(major_df['contig_id']) else -1
+                      for x in ocsvm_recruit_df['contig_id']
+                      ]
+        # ocsvm_recruit_df['majority_pred'] = major_pred
+
+    return major_df
 
 
 def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
                  nthreads
-                 ):
+                 ):  # TODO: need to add multithreading where ever possible
     # Convert CovM to UMAP feature table
     cov_emb = Path(o_join(clst_path, mg_id + '.covm_emb.tsv'))
     if not cov_emb.is_file():
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
         clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
-                                          n_components=int(cov_df.shape[1]),
+                                          n_components=len(cov_df.columns),
                                           random_state=42, metric='manhattan'
                                           ).fit_transform(cov_df)
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
@@ -38,10 +187,10 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
 
-    denovo_out_file = Path(o_join(clst_path, mg_id + '.denovo_clusters.tsv'))
-    noise_out_file = Path(o_join(clst_path, mg_id + '.noise.tsv'))
-    if not denovo_out_file.is_file():
-        print('Loading Tetra and Coverage Embeddings...')
+    # Merge Coverage and Tetra Embeddings
+    merged_emb = Path(o_join(clst_path, mg_id + '.merged_emb.tsv'))
+    if not merged_emb.is_file():
+        print('Merging Tetra and Coverage Embeddings...')
         tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
         tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
         # load covm file
@@ -53,7 +202,14 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         merge_df.drop(columns=['contig_id_tetra', 'contig_id_cov'], inplace=True)
         tetra_feat_df.drop(columns=['contig_id'], inplace=True)
         cov_feat_df.drop(columns=['contig_id'], inplace=True)
+        merge_df.to_csv(merged_emb, sep='\t')
+    else:
+        print('Loading Merged Embedding...')
+        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
 
+    denovo_out_file = Path(o_join(clst_path, mg_id + '.denovo_clusters.tsv'))
+    noise_out_file = Path(o_join(clst_path, mg_id + '.noise.tsv'))
+    if not denovo_out_file.is_file():
         print('Performing De Novo Clustering...')
         clusterer = hdbscan.HDBSCAN(min_cluster_size=100, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
@@ -105,7 +261,6 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         print('Re-grouping with Trusted Contigs...')
         mh_trusted_df = minhash_dict[201]
         mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        trust_recruit_list = []
         label_max_list = []
         contig_max_list = []
         for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
@@ -152,7 +307,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
             sag_id = row['sag_id']
             jacc_sim = row['jacc_sim']
             sub_sag_contig_df = sag_contig_df.query('sag_id == @sag_id and '
-                                                    'jacc_sim == @jacc_sim'
+                                                    'jacc_sim >= @jacc_sim'
                                                     )
             sag_contig_list.append(sub_sag_contig_df)
 
@@ -163,6 +318,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         sag_noise_df = contig_pruned_df.merge(noise_df, on='contig_id', how='left')
 
         print('Building Trusted Clusters...')
+        trust_recruit_list = []
         for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
             trust_cols = ['sag_id', 'contig_id']
             sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0'
@@ -175,7 +331,6 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
 
         trust_recruit_df = pd.concat(trust_recruit_list)
         trust_recruit_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
-
         trust_recruit_df.to_csv(trust_out_file, sep='\t', index=False)
     elif trust_out_file.is_file():
         print('Trust Clusters already exist...')
@@ -184,4 +339,52 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         print('No Trusted Contigs Provided...')
         trust_recruit_df = False
 
-    return no_noise_df, trust_recruit_df
+    # Run OC-SVM recruiting
+    ocsvm_out_file = Path(o_join(clst_path, mg_id + '.ocsvm_clusters.tsv'))
+    if minhash_dict and not ocsvm_out_file.is_file():
+        print('Performing Anchored Recruitment with OC-SVM...')
+        mh_trusted_df = minhash_dict[201]
+        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
+        for sag_id in mh_trusted_df['sag_id'].unique():
+            arg_list.append([merge_df, mh_trusted_df, no_noise_df, noise_df, sag_id])
+        ocsvm_recruit_list = []
+        results = pool.imap_unordered(recruitOCSVM, arg_list)
+        for i, output in tqdm(enumerate(results, 1)):
+            ocsvm_recruit_list.append(output)
+        pool.close()
+        pool.join()
+        ocsvm_contig_df = pd.concat(ocsvm_recruit_list)
+        ocsvm_contig_best_df = ocsvm_contig_df.sort_values(by='percent', ascending=False
+                                                           ).drop_duplicates(subset='contig_id')
+        sag_contig_list = []
+        for index, row in tqdm(ocsvm_contig_best_df.iterrows()):
+            sag_id = row['sag_id']
+            percent = row['percent']
+            sub_sag_contig_df = ocsvm_contig_df.query('sag_id == @sag_id and '
+                                                      'percent >= @percent'
+                                                      )
+            sag_contig_list.append(sub_sag_contig_df)
+        contig_pruned_df = pd.concat(sag_contig_list)
+
+        print('Building OC-SVM Clusters...')
+        ocsvm_clust_list = []
+        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
+            trust_cols = ['sag_id', 'contig_id']
+            sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0'
+                                                 )[trust_cols]
+            sub_ocsvm_df = contig_pruned_df.query('sag_id == @sag_id')[trust_cols]
+            ocsvm_cat_df = pd.concat([sub_trusted_df, sub_ocsvm_df]).drop_duplicates()
+            ocsvm_clust_list.append(ocsvm_cat_df)
+
+        ocsvm_clust_df = pd.concat(ocsvm_clust_list)
+        ocsvm_clust_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
+        ocsvm_clust_df.to_csv(ocsvm_out_file, sep='\t', index=False)
+    elif ocsvm_out_file.is_file():
+        print('OC-SVM Clusters already exist...')
+        tc_ocsvm_df = pd.read_csv(ocsvm_out_file, sep='\t', header=0)
+    else:
+        tc_ocsvm_df = False
+
+    return no_noise_df, trust_recruit_df, ocsvm_clust_df

@@ -309,18 +309,22 @@ else:
     sag2cami_list = []
     print('Mapping Sources to Synthetic SAGs...')
     for sag_id in mh_list:
-        match = difflib.get_close_matches(str(sag_id), cami_list, n=1, cutoff=0)[0]
+        tmp_sag_id = sag_id
+        if 'LC_' in tmp_sag_id[:3]:
+            tmp_sag_id = tmp_sag_id.strip('LC_')
+        match = difflib.get_close_matches(str(tmp_sag_id), cami_list, n=1, cutoff=0)[0]
         m_len = len(match)
-        sub_sag_id = sag_id[:m_len]
+        sub_sag_id = tmp_sag_id[:m_len]
         if sub_sag_id != match:
             match = difflib.get_close_matches(str(sub_sag_id), cami_list, n=1, cutoff=0)[0]
             if match == sub_sag_id:
-                print("PASSED:", sag_id, sub_sag_id, match)
+                print("PASSED:", tmp_sag_id, sub_sag_id, match)
             else:
                 m1_len = len(match)
-                sub_sag_id = sag_id[:m_len]
+                sub_sag_id = tmp_sag_id[:m_len]
                 sub_sub_id = sub_sag_id[:m1_len].split('.')[0]
                 match = difflib.get_close_matches(str(sub_sub_id), cami_list, n=1, cutoff=0)[0]
+                print("PASSED:", tmp_sag_id, sub_sag_id, sub_sub_id, match)
         sag2cami_list.append([sag_id, match])
     sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
     sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')

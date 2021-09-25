@@ -519,7 +519,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
             print('Loading ' + clust[0] + ' Clean Clusters...')
             cat_denovo_df = pd.read_csv(clust_out_file, header=0, sep='\t')
             cat_noise_df = pd.read_csv(noise_out_file, header=0, sep='\t')
-    cleaned_clust_dict[clust[0]] = cat_denovo_df
+        cleaned_clust_dict[clust[0]] = cat_denovo_df
 
     return no_noise_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df, \
            cleaned_clust_dict['denovo'], cleaned_clust_dict['trusted'], \

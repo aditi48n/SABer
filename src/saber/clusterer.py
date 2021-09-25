@@ -181,7 +181,6 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
-
     # Merge Coverage and Tetra Embeddings
     merged_emb = Path(o_join(clst_path, mg_id + '.merged_emb.tsv'))
     if not merged_emb.is_file():
@@ -226,7 +225,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
                           sep='\t', index=False
                           )
 
-        print('Denoising/cleaning Clusters...')
+        print('Denoising Clusters...')
         ns_ratio_list = []
         for contig in tqdm(list(cluster_df['contig_id'].unique())):
             sub_df = cluster_df.query('contig_id == @contig')
@@ -403,4 +402,125 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     else:
         inter_clust_df = False
 
-    return no_noise_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df
+    # Try building a bin cleaning  algorithm
+    # Convert CovM to UMAP feature table
+    cov_emb = Path(o_join(clst_path, mg_id + '.covm_emb10.tsv'))
+    if not cov_emb.is_file():
+        print('Building UMAP embedding for Coverage...')
+        cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
+        clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+                                          n_components=len(cov_df.columns),
+                                          random_state=42, metric='manhattan'
+                                          ).fit_transform(cov_df)
+        umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
+        umap_feat_df.reset_index(inplace=True)
+        umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
+        umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
+    # Convert Tetra to UMAP feature table
+    tetra_emb = Path(o_join(clst_path, mg_id + '.tetra_emb80.tsv'))
+    if not tetra_emb.is_file():
+        print('Building UMAP embedding for Tetra Hz...')
+        tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
+        clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0, n_components=80,
+                                          random_state=42, metric='manhattan'
+                                          ).fit_transform(tetra_df)
+        umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
+        umap_feat_df.reset_index(inplace=True)
+        umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
+        umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
+    # Merge Coverage and Tetra Embeddings
+    merged_emb = Path(o_join(clst_path, mg_id + '.merged_emb90.tsv'))
+    if not merged_emb.is_file():
+        print('Merging Tetra and Coverage Embeddings...')
+        tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
+        tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
+        # load covm file
+        cov_feat_df = pd.read_csv(cov_emb, sep='\t', header=0)
+        cov_feat_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
+        cov_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_feat_df['subcontig_id']]
+        cov_feat_df.set_index('subcontig_id', inplace=True)
+        merge_df = tetra_feat_df.join(cov_feat_df, lsuffix='_tetra', rsuffix='_cov')
+        merge_df.drop(columns=['contig_id_tetra', 'contig_id_cov'], inplace=True)
+        tetra_feat_df.drop(columns=['contig_id'], inplace=True)
+        cov_feat_df.drop(columns=['contig_id'], inplace=True)
+        merge_df.to_csv(merged_emb, sep='\t')
+    else:
+        print('Loading Merged Embedding...')
+        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
+
+    merge_df['contig_id'] = [x.rsplit('_', 1)[0] for x in merge_df.index.values]
+    cluster_df_list = [['denovo', no_noise_df], ['trusted', trust_recruit_df], ['ocsvm', ocsvm_clust_df],
+                       ['inter', inter_clust_df]
+                       ]
+    cleaned_clust_dict = {}
+    for clust in cluster_df_list:
+        clust_df = clust[1]
+        clust_out_file = Path(o_join(clst_path, mg_id + '.denovo_' + clust[0] + '.tsv'))
+        noise_out_file = Path(o_join(clst_path, mg_id + '.noise_' + clust[0] + '.tsv'))
+        if not clust_out_file.is_file():
+            print('Performing Cluster Cleaning on ' + clust[0] + '...')
+            hdbscan_list = []
+            denovo_list = []
+            noise_list = []
+            for best_label in tqdm(clust_df['best_label'].unique()):
+                # print('Performing Cleaning ' + str(best_label) + '...')
+                sub_clust_df = clust_df.query('best_label == @best_label')
+                clust_contigs = list(sub_clust_df['contig_id'].unique())
+                sub_feat_df = merge_df.query('contig_id in @clust_contigs')
+                sub_feat_df.drop(columns=['contig_id'], inplace=True)
+                c = 100
+                if sub_feat_df.shape[0] < c:
+                    c = sub_feat_df.shape[0]
+                clusterer = hdbscan.HDBSCAN(min_cluster_size=100, cluster_selection_method='eom',
+                                            prediction_data=True, cluster_selection_epsilon=0,
+                                            min_samples=c
+                                            ).fit(sub_feat_df)
+
+                cluster_labels = [str(best_label) + '_' + str(x) for x in clusterer.labels_]
+                cluster_probs = clusterer.probabilities_
+                cluster_outlier = clusterer.outlier_scores_
+
+                cluster_df = pd.DataFrame(zip(merge_df.index.values, cluster_labels, cluster_probs,
+                                              cluster_outlier),
+                                          columns=['subcontig_id', 'label', 'probabilities',
+                                                   'outlier_score']
+                                          )
+                cluster_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cluster_df['subcontig_id']]
+                hdbscan_list.append(cluster_df)
+
+                # print('Denoising ' + str(best_label) + ' Clean Clusters...')
+                ns_ratio_list = []
+                for contig in list(cluster_df['contig_id'].unique()):
+                    sub_df = cluster_df.query('contig_id == @contig')
+                    noise_cnt = sub_df.query('label == -1').shape[0]
+                    signal_cnt = sub_df.query('label != -1').shape[0]
+                    ns_ratio = (noise_cnt / (noise_cnt + signal_cnt)) * 100
+                    prob_df = sub_df.groupby(['label'])[['probabilities']].max().reset_index()
+                    best_ind = prob_df['probabilities'].argmax()
+                    best_label = prob_df['label'].iloc[best_ind]
+                    best_prob = prob_df['probabilities'].iloc[best_ind]
+                    ns_ratio_list.append([contig, best_label])
+
+                ns_ratio_df = pd.DataFrame(ns_ratio_list, columns=['contig_id', 'best_label'])
+                cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
+                no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
+                noise_df = cluster_ns_df.query('best_label == -1')  # 'best_prob < 0.51')
+                denovo_list.append(no_noise_df)
+                noise_list.append(noise_df)
+            cat_clust_df = pd.concat(hdbscan_list)
+            cat_denovo_df = pd.concat(denovo_list)
+            cat_noise_df = pd.concat(noise_list)
+            cat_clust_df.to_csv(o_join(clst_path, mg_id + '.hdbscan_' + clust[0] + '.tsv'),
+                                sep='\t', index=False
+                                )
+            cat_denovo_df.to_csv(clust_out_file, sep='\t', index=False)
+            cat_noise_df.to_csv(noise_out_file, sep='\t', index=False)
+        else:
+            print('Loading ' + clust[0] + ' Clean Clusters...')
+            cat_denovo_df = pd.read_csv(clust_out_file, header=0, sep='\t')
+            cat_noise_df = pd.read_csv(noise_out_file, header=0, sep='\t')
+    cleaned_clust_dict[clust[0]] = cat_denovo_df
+
+    return no_noise_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df, \
+           cleaned_clust_dict['denovo'], cleaned_clust_dict['trusted'], \
+           cleaned_clust_dict['ocsvm'], cleaned_clust_dict['inter']

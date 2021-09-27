@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import multiprocessing
+import warnings
 from os.path import join as o_join
 from pathlib import Path
 
@@ -11,6 +12,9 @@ from sklearn import svm
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.ensemble import IsolationForest
 from tqdm import tqdm
+
+warnings.filterwarnings("error")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def runOCSVM(tc_df, mg_df, tc_id, gamma, nu):
@@ -157,50 +161,62 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
                  nthreads
                  ):  # TODO: need to add multithreading where ever possible
     # Convert CovM to UMAP feature table
-    cov_emb = Path(o_join(clst_path, mg_id + '.covm_emb.tsv'))
+    set_init = 'spectral'
+    cov_emb = Path(o_join(clst_path, mg_id + '.denovo.covm_emb.tsv'))
     if not cov_emb.is_file():
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
-        clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
-                                          n_components=len(cov_df.columns),
-                                          random_state=42, metric='manhattan'
-                                          ).fit_transform(cov_df)
+        # COV sometimes crashes when init='spectral', so fall back on 'random' when that happens.
+        try:
+            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+                                              n_components=len(cov_df.columns),
+                                              random_state=42, metric='manhattan', init=set_init
+                                              ).fit_transform(cov_df)
+        except:
+            print('Resetting UMAP initialization to random to avoid warning...')
+            tmp_init = 'random'
+            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+                                              n_components=len(cov_df.columns),
+                                              random_state=42, metric='manhattan', init=tmp_init
+                                              ).fit_transform(
+                cov_df)  # TODO: Spectral works better for De novo, Random for Anchored.
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
     # Convert Tetra to UMAP feature table
-    tetra_emb = Path(o_join(clst_path, mg_id + '.tetra_emb.tsv'))
+    tetra_emb = Path(o_join(clst_path, mg_id + '.denovo.tetra_emb.tsv'))
     if not tetra_emb.is_file():
         print('Building UMAP embedding for Tetra Hz...')
         tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
         clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0, n_components=40,
-                                          random_state=42, metric='manhattan', init='random'
+                                          random_state=42, metric='manhattan', init=set_init
                                           ).fit_transform(tetra_df)
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
     # Merge Coverage and Tetra Embeddings
-    merged_emb = Path(o_join(clst_path, mg_id + '.merged_emb.tsv'))
+    merged_emb = Path(o_join(clst_path, mg_id + '.denovo.merged_emb.tsv'))
     if not merged_emb.is_file():
         print('Merging Tetra and Coverage Embeddings...')
         tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
         tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
+        tetra_feat_df.columns = [str(x) + '_tetra' for x in tetra_feat_df.columns]
         # load covm file
         cov_feat_df = pd.read_csv(cov_emb, sep='\t', header=0)
         cov_feat_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
         cov_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_feat_df['subcontig_id']]
         cov_feat_df.set_index('subcontig_id', inplace=True)
-        merge_df = tetra_feat_df.join(cov_feat_df, lsuffix='_tetra', rsuffix='_cov')
+        cov_feat_df.columns = [str(x) + '_cov' for x in cov_feat_df.columns]
+        merge_df = tetra_feat_df.join(cov_feat_df)
         merge_df.drop(columns=['contig_id_tetra', 'contig_id_cov'], inplace=True)
-        tetra_feat_df.drop(columns=['contig_id'], inplace=True)
-        cov_feat_df.drop(columns=['contig_id'], inplace=True)
+        tetra_feat_df.drop(columns=['contig_id_tetra'], inplace=True)
+        cov_feat_df.drop(columns=['contig_id_cov'], inplace=True)
         merge_df.to_csv(merged_emb, sep='\t')
     else:
         print('Loading Merged Embedding...')
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-
     denovo_out_file = Path(o_join(clst_path, mg_id + '.denovo_clusters.tsv'))
     noise_out_file = Path(o_join(clst_path, mg_id + '.noise.tsv'))
     if not denovo_out_file.is_file():
@@ -251,6 +267,53 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
 
     trust_out_file = Path(o_join(clst_path, mg_id + '.trusted_clusters.tsv'))
     if minhash_dict and not trust_out_file.is_file():
+        print('Anchored Binning Starting with Trusted Contigs...')
+        # Convert CovM to UMAP feature table
+        set_init = 'random'
+        cov_emb = Path(o_join(clst_path, mg_id + '.anchored.covm_emb.tsv'))
+        if not cov_emb.is_file():
+            print('Building UMAP embedding for Coverage...')
+            cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
+            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+                                              n_components=len(cov_df.columns),
+                                              random_state=42, metric='manhattan', init=set_init
+                                              ).fit_transform(cov_df)
+            umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
+            umap_feat_df.reset_index(inplace=True)
+            umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
+            umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
+        # Convert Tetra to UMAP feature table
+        tetra_emb = Path(o_join(clst_path, mg_id + '.anchored.tetra_emb.tsv'))
+        if not tetra_emb.is_file():
+            print('Building UMAP embedding for Tetra Hz...')
+            tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
+            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0, n_components=40,
+                                              random_state=42, metric='manhattan', init=set_init
+                                              ).fit_transform(tetra_df)
+            umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
+            umap_feat_df.reset_index(inplace=True)
+            umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
+            umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
+        # Merge Coverage and Tetra Embeddings
+        anchor_emb = Path(o_join(clst_path, mg_id + '.anchored.merged_emb.tsv'))
+        if not anchor_emb.is_file():
+            print('Merging Tetra and Coverage Embeddings...')
+            tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
+            tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
+            # load covm file
+            cov_feat_df = pd.read_csv(cov_emb, sep='\t', header=0)
+            cov_feat_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
+            cov_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_feat_df['subcontig_id']]
+            cov_feat_df.set_index('subcontig_id', inplace=True)
+            anchor_df = tetra_feat_df.join(cov_feat_df, lsuffix='_tetra', rsuffix='_cov')
+            anchor_df.drop(columns=['contig_id_tetra', 'contig_id_cov'], inplace=True)
+            tetra_feat_df.drop(columns=['contig_id'], inplace=True)
+            cov_feat_df.drop(columns=['contig_id'], inplace=True)
+            anchor_df.to_csv(anchor_emb, sep='\t')
+        else:
+            print('Loading Merged Embedding...')
+            anchor_df = pd.read_csv(anchor_emb, sep='\t', header=0, index_col='subcontig_id')
+
         # Group clustered and noise contigs by trusted contigs
         print('Re-grouping with Trusted Contigs...')
         mh_trusted_df = minhash_dict[201]
@@ -342,7 +405,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
         for sag_id in mh_trusted_df['sag_id'].unique():
-            arg_list.append([merge_df, mh_trusted_df, no_noise_df, noise_df, sag_id])
+            arg_list.append([anchor_df, mh_trusted_df, no_noise_df, noise_df, sag_id])
         ocsvm_recruit_list = []
         results = pool.imap_unordered(recruitOCSVM, arg_list)
         for i, output in tqdm(enumerate(results, 1)):

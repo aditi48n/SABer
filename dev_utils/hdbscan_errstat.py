@@ -334,7 +334,7 @@ else:
 
 # setup mapping to CAMI ref genomes
 cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
-cluster_trim_df = cluster_df.query('best_label != -1')
+cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
 src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
 src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
 contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]

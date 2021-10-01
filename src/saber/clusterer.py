@@ -258,6 +258,9 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
         no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
         noise_df = cluster_ns_df.query('best_label == -1')  # 'best_prob < 0.51')
+        if no_noise_df.empty:
+            #  TODO: fix this or print a warning message to user :)
+            no_noise_df = noise_df.copy()
         no_noise_df.to_csv(denovo_out_file, sep='\t', index=False)
         noise_df.to_csv(noise_out_file, sep='\t', index=False)
     else:
@@ -368,10 +371,13 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
                                                     )
             sag_contig_list.append(sub_sag_contig_df)
 
-        label_pruned_df = pd.concat(sag_label_list)
-        contig_pruned_df = pd.concat(sag_contig_list)
+        if sag_label_list:
+            label_pruned_df = pd.concat(sag_label_list)
+            sag_denovo_df = label_pruned_df.merge(no_noise_df, on='best_label', how='left')
+        else:
+            sag_denovo_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
 
-        sag_denovo_df = label_pruned_df.merge(no_noise_df, on='best_label', how='left')
+        contig_pruned_df = pd.concat(sag_contig_list)
         sag_noise_df = contig_pruned_df.merge(noise_df, on='contig_id', how='left')
 
         print('Building Trusted Clusters...')

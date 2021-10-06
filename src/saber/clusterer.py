@@ -166,16 +166,22 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     if not cov_emb.is_file():
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
+        X = cov_df.values
+        n, dim = X.shape
+        # if n < 10000:
+        n_neighbors = 10
+        # else:
+        #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
         # COV sometimes crashes when init='spectral', so fall back on 'random' when that happens.
         try:
-            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0,
                                               n_components=len(cov_df.columns),
                                               random_state=42, metric='manhattan', init=set_init
                                               ).fit_transform(cov_df)
         except:
             print('Resetting UMAP initialization to random to avoid warning...')
             tmp_init = 'random'
-            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0,
                                               n_components=len(cov_df.columns),
                                               random_state=42, metric='manhattan', init=tmp_init
                                               ).fit_transform(
@@ -189,7 +195,13 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     if not tetra_emb.is_file():
         print('Building UMAP embedding for Tetra Hz...')
         tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
-        clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0, n_components=40,
+        X = tetra_df.values
+        n, dim = X.shape
+        # if n < 10000:
+        n_neighbors = 10
+        # else:
+        #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
+        clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0, n_components=40,
                                           random_state=42, metric='manhattan', init=set_init
                                           ).fit_transform(tetra_df)
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
@@ -277,7 +289,13 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         if not cov_emb.is_file():
             print('Building UMAP embedding for Coverage...')
             cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
-            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0,
+            X = cov_df.values
+            n, dim = X.shape
+            # if n < 10000:
+            n_neighbors = 10
+            # else:
+            #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
+            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0,
                                               n_components=len(cov_df.columns),
                                               random_state=42, metric='manhattan', init=set_init
                                               ).fit_transform(cov_df)
@@ -290,7 +308,13 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         if not tetra_emb.is_file():
             print('Building UMAP embedding for Tetra Hz...')
             tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
-            clusterable_embedding = umap.UMAP(n_neighbors=10, min_dist=0.0, n_components=40,
+            X = tetra_df.values
+            n, dim = X.shape
+            # if n < 10000:
+            n_neighbors = 10
+            # else:
+            #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
+            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0, n_components=40,
                                               random_state=42, metric='manhattan', init=set_init
                                               ).fit_transform(tetra_df)
             umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)

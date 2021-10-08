@@ -166,12 +166,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     if not cov_emb.is_file():
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
-        X = cov_df.values
-        n, dim = X.shape
-        # if n < 10000:
         n_neighbors = 10
-        # else:
-        #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
         # COV sometimes crashes when init='spectral', so fall back on 'random' when that happens.
         try:
             clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0,
@@ -195,12 +190,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     if not tetra_emb.is_file():
         print('Building UMAP embedding for Tetra Hz...')
         tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
-        X = tetra_df.values
-        n, dim = X.shape
-        # if n < 10000:
         n_neighbors = 10
-        # else:
-        #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
         clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0, n_components=40,
                                           random_state=42, metric='manhattan', init=set_init
                                           ).fit_transform(tetra_df)
@@ -235,7 +225,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         print('Performing De Novo Clustering...')
         clusterer = hdbscan.HDBSCAN(min_cluster_size=100, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
-                                    min_samples=100
+                                    min_samples=25
                                     ).fit(merge_df.values)
 
         cluster_labels = clusterer.labels_
@@ -289,12 +279,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         if not cov_emb.is_file():
             print('Building UMAP embedding for Coverage...')
             cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
-            X = cov_df.values
-            n, dim = X.shape
-            # if n < 10000:
             n_neighbors = 10
-            # else:
-            #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
             clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0,
                                               n_components=len(cov_df.columns),
                                               random_state=42, metric='manhattan', init=set_init
@@ -308,12 +293,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         if not tetra_emb.is_file():
             print('Building UMAP embedding for Tetra Hz...')
             tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
-            X = tetra_df.values
-            n, dim = X.shape
-            # if n < 10000:
             n_neighbors = 10
-            # else:
-            #    n_neighbors = int(10 + 15 * (np.log10(n) - 4))
             clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.0, n_components=40,
                                               random_state=42, metric='manhattan', init=set_init
                                               ).fit_transform(tetra_df)

@@ -19,17 +19,17 @@ warnings.filterwarnings("error")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def runOCSVM(tc_df, mg_df, tc_id, gamma, nu):
+def runOCSVM(tc_df, mg_df, tc_id, n, gam):
     # fit OCSVM
-    clf = svm.OneClassSVM()  # nu=nu, gamma=gamma)
+    clf = svm.OneClassSVM(nu=n, gamma=gam)
     clf.fit(tc_df.values)
     mg_pred = clf.predict(mg_df.values)
     contig_id_list = [x.rsplit('_', 1)[0] for x in mg_df.index.values]
     pred_df = pd.DataFrame(zip(mg_df.index.values, contig_id_list, mg_pred),
                            columns=['subcontig_id', 'contig_id', 'pred']
                            )
-    pred_df['nu'] = 'default'  # nu
-    pred_df['gamma'] = 'default'  # gamma
+    pred_df['nu'] = n
+    pred_df['gamma'] = gam
     pred_df['sag_id'] = tc_id
     pred_df = pred_df[['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id', 'pred']]
 
@@ -77,7 +77,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
 
 
 def recruitOCSVM(p):
-    merge_df, mh_trusted_df, no_noise_df, noise_df, sag_id = p
+    merge_df, mh_trusted_df, no_noise_df, noise_df, sag_id, nu, gamma = p
     # Subset trusted contigs by SAG
     sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0')
     trusted_contigs_list = sub_trusted_df['contig_id'].unique()
@@ -106,7 +106,7 @@ def recruitOCSVM(p):
                                       columns=['sag_id', 'subcontig_id', 'contig_id']
                                       )
         nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
-        ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, None, None)
+        ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, nu, gamma)
         val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
             normalize=True).reset_index(name='percent')
         pos_perc = val_perc.loc[val_perc['pred'] == 1]
@@ -116,13 +116,14 @@ def recruitOCSVM(p):
     return major_df
 
 def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
-                 nthreads
+                 min_clust_size, min_samp, nu, gamma, nthreads
                  ):  # TODO: need to add multithreading where ever possible
 
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
-    cov_emb = Path(o_join(clst_path, mg_id + '.denovo.covm_emb.tsv'))
-    if not cov_emb.is_file():
+    merged_emb = Path(o_join(clst_path, mg_id + '.denovo.merged_emb.tsv'))
+    if not merged_emb.is_file():
+        cov_emb = Path(o_join(clst_path, mg_id + '.denovo.covm_emb.tsv'))
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
         n_neighbors = 10
@@ -144,9 +145,9 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
-    # Convert Tetra to UMAP feature table
-    tetra_emb = Path(o_join(clst_path, mg_id + '.denovo.tetra_emb.tsv'))
-    if not tetra_emb.is_file():
+
+        # Convert Tetra to UMAP feature table
+        tetra_emb = Path(o_join(clst_path, mg_id + '.denovo.tetra_emb.tsv'))
         print('Building UMAP embedding for Tetra Hz...')
         tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
         n_neighbors = 10
@@ -157,9 +158,8 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
-    # Merge Coverage and Tetra Embeddings
-    merged_emb = Path(o_join(clst_path, mg_id + '.denovo.merged_emb.tsv'))
-    if not merged_emb.is_file():
+
+        # Merge Coverage and Tetra Embeddings
         print('Merging Tetra and Coverage Embeddings...')
         tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
         tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
@@ -182,9 +182,9 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     noise_out_file = Path(o_join(clst_path, mg_id + '.noise.tsv'))
     if not denovo_out_file.is_file():
         print('Performing De Novo Clustering...')
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=100, cluster_selection_method='eom',
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
-                                    min_samples=25
+                                    min_samples=min_samp
                                     ).fit(merge_df.values)
 
         cluster_labels = clusterer.labels_
@@ -234,8 +234,9 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         print('Anchored Binning Starting with Trusted Contigs...')
         # Convert CovM to UMAP feature table
         set_init = 'random'
-        cov_emb = Path(o_join(clst_path, mg_id + '.anchored.covm_emb.tsv'))
-        if not cov_emb.is_file():
+        anchor_emb = Path(o_join(clst_path, mg_id + '.anchored.merged_emb.tsv'))
+        if not anchor_emb.is_file():
+            cov_emb = Path(o_join(clst_path, mg_id + '.anchored.covm_emb.tsv'))
             print('Building UMAP embedding for Coverage...')
             cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
             n_neighbors = 10
@@ -247,9 +248,9 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
             umap_feat_df.reset_index(inplace=True)
             umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
             umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
-        # Convert Tetra to UMAP feature table
-        tetra_emb = Path(o_join(clst_path, mg_id + '.anchored.tetra_emb.tsv'))
-        if not tetra_emb.is_file():
+
+            # Convert Tetra to UMAP feature table
+            tetra_emb = Path(o_join(clst_path, mg_id + '.anchored.tetra_emb.tsv'))
             print('Building UMAP embedding for Tetra Hz...')
             tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
             n_neighbors = 10
@@ -260,9 +261,8 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
             umap_feat_df.reset_index(inplace=True)
             umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
             umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
-        # Merge Coverage and Tetra Embeddings
-        anchor_emb = Path(o_join(clst_path, mg_id + '.anchored.merged_emb.tsv'))
-        if not anchor_emb.is_file():
+
+            # Merge Coverage and Tetra Embeddings
             print('Merging Tetra and Coverage Embeddings...')
             tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
             tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
@@ -374,7 +374,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
         for sag_id in mh_trusted_df['sag_id'].unique():
-            arg_list.append([anchor_df, mh_trusted_df, no_noise_df, noise_df, sag_id])
+            arg_list.append([anchor_df, mh_trusted_df, no_noise_df, noise_df, sag_id, nu, gamma])
         ocsvm_recruit_list = []
         results = pool.imap_unordered(recruitOCSVM, arg_list)
         for i, output in tqdm(enumerate(results, 1)):
@@ -436,8 +436,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
 
     logging.info('Cleaning up intermediate files...\n')
     for s in ["*.denovo.covm_emb.tsv", "*.denovo.tetra_emb.tsv",
-              "*.denovo.merged_emb.tsv", "*.anchored.covm_emb.tsv",
-              "*.anchored.tetra_emb.tsv", "*.anchored.merged_emb.tsv",
+              "*.anchored.covm_emb.tsv", "*.anchored.tetra_emb.tsv",
               "*.subcontigs.*"
               ]:
         s_utils.runCleaner(clst_path, s)

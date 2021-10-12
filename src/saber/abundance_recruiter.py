@@ -29,6 +29,11 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
         mg_covm_out = procMetaGs(abr_path, mg_id, mg_raw_file_list,
                                  subcontig_path, nthreads
                                  )
+    # Clean up the directory
+    logging.info('Cleaning up intermediate files...\n')
+    for s in ["*.sam", "*.bam", "*.stderr.txt", "*.metabat.tsv"]:
+        s_utils.runCleaner(abr_path, s)
+
     return mg_covm_out
 
 
@@ -50,10 +55,6 @@ def procMetaGs(abr_path, mg_id, mg_raw_file_list, subcontig_path, nthreads):
         sorted_bam_list.append(mg_sort_out)
     logging.info('\n')
     mg_covm_out = runCovM(abr_path, mg_id, nthreads, sorted_bam_list)
-    # Clean up the directory
-    logging.info('Cleaning up intermediate files...\n')
-    for s in ["*.sam", "*.bam", "*.stderr.txt", "*.metabat.tsv"]:
-        s_utils.runCleaner(abr_path, s)
 
     return mg_covm_out
 

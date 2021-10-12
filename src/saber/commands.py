@@ -109,7 +109,8 @@ def recruit(sys_args):
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
     mg_id = mg_sub_file[0]
     clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], abund_file, tetra_file,
-                                 minhash_df_dict, recruit_s.nthreads
+                                 minhash_df_dict, 100, 25, 0.5, 'scale',
+                                 recruit_s.nthreads
                                  )
     # Collect and join all recruits
     com.run_combine_recruits(save_dirs_dict['xPGs'], recruit_s.mg_file, clusters)

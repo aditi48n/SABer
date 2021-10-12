@@ -6,7 +6,6 @@ from os.path import join as o_join
 import numpy as np
 import pandas as pd
 import sourmash
-from sourmash.lca import LCA_Database
 from sourmash.sbtmh import SigLeaf
 
 import utilities as s_utils
@@ -81,67 +80,6 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                                       sep='\t',
                                       index=False
                                       )
-            # logging.info('Compiling all MinHash Recruits\n')
-            '''
-            # Count # of subcontigs recruited to each SAG via sourmash
-            mh_cnt_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
-                                                   )['q_subcontig_id'].count().reset_index()
-            mh_cnt_df.columns = ['sag_id', 'contig_id', 'subcontig_recruits']
-            mh_avg_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
-                                                   )['jacc_sim'].mean().reset_index()
-            mh_avg_df.columns = ['sag_id', 'contig_id', 'jacc_sim_avg']
-            mh_max_df = minhash_recruit_df.groupby(['sag_id', 'q_contig_id']
-                                                   )['jacc_sim'].max().reset_index()
-            mh_max_df.columns = ['sag_id', 'contig_id', 'jacc_sim_max']
-            mh_dfs = [mh_cnt_df, mh_avg_df, mh_max_df]
-            mh_merge_df = reduce(lambda left, right: pd.merge(left, right,
-                                                              on=['sag_id', 'contig_id']),
-                                 mh_dfs
-                                 )
-            '''
-            # mh_trim_df = minhash_recruit_df[['sag_id', 'q_contig_id', 'jacc_sim']]
-            # mh_trim_df.columns = ['sag_id', 'contig_id', 'jacc_sim']
-            # mh_filter_df = mh_trim_df.loc[mh_trim_df['jacc_sim'] >= 0.99]
-            '''
-            # Build subcontig count for each MG contig
-            mg_contig_list = [x.rsplit('_', 1)[0] for x in mg_headers]
-            mg_tot_df = pd.DataFrame(zip(mg_contig_list, mg_headers),
-                                     columns=['contig_id', 'subcontig_id'])
-            mg_tot_cnt_df = mg_tot_df.groupby(['contig_id']).count().reset_index()
-            mg_tot_cnt_df.columns = ['contig_id', 'subcontig_total']
-            mh_recruit_df = mh_cnt_df.merge(mg_tot_cnt_df, how='left', on='contig_id')
-            mh_recruit_df['percent_recruited'] = mh_recruit_df['subcontig_recruits'] / \
-                                                 mh_recruit_df['subcontig_total']
-            mh_jacc_merge_df = mh_recruit_df.merge(mh_avg_df, how='left', on=['sag_id', 'contig_id'])
-            mh_max_merge_df = mh_jacc_merge_df.merge(mh_max_df, how='left', on=['sag_id', 'contig_id'])
-
-            mh_max_list = []
-            for sag_id in list(set(minhash_df['sag_id'])):
-                sag_max_only_df = mh_max_merge_df.loc[mh_max_merge_df['sag_id'] == sag_id]
-                mh_max_df = mg_tot_df[mg_tot_df['contig_id'].isin(list(sag_max_only_df['contig_id']))]
-                mh_max_df['sag_id'] = sag_id
-                sag_merge_df = mh_max_df.merge(sag_max_only_df, how='left',
-                                               on=['contig_id', 'sag_id']
-                                               )
-                sag_merge_df = sag_merge_df[['sag_id', 'subcontig_id', 'contig_id', 'subcontig_recruits',
-                                             'subcontig_total', 'percent_recruited', 'jacc_sim_avg',
-                                             'jacc_sim_max'
-                                             ]]
-                mh_max_list.append(sag_merge_df)
-            mh_final_max_df = pd.concat(mh_max_list)
-            merge_jacc_df = mh_final_max_df.merge(minhash_df, how='left',
-                                                  on=['sag_id', 'subcontig_id', 'contig_id']
-                                                  )
-            merge_jacc_df.fillna(0, inplace=True)
-            minhash_filter_df = merge_jacc_df.loc[(merge_jacc_df['jacc_sim_max'] != 0)]
-            minhash_filter_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
-                                     index=False
-                                     )
-            mh_kmer_recruits_dict[kmer] = minhash_filter_df
-            '''
-            # mh_filter_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv'), sep='\t',
-            #                    index=False
-            #                    )
             mh_kmer_recruits_dict[kmer] = minhash_recruit_df
 
     logging.info('MinHash Recruitment Algorithm Complete\n')
@@ -205,59 +143,6 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
                          )
         search_df_list.append(search_df)
     return search_df_list
-
-
-def compare_sag_lca(p):  # TODO: needs stdout for user monitoring
-    lca_args, mhr_path, sag_id_list, sag_sig_dict, kmer = p
-    mg_id, mg_sub_file, sig_path, nthreads = lca_args
-    mg_lca = build_mg_lca(mg_id, mg_sub_file, sig_path, nthreads, kmer)
-    search_df_list = []
-    for i, sag_id in enumerate(sag_id_list):
-        sag_sig_list = sag_sig_dict[sag_id]
-        search_list = []
-        for i, sig in enumerate(sag_sig_list):
-            lca_out = mg_lca.search(sig, threshold=0.000000000001)
-            for similarity, t_sig, filename in lca_out:
-                q_subcontig = t_sig.name()
-                q_contig = q_subcontig.rsplit('_', 1)[0]
-                search_list.append([sag_id, q_subcontig, q_contig, similarity])
-        search_df = pd.DataFrame(search_list, columns=['sag_id', 'subcontig_id', 'contig_id',
-                                                       'jacc_sim'
-                                                       ])
-        search_df['jacc_sim'] = search_df['jacc_sim'].astype(float)
-        search_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
-        search_df.drop_duplicates(subset='subcontig_id', inplace=True)
-        search_file = o_join(mhr_path, sag_id + '.' + str(kmer) + '.mhr_recruits.tsv')
-        search_df.to_csv(search_file, sep='\t',
-                         index=False
-                         )
-        search_df_list.append(search_df)
-    return search_df_list
-
-
-def build_mg_lca(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=False):
-    mg_lca_file = o_join(sig_path, mg_id + '.' + str(kmer) + '.lca.json.gz')
-    if isfile(mg_lca_file):
-        if checkonly is True:
-            logging.info('%s LCA DB Exists\n' % mg_id)
-            mg_lca_db = True
-        else:
-            mg_lca_db = sourmash.load_file_as_index(mg_lca_file)
-    else:
-        logging.info('Building %s LCA Database\n' % mg_id)
-        mg_sig_list = load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer)
-        db = LCA_Database(ksize=kmer, scaled=100, moltype='DNA')
-        pool = multiprocessing.Pool(processes=nthreads)
-        for i, sig in enumerate(mg_sig_list, 1):
-            hashes_inserted = db.insert(sig)
-            logging.info('Inserting hashes into LCA DB: {}/{}\r'.format(i, len(mg_sig_list)))
-        logging.info('\n')
-        db.save(mg_lca_file)
-        pool.close()
-        pool.join()
-        mg_lca_db = None
-
-    return mg_lca_db
 
 
 def build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=False):
@@ -388,78 +273,3 @@ def build_signature(p):
     return mg_sig
 
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
-
-'''
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='uses MinHash Signatures to recruit metaG reads to Trusted Contigs')
-    parser.add_argument("-s", "--sag", required=True, dest="sag_path",
-                        help="Path to reference Trusted Contig FASTA file or directory "
-                             "containing only FASTA files."
-                        )
-    parser.add_argument("-m", "--metag", required=True, dest="mg_file",
-                        help="Path to a metagenome assembly [FASTA format only]."
-                        )
-    parser.add_argument("-o", "--output-dir", required=True, dest="save_path",
-                        help="Path to directory for all outputs."
-                        )
-    parser.add_argument("--max_contig_len", required=False, default=10000,
-                        dest="max_contig_len",
-                        help="Max subcontig length in basepairs [10000]."
-                        )
-    parser.add_argument("--overlap_len", required=False, default=2000,
-                        dest="overlap_len",
-                        help="subcontig overlap in basepairs [2000]."
-                        )
-    parser.add_argument(
-        '--threads',
-        help='number of threads to use', required=False, default='2'
-    )
-    parser.add_argument("--force", required=False, default=False,
-                        help="Force SABer to run even if final recruits files exist [False]"
-                        )
-    parser.add_argument("-v", "--verbose", action="store_true", default=False,
-                        help="Prints a more verbose runtime log"
-                        )
-
-    args = parser.parse_args()
-    # set args
-    save_path = args.save_path
-    sag_path = args.sag_path
-    mg_file = args.mg_file
-    max_contig_len = args.max_contig_len
-    overlap_len = args.overlap_len
-    nthreads = int(args.threads)
-    force = args.force
-    
-    # Build save dir structure
-    save_dirs_dict = s_utils.check_out_dirs(save_path)
-    # Find the SAGs!
-    sag_list = s_utils.get_SAGs(sag_path)
-
-    # Build subcontiges for SAGs and MG
-    sag_sub_files = s_utils.build_subcontigs('SAGs', sag_list,
-                                             save_dirs_dict['subcontigs'],
-                                             max_contig_len,
-                                             overlap_len
-                                             )
-
-    mg_sub_file = s_utils.build_subcontigs('Metagenomes', [mg_file],
-                                           save_dirs_dict['subcontigs'],
-                                           max_contig_len,
-                                           overlap_len
-                                           )
-    # setup logging
-    logging.StreamHandler.terminator = ""
-    logging.getLogger().setLevel(logging.INFO)
-    s_log.prep_logging("minhash_log.txt", args.verbose)
-
-    run_minhash_recruiter(save_dirs_dict['signatures'], save_dirs_dict['minhash_recruits'],
-                          sag_sub_files, mg_sub_file, nthreads, force
-                          )
-'''

@@ -33,40 +33,6 @@ def run_combine_recruits(xpg_path, mg_file, clusters):
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
-    # Trusted Bins
-    if isinstance(trusted_clust_df, pd.DataFrame):
-        for best_label in set(trusted_clust_df['best_label']):
-            sub_merge_df = trusted_clust_df.query('best_label == @best_label')
-            logging.info('Recruited %s contigs from entire analysis for %s using HDBSCAN\n' %
-                         (sub_merge_df.shape[0], best_label)
-                         )
-            final_rec = o_join(xpg_path, str(best_label) + '.tc_hdbscan.xPG.fasta')
-            with open(final_rec, 'w') as final_out:
-                trust_contig_list = list(set(sub_merge_df['contig_id']))
-                mg_sub_filter_df = mg_contigs_df.query('contig_id in @trust_contig_list')
-                final_mgsubs_list = ['\n'.join(['>' + x[0], x[1]]) for x in
-                                     zip(mg_sub_filter_df['contig_id'],
-                                         mg_sub_filter_df['seq']
-                                         )
-                                     ]
-                final_out.write('\n'.join(final_mgsubs_list))
-    # OC-SVM Bins
-    if isinstance(ocsvm_clust_df, pd.DataFrame):
-        for best_label in set(ocsvm_clust_df['best_label']):
-            sub_merge_df = ocsvm_clust_df.query('best_label == @best_label')
-            logging.info('Recruited %s contigs from entire analysis for %s using OC-SVM\n' %
-                         (sub_merge_df.shape[0], best_label)
-                         )
-            final_rec = o_join(xpg_path, str(best_label) + '.tc_ocsvm.xPG.fasta')
-            with open(final_rec, 'w') as final_out:
-                ocsvm_contig_list = list(set(sub_merge_df['contig_id']))
-                mg_sub_filter_df = mg_contigs_df.query('contig_id in @ocsvm_contig_list')
-                final_mgsubs_list = ['\n'.join(['>' + x[0], x[1]]) for x in
-                                     zip(mg_sub_filter_df['contig_id'],
-                                         mg_sub_filter_df['seq']
-                                         )
-                                     ]
-                final_out.write('\n'.join(final_mgsubs_list))
     # Combined Bins
     if isinstance(inter_clust_df, pd.DataFrame):
         for best_label in set(inter_clust_df['best_label']):

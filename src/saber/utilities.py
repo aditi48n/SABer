@@ -121,10 +121,7 @@ def check_out_dirs(save_path):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    sd_list = ['subcontigs', 'signatures', 'minhash_recruits',
-               'abund_recruits', 'tetra_recruits', 'xPGs',
-               'clusters'
-               ]
+    sd_list = ['subcontigs', 'signatures', 'features', 'xPGs', 'clusters']
     sd_dict = {}
     for sd in sd_list:
         sd_path = os.path.join(save_path, sd)

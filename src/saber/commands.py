@@ -67,10 +67,6 @@ def recruit(sys_args):
     recruit_s.save_path = args.save_path
     recruit_s.max_contig_len = int(args.max_contig_len)
     recruit_s.overlap_len = int(args.overlap_len)
-    recruit_s.jacc_thresh = float(args.jacc_thresh)
-    recruit_s.abund_per_pass = float(args.abund_per_pass)
-    recruit_s.gmm_per_pass = float(args.gmm_per_pass)
-    recruit_s.mh_per_pass = float(args.mh_per_pass)
     recruit_s.nthreads = int(args.nthreads)
     recruit_s.force = args.force
     # Build save dir structure
@@ -95,7 +91,6 @@ def recruit(sys_args):
         minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],  # TODO: expose some params for users
                                                     save_dirs_dict['minhash_recruits'],
                                                     trust_files, mg_file,
-                                                    # recruit_s.jacc_thresh, recruit_s.mh_per_pass,
                                                     recruit_s.nthreads, recruit_s.force
                                                     )
     else:
@@ -103,15 +98,13 @@ def recruit(sys_args):
 
     # Build abundance tables
     abund_file = abr.runAbundRecruiter(save_dirs_dict['subcontigs'],
-                                       save_dirs_dict['abund_recruits'], mg_sub_file,
-                                       recruit_s.mg_raw_file_list, None,
-                                       None, None,
+                                       save_dirs_dict['features'], mg_sub_file,
+                                       recruit_s.mg_raw_file_list,
                                        recruit_s.nthreads, recruit_s.force
                                        )
     # Build tetra hz tables
-    tetra_file = tra.run_tetra_recruiter(save_dirs_dict['tetra_recruits'],
-                                         mg_sub_file, None, None, None, None,
-                                         None
+    tetra_file = tra.run_tetra_recruiter(save_dirs_dict['features'],
+                                         mg_sub_file
                                          )
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
     mg_id = mg_sub_file[0]

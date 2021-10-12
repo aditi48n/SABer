@@ -10,7 +10,6 @@ import pandas as pd
 import umap
 from sklearn import svm
 from sklearn.cluster import MiniBatchKMeans
-from sklearn.ensemble import IsolationForest
 from tqdm import tqdm
 
 warnings.filterwarnings("error")
@@ -32,50 +31,6 @@ def runOCSVM(tc_df, mg_df, tc_id, gamma, nu):
     pred_df = pred_df[['sag_id', 'nu', 'gamma', 'subcontig_id', 'contig_id', 'pred']]
 
     return pred_df
-
-
-def runISOF(sag_df, mg_df, sag_id, contam=0, estim=10, max_samp='auto'):
-    # fit IsoForest
-    clf = IsolationForest(random_state=42, contamination=contam, n_estimators=estim,
-                          max_samples=max_samp
-                          )
-    clf.fit(sag_df.values)
-    sag_pred = clf.predict(sag_df.values)
-    sag_score = clf.decision_function(sag_df.values)
-    sag_pred_df = pd.DataFrame(data=sag_pred, index=sag_df.index.values,
-                               columns=['anomaly'])
-    sag_pred_df.loc[sag_pred_df['anomaly'] == 1, 'anomaly'] = 0
-    sag_pred_df.loc[sag_pred_df['anomaly'] == -1, 'anomaly'] = 1
-    sag_pred_df['scores'] = sag_score
-    lower_bound, upper_bound = iqr_bounds(sag_pred_df['scores'], k=0.5)
-
-    mg_pred = clf.predict(mg_df.values)
-    mg_score = clf.decision_function(mg_df.values)
-    contig_id_list = [x.rsplit('_', 1)[0] for x in mg_df.index.values]
-    pred_df = pd.DataFrame(zip(mg_df.index.values, contig_id_list, mg_pred),
-                           columns=['subcontig_id', 'contig_id', 'anomaly']
-                           )
-    pred_df.loc[pred_df['anomaly'] == 1, 'anomaly'] = 0
-    pred_df.loc[pred_df['anomaly'] == -1, 'anomaly'] = 1
-    pred_df['scores'] = mg_score
-    pred_df['iqr_anomaly'] = 0
-    pred_df['iqr_anomaly'] = (pred_df['scores'] < lower_bound) | \
-                             (pred_df['scores'] > upper_bound)
-    pred_df['iqr_anomaly'] = pred_df['iqr_anomaly'].astype(int)
-    pred_df['sag_id'] = sag_id
-    pred_df['pred'] = pred_df['iqr_anomaly'] == 0
-    pred_df['pred'] = pred_df['pred'].astype(int)
-
-    return pred_df
-
-
-def iqr_bounds(scores, k=1.5):
-    q1 = scores.quantile(0.25)
-    q3 = scores.quantile(0.75)
-    iqr = q3 - q1
-    lower_bound = (q1 - k * iqr)
-    upper_bound = (q3 + k * iqr)
-    return lower_bound, upper_bound
 
 
 def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):

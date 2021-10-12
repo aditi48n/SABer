@@ -91,7 +91,7 @@ def recruit(sys_args):
         minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['tmp'],  # TODO: expose some params for users
                                                     save_dirs_dict['tmp'],
                                                     trust_files, mg_file,
-                                                    recruit_s.nthreads, recruit_s.force
+                                                    recruit_s.nthreads
                                                     )
     else:
         minhash_df_dict = False

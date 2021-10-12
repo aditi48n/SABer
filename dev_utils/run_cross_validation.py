@@ -17,10 +17,10 @@ ocsvm_combo = list(itertools.product(*[nu, gamma]))
 hdbscan_combo = list(itertools.product(*[min_cluster_size, min_samples]))
 
 # Run MinHash recruiting algorithm
-minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['tmp'],  # TODO: expose some params for users
+minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['tmp'],
                                             save_dirs_dict['tmp'],
                                             trust_files, mg_file,
-                                            recruit_s.nthreads, recruit_s.force
+                                            recruit_s.nthreads
                                             )
 
 # Build abundance tables

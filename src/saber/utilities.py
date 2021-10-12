@@ -1,5 +1,6 @@
 __author__ = 'Ryan J McLaughlin'
 
+import glob
 import logging
 import os
 import re
@@ -121,7 +122,7 @@ def check_out_dirs(save_path):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    sd_list = ['subcontigs', 'signatures', 'features', 'xPGs', 'clusters']
+    sd_list = ['tmp', 'xPGs']
     sd_dict = {}
     for sd in sd_list:
         sd_path = os.path.join(save_path, sd)
@@ -336,3 +337,12 @@ def tetra_cnt(fasta):  # TODO: add multi-processing to this function
     std_tetra_df = pd.DataFrame(scaled_data, index=clr_df.index)
 
     return std_tetra_df
+
+
+def runCleaner(dir_path, ptrn):
+    ptrn_glob = glob.glob(os.path.join(dir_path, ptrn))
+    for file in ptrn_glob:
+        try:
+            os.remove(file)
+        except:
+            print("Error while deleting file : ", file)

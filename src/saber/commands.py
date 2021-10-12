@@ -76,7 +76,7 @@ def recruit(sys_args):
     mg_file = tuple([recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0],
                      recruit_s.mg_file])  # TODO: needs to support multiple MetaGs
     mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
-                                           save_dirs_dict['subcontigs'],
+                                           save_dirs_dict['tmp'],
                                            recruit_s.max_contig_len,
                                            recruit_s.overlap_len
                                            )
@@ -88,8 +88,8 @@ def recruit(sys_args):
             recruit_s.trust_path)  # TODO: needs to support a single multi-FASTA and multiple FASTAs
         trust_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in tc_list])
         # Run MinHash recruiting algorithm
-        minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],  # TODO: expose some params for users
-                                                    save_dirs_dict['minhash_recruits'],
+        minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['tmp'],  # TODO: expose some params for users
+                                                    save_dirs_dict['tmp'],
                                                     trust_files, mg_file,
                                                     recruit_s.nthreads, recruit_s.force
                                                     )
@@ -97,18 +97,18 @@ def recruit(sys_args):
         minhash_df_dict = False
 
     # Build abundance tables
-    abund_file = abr.runAbundRecruiter(save_dirs_dict['subcontigs'],
-                                       save_dirs_dict['features'], mg_sub_file,
+    abund_file = abr.runAbundRecruiter(save_dirs_dict['tmp'],
+                                       save_dirs_dict['tmp'], mg_sub_file,
                                        recruit_s.mg_raw_file_list,
                                        recruit_s.nthreads, recruit_s.force
                                        )
     # Build tetra hz tables
-    tetra_file = tra.run_tetra_recruiter(save_dirs_dict['features'],
+    tetra_file = tra.run_tetra_recruiter(save_dirs_dict['tmp'],
                                          mg_sub_file
                                          )
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
     mg_id = mg_sub_file[0]
-    clusters = clst.runClusterer(mg_id, save_dirs_dict['clusters'], abund_file, tetra_file,
+    clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], abund_file, tetra_file,
                                  minhash_df_dict, recruit_s.nthreads
                                  )
     # Collect and join all recruits

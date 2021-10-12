@@ -36,7 +36,6 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             build_list, minhash_pass_list = sag_recruit_checker(mhr_path, sag_sub_files, kmer)
             if len(build_list) != 0:
                 sag_sig_dict = build_sag_sig_dict(build_list, nthreads, sig_path, kmer)
-                # build_mg_lca(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=True)  # make sure SBT exists first
                 build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=True)  # make sure SBT exists first
                 pool = multiprocessing.Pool(processes=nthreads)
                 sbt_args = mg_id, mg_sub_file, sig_path, nthreads
@@ -73,14 +72,16 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                 minhash_df = minhash_pass_list[0]
 
             minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
-            # recruit_list = list(minhash_df['subcontig_id'].loc[minhash_df['jacc_sim'] >= 0.10])
-            minhash_recruit_df = minhash_df.copy()  # .loc[minhash_df['subcontig_id'].isin(recruit_list)]
+            minhash_recruit_df = minhash_df.copy()
             minhash_recruit_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
                                              '.mhr_contig_recruits.tsv'),
                                       sep='\t',
                                       index=False
                                       )
             mh_kmer_recruits_dict[kmer] = minhash_recruit_df
+    logging.info('Cleaning up intermediate files...\n')
+    for s in ["*.sig", "*.mhr_recruits.tsv", "*.sbt.zip"]:
+        s_utils.runCleaner(mhr_path, s)
 
     logging.info('MinHash Recruitment Algorithm Complete\n')
     return mh_kmer_recruits_dict
@@ -117,24 +118,13 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
             sbt_out = mg_sbt.search(sig, threshold=0.000000000001)
             sbt_out_cont = mg_sbt.search(sig, threshold=0.000000000001, do_containment=True)
             sbt_out.extend(sbt_out_cont)
-            # r_subcontig = sig.name()
-            # r_contig = r_subcontig.rsplit('_', 1)[0]
             r_contig = sig.name()
             for similarity, t_sig, filename in sbt_out:
-                # q_subcontig = t_sig.name()
-                # q_contig = q_subcontig.rsplit('_', 1)[0]
                 q_contig = t_sig.name()
-                # search_list.append([sag_id, r_subcontig, r_contig, q_subcontig,
-                #                    q_contig, similarity
-                #                    ])
                 search_list.append([sag_id, r_contig, q_contig, similarity])
         search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_contig_id', 'q_contig_id',
                                                        'jacc_sim'
                                                        ])
-        # search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_subcontig_id', 'r_contig_id',
-        #                                               'q_subcontig_id', 'q_contig_id',
-        #                                               'jacc_sim'
-        #                                               ])
         search_df['jacc_sim'] = search_df['jacc_sim'].astype(float)
         search_df.sort_values(by='jacc_sim', ascending=False, inplace=True)
         search_file = o_join(mhr_path, sag_id + '.' + str(kmer) + '.mhr_recruits.tsv')
@@ -172,7 +162,7 @@ def build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=False):
         mg_sbt_tree.save(mg_sbt_file)
         pool.close()
         pool.join()
-        mg_sbt_tree = None  # sourmash.load_sbt_index(mg_sbt_file)
+        mg_sbt_tree = None
 
     return mg_sbt_tree
 

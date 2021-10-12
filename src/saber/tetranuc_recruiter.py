@@ -22,4 +22,5 @@ def run_tetra_recruiter(tra_path, mg_sub_file):
                            sep='\t'
                            )
         mg_tetra_file = o_join(tra_path, mg_id + '.tetras.tsv')
+
     return mg_tetra_file

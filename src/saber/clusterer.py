@@ -12,6 +12,8 @@ from sklearn import svm
 from sklearn.cluster import MiniBatchKMeans
 from tqdm import tqdm
 
+import utilities as s_utils
+
 warnings.filterwarnings("error")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -50,7 +52,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
         )]
         subset_clust_df['kmeans_pred'] = 1
         temp_cat_df = temp_cat_df.loc[temp_cat_df.index.isin(list(subset_clust_df['subcontig_id']))]
-    cat_clust_df = subset_clust_df.copy()  # pd.concat(block_list)
+    cat_clust_df = subset_clust_df.copy()
     std_id_df = pd.DataFrame(std_merge_df.index.values, columns=['subcontig_id'])
     std_id_df['contig_id'] = [x.rsplit('_', 1)[0] for x in std_id_df['subcontig_id']]
     cat_clust_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cat_clust_df['subcontig_id']]
@@ -115,6 +117,7 @@ def recruitOCSVM(p):
 def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
                  nthreads
                  ):  # TODO: need to add multithreading where ever possible
+
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
     cov_emb = Path(o_join(clst_path, mg_id + '.denovo.covm_emb.tsv'))
@@ -429,5 +432,12 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         inter_clust_df = pd.read_csv(inter_out_file, sep='\t', header=0)
     else:
         inter_clust_df = False
+
+    logging.info('Cleaning up intermediate files...\n')
+    for s in ["*.denovo.covm_emb.tsv", "*.denovo.tetra_emb.tsv",
+              "*.denovo.merged_emb.tsv", "*.anchored.covm_emb.tsv",
+              "*.anchored.tetra_emb.tsv", "*.anchored.merged_emb.tsv",
+              ]:
+        s_utils.runCleaner(clst_path, s)
 
     return no_noise_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df

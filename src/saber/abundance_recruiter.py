@@ -5,6 +5,8 @@ from subprocess import Popen
 
 import pandas as pd
 
+import utilities as s_utils
+
 pd.set_option('display.max_columns', None)
 pd.options.mode.chained_assignment = None
 from sklearn.preprocessing import StandardScaler
@@ -34,6 +36,7 @@ def procMetaGs(abr_path, mg_id, mg_raw_file_list, subcontig_path, nthreads):
     # Process each raw metagenome
     with open(mg_raw_file_list, 'r') as raw_fa_in:
         raw_data = raw_fa_in.readlines()
+    sam_list = []
     sorted_bam_list = []
     for line in raw_data:
         raw_file_list = line.strip('\n').split('\t')
@@ -41,11 +44,16 @@ def procMetaGs(abr_path, mg_id, mg_raw_file_list, subcontig_path, nthreads):
         pe_id, mg_sam_out = runBWAmem(abr_path, subcontig_path, mg_id, raw_file_list,
                                       nthreads
                                       )
+        sam_list.append(mg_sam_out)
         # Build/sorted .bam files
         mg_sort_out = runSamTools(abr_path, pe_id, nthreads, mg_id, mg_sam_out)
         sorted_bam_list.append(mg_sort_out)
     logging.info('\n')
     mg_covm_out = runCovM(abr_path, mg_id, nthreads, sorted_bam_list)
+    # Clean up the directory
+    logging.info('Cleaning up intermediate files...\n')
+    for s in ["*.sam", "*.bam", "*.stderr.txt", "*.metabat.tsv"]:
+        s_utils.runCleaner(abr_path, s)
 
     return mg_covm_out
 
@@ -124,5 +132,3 @@ def runCovM(abr_path, mg_id, nthreads, sorted_bam_list):
         std_merge_df.to_csv(mg_covm_std, header=True, sep='\t', index=False)
 
     return mg_covm_std
-
-

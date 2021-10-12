@@ -20,7 +20,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     kmer_list = [201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
-        if isfile(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_trimmed_recruits.tsv')):
+        if isfile(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_contig_recruits.tsv')):
             logging.info('MinHash already done\n')
             mh_max_df = pd.read_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
                                            '.mhr_contig_recruits.tsv'), header=0,

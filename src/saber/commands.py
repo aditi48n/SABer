@@ -100,7 +100,7 @@ def recruit(sys_args):
     abund_file = abr.runAbundRecruiter(save_dirs_dict['tmp'],
                                        save_dirs_dict['tmp'], mg_sub_file,
                                        recruit_s.mg_raw_file_list,
-                                       recruit_s.nthreads, recruit_s.force
+                                       recruit_s.nthreads
                                        )
     # Build tetra hz tables
     tetra_file = tra.run_tetra_recruiter(save_dirs_dict['tmp'],
@@ -108,7 +108,8 @@ def recruit(sys_args):
                                          )
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
     mg_id = mg_sub_file[0]
-    clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], abund_file, tetra_file,
+    clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], save_dirs_dict['tmp'],
+                                 abund_file, tetra_file,
                                  minhash_df_dict, 100, 25, 0.5, 'scale',
                                  recruit_s.nthreads
                                  )

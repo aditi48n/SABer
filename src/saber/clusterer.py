@@ -115,15 +115,14 @@ def recruitOCSVM(p):
 
     return major_df
 
-def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
+def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                  min_clust_size, min_samp, nu, gamma, nthreads
                  ):  # TODO: need to add multithreading where ever possible
-
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
-    merged_emb = Path(o_join(clst_path, mg_id + '.denovo.merged_emb.tsv'))
+    merged_emb = Path(o_join(tmp_path, mg_id + '.denovo.merged_emb.tsv'))
     if not merged_emb.is_file():
-        cov_emb = Path(o_join(clst_path, mg_id + '.denovo.covm_emb.tsv'))
+        cov_emb = Path(o_join(tmp_path, mg_id + '.denovo.covm_emb.tsv'))
         print('Building UMAP embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
         n_neighbors = 10
@@ -147,7 +146,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
 
         # Convert Tetra to UMAP feature table
-        tetra_emb = Path(o_join(clst_path, mg_id + '.denovo.tetra_emb.tsv'))
+        tetra_emb = Path(o_join(tmp_path, mg_id + '.denovo.tetra_emb.tsv'))
         print('Building UMAP embedding for Tetra Hz...')
         tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
         n_neighbors = 10
@@ -234,9 +233,9 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
         print('Anchored Binning Starting with Trusted Contigs...')
         # Convert CovM to UMAP feature table
         set_init = 'random'
-        anchor_emb = Path(o_join(clst_path, mg_id + '.anchored.merged_emb.tsv'))
+        anchor_emb = Path(o_join(tmp_path, mg_id + '.anchored.merged_emb.tsv'))
         if not anchor_emb.is_file():
-            cov_emb = Path(o_join(clst_path, mg_id + '.anchored.covm_emb.tsv'))
+            cov_emb = Path(o_join(tmp_path, mg_id + '.anchored.covm_emb.tsv'))
             print('Building UMAP embedding for Coverage...')
             cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
             n_neighbors = 10
@@ -250,7 +249,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
             umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
 
             # Convert Tetra to UMAP feature table
-            tetra_emb = Path(o_join(clst_path, mg_id + '.anchored.tetra_emb.tsv'))
+            tetra_emb = Path(o_join(tmp_path, mg_id + '.anchored.tetra_emb.tsv'))
             print('Building UMAP embedding for Tetra Hz...')
             tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
             n_neighbors = 10

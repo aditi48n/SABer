@@ -13,13 +13,11 @@ from sklearn.preprocessing import StandardScaler
 
 
 def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
-                      nthreads, force
+                      nthreads
                       ):
     logging.info('Starting Abundance Data Transformation\n')
     mg_id = mg_sub_file[0]
-    if ((isfile(o_join(abr_path, mg_id + '.covM.scaled.tsv'))) &
-            (force is False)
-    ):
+    if isfile(o_join(abr_path, mg_id + '.covM.scaled.tsv')):
         logging.info('Loading Abundance matrix for %s\n' % mg_id)
         mg_covm_out = o_join(abr_path, mg_id + '.covM.scaled.tsv')
     else:

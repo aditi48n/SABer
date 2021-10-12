@@ -17,8 +17,6 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     logging.info('Starting MinHash Recruitment\n')
     # Calculate/Load MinHash Signatures with SourMash for MG subseqs
     mg_id = mg_sub_file[0]
-    mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
-    mg_headers = tuple(mg_subcontigs.keys())
     kmer_list = [201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
@@ -261,5 +259,3 @@ def build_signature(p):
     mg_sig = sourmash.SourmashSignature(mg_minhash, name=header)
 
     return mg_sig
-
-

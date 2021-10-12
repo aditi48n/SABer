@@ -202,18 +202,16 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                           )
 
         print('Denoising Clusters...')
-        ns_ratio_list = []
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
         for contig in tqdm(list(cluster_df['contig_id'].unique())):
-            sub_df = cluster_df.query('contig_id == @contig')
-            noise_cnt = sub_df.query('label == -1').shape[0]
-            signal_cnt = sub_df.query('label != -1').shape[0]
-            ns_ratio = (noise_cnt / (noise_cnt + signal_cnt)) * 100
-            prob_df = sub_df.groupby(['label'])[['probabilities']].max().reset_index()
-            best_ind = prob_df['probabilities'].argmax()
-            best_label = prob_df['label'].iloc[best_ind]
-            best_prob = prob_df['probabilities'].iloc[best_ind]
-            ns_ratio_list.append([contig, best_label])
-
+            arg_list.append([cluster_df, contig])
+        ns_ratio_list = []
+        results = pool.imap_unordered(denoise_clust, arg_list)
+        for i, output in tqdm(enumerate(results, 1)):
+            ns_ratio_list.append(output)
+        pool.close()
+        pool.join()
         ns_ratio_df = pd.DataFrame(ns_ratio_list, columns=['contig_id', 'best_label'])
         cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
         no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
@@ -283,32 +281,19 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         print('Re-grouping with Trusted Contigs...')
         mh_trusted_df = minhash_dict[201]
         mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
+        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
+            arg_list.append([mh_trusted_df, no_noise_df, noise_df, sag_id])
         label_max_list = []
         contig_max_list = []
-        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
-            # Subset trusted contigs by SAG
-            sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0')
-            trusted_contigs_list = sub_trusted_df['contig_id'].unique()
-            # Gather trusted contigs subset from cluster and noise DFs
-            sub_denovo_df = no_noise_df.query('contig_id in @trusted_contigs_list and '
-                                              'probabilities >= 1.0'
-                                              )
-            sub_noise_df = noise_df.query('contig_id in @trusted_contigs_list')
-            # Gather all contigs associated with trusted clusters
-            trust_clust_list = list(sub_denovo_df['best_label'].unique())
-            sub_label_df = no_noise_df.query('best_label in @trust_clust_list')
-            # Get average max jaccard for each cluster
-            label_mh_df = sub_label_df.merge(sub_trusted_df, on='contig_id', how='left')
-            label_max_df = label_mh_df.groupby(['best_label'])[['jacc_sim']].mean().reset_index()
-            label_max_df['sag_id'] = sag_id
-            label_max_list.append(label_max_df)
-            # Get max jaccard for noise labeled contigs
-            if sub_noise_df.shape[0] != 0:
-                noise_mh_df = sub_noise_df.merge(sub_trusted_df, on='contig_id', how='left')
-                noise_max_df = noise_mh_df.groupby(['contig_id'])[['jacc_sim']].mean().reset_index()
-                noise_max_df['sag_id'] = sag_id
-                contig_max_list.append(noise_max_df)
-
+        results = pool.imap_unordered(trust_clust, arg_list)
+        for i, output in tqdm(enumerate(results, 1)):
+            label_max_list.append(output[0])
+            if isinstance(output[1], pd.DataFrame):
+                contig_max_list.append(output[1])
+        pool.close()
+        pool.join()
         sag_label_df = pd.concat(label_max_list)
         sag_contig_df = pd.concat(contig_max_list)
         sag_label_best_df = sag_label_df.sort_values(by='jacc_sim', ascending=False
@@ -343,17 +328,16 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         sag_noise_df = contig_pruned_df.merge(noise_df, on='contig_id', how='left')
 
         print('Building Trusted Clusters...')
-        trust_recruit_list = []
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
         for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
-            trust_cols = ['sag_id', 'contig_id']
-            sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0'
-                                                 )[trust_cols]
-            sub_denovo_df = sag_denovo_df.query('sag_id == @sag_id')[trust_cols]
-            sub_noise_df = sag_noise_df.query('sag_id == @sag_id')[trust_cols]
-            trust_cat_df = pd.concat([sub_trusted_df, sub_denovo_df, sub_noise_df]
-                                     ).drop_duplicates()
-            trust_recruit_list.append(trust_cat_df)
-
+            arg_list.append([mh_trusted_df, sag_denovo_df, sag_noise_df, sag_id])
+        trust_recruit_list = []
+        results = pool.imap_unordered(trust_build, arg_list)
+        for i, output in tqdm(enumerate(results, 1)):
+            trust_recruit_list.append(output)
+        pool.close()
+        pool.join()
         trust_recruit_df = pd.concat(trust_recruit_list)
         trust_recruit_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
         trust_recruit_df.to_csv(trust_out_file, sep='\t', index=False)
@@ -441,3 +425,57 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         s_utils.runCleaner(clst_path, s)
 
     return no_noise_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df
+
+
+def trust_build(p):
+    mh_trusted_df, sag_denovo_df, sag_noise_df, sag_id = p
+    trust_cols = ['sag_id', 'contig_id']
+    sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0'
+                                         )[trust_cols]
+    sub_denovo_df = sag_denovo_df.query('sag_id == @sag_id')[trust_cols]
+    sub_noise_df = sag_noise_df.query('sag_id == @sag_id')[trust_cols]
+    trust_cat_df = pd.concat([sub_trusted_df, sub_denovo_df, sub_noise_df]
+                             ).drop_duplicates()
+    return trust_cat_df
+
+
+def trust_clust(p):
+    mh_trusted_df, no_noise_df, noise_df, sag_id = p
+    # Subset trusted contigs by SAG
+    sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id and jacc_sim >= 1.0')
+    trusted_contigs_list = sub_trusted_df['contig_id'].unique()
+    # Gather trusted contigs subset from cluster and noise DFs
+    sub_denovo_df = no_noise_df.query('contig_id in @trusted_contigs_list and '
+                                      'probabilities >= 1.0'
+                                      )
+    sub_noise_df = noise_df.query('contig_id in @trusted_contigs_list')
+    # Gather all contigs associated with trusted clusters
+    trust_clust_list = list(sub_denovo_df['best_label'].unique())
+    sub_label_df = no_noise_df.query('best_label in @trust_clust_list')
+    # Get average max jaccard for each cluster
+    label_mh_df = sub_label_df.merge(sub_trusted_df, on='contig_id', how='left')
+    label_max_df = label_mh_df.groupby(['best_label'])[['jacc_sim']].mean().reset_index()
+    label_max_df['sag_id'] = sag_id
+    # Get max jaccard for noise labeled contigs
+    if sub_noise_df.shape[0] != 0:
+        noise_mh_df = sub_noise_df.merge(sub_trusted_df, on='contig_id', how='left')
+        noise_max_df = noise_mh_df.groupby(['contig_id'])[['jacc_sim']].mean().reset_index()
+        noise_max_df['sag_id'] = sag_id
+    else:
+        noise_max_df = None
+
+    return label_max_df, noise_max_df
+
+
+def denoise_clust(p):
+    cluster_df, contig = p
+    sub_df = cluster_df.query('contig_id == @contig')
+    noise_cnt = sub_df.query('label == -1').shape[0]
+    signal_cnt = sub_df.query('label != -1').shape[0]
+    ns_ratio = (noise_cnt / (noise_cnt + signal_cnt)) * 100
+    prob_df = sub_df.groupby(['label'])[['probabilities']].max().reset_index()
+    best_ind = prob_df['probabilities'].argmax()
+    best_label = prob_df['label'].iloc[best_ind]
+    best_prob = prob_df['probabilities'].iloc[best_ind]
+
+    return ([contig, best_label])

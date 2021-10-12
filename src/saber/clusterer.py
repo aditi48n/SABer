@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import multiprocessing
 import warnings
 from os.path import join as o_join
@@ -437,6 +438,7 @@ def runClusterer(mg_id, clst_path, cov_file, tetra_file, minhash_dict,
     for s in ["*.denovo.covm_emb.tsv", "*.denovo.tetra_emb.tsv",
               "*.denovo.merged_emb.tsv", "*.anchored.covm_emb.tsv",
               "*.anchored.tetra_emb.tsv", "*.anchored.merged_emb.tsv",
+              "*.subcontigs.*"
               ]:
         s_utils.runCleaner(clst_path, s)
 

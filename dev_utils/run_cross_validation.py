@@ -3,6 +3,8 @@ import itertools
 import os
 import sys
 
+import pandas as pd
+
 sys.path.append('/home/rmclaughlin/deployment/SABer')
 sys.path.append('/home/rmclaughlin/deployment/SABer/src')
 sys.path.append('/home/rmclaughlin/deployment/SABer/src/saber')
@@ -10,6 +12,7 @@ import src.saber.abundance_recruiter as abr
 import src.saber.clusterer as clst
 import src.saber.minhash_recruiter as mhr
 import src.saber.tetranuc_recruiter as tra
+import hdbscan_errstat as err
 
 # This script is for running CV for HDBSCAN and OCSVM
 # Expects that you have already pre-run the samples to create the
@@ -25,6 +28,8 @@ hdbscan_combo = list(itertools.product(*[min_cluster_size, min_samples]))
 
 # Input files directory
 working_dir = sys.argv[1]
+synthdata_dir = sys.argv[2]
+mg_asm = sys.argv[3]
 threads = 10
 # Find previously run files and build needed inputs
 mhr_recruits = glob.glob(os.path.join(working_dir, '*.201.mhr_contig_recruits.tsv'))
@@ -56,6 +61,7 @@ tetra_file = tra.run_tetra_recruiter(working_dir,
 
 # Run iterative clusterings using all the different params from above
 # First do HDBSCAN and keep OCSVM static
+cat_err_list = []
 for mcs, mss in hdbscan_combo:
     if mcs >= mss:
         print("Running HDBSCAN with min_cluster_size=" + str(mcs) + " and min_samples=" + str(mss))
@@ -66,6 +72,8 @@ for mcs, mss in hdbscan_combo:
         clusters = clst.runClusterer(mg_id, working_dir, output_path, abund_file, tetra_file,
                                      minhash_df_dict, mcs, mss, 0.5, 'scale', threads
                                      )
+        run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, threads)
+        cat_err_list.append(run_err_df)
 
 # Next do the OCSVM
 for nu, gamma in ocsvm_combo:
@@ -77,3 +85,8 @@ for nu, gamma in ocsvm_combo:
     clusters = clst.runClusterer(mg_id, working_dir, output_path, abund_file, tetra_file,
                                  minhash_df_dict, 100, 25, nu, gamma, threads
                                  )
+    run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, threads)
+    cat_err_list.append(run_err_df)
+
+cat_err_df = pd.concat(cat_err_list)
+cat_err_df.to_csv(os.path.join(working_dir, 'CV_errstat.tsv'), sep='\t', index=False)

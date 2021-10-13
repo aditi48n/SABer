@@ -229,6 +229,84 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
     trust_out_file = Path(o_join(clst_path, mg_id + '.trusted_clusters.tsv'))
     if minhash_dict and not trust_out_file.is_file():
         print('Anchored Binning Starting with Trusted Contigs...')
+        # Group clustered and noise contigs by trusted contigs
+        print('Re-grouping with Trusted Contigs...')
+        mh_trusted_df = minhash_dict[201]
+        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
+        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
+            arg_list.append([mh_trusted_df, no_noise_df, noise_df, sag_id])
+        label_max_list = []
+        contig_max_list = []
+        results = pool.imap_unordered(trust_clust, arg_list)
+        for i, output in tqdm(enumerate(results, 1)):
+            label_max_list.append(output[0])
+            if isinstance(output[1], pd.DataFrame):
+                contig_max_list.append(output[1])
+        pool.close()
+        pool.join()
+        sag_label_df = pd.concat(label_max_list)
+        sag_contig_df = pd.concat(contig_max_list)
+        sag_label_best_df = sag_label_df.sort_values(by='jacc_sim', ascending=False
+                                                     ).drop_duplicates(subset='best_label')
+        sag_contig_best_df = sag_contig_df.sort_values(by='jacc_sim', ascending=False
+                                                       ).drop_duplicates(subset='contig_id')
+        sag_label_list = []
+        for index, row in sag_label_best_df.iterrows():
+            best_label = row['best_label']
+            jacc_sim = row['jacc_sim']
+            sub_sag_label_df = sag_label_df.query('best_label == @best_label and '
+                                                  'jacc_sim == @jacc_sim'
+                                                  )
+            sag_label_list.append(sub_sag_label_df)
+
+        sag_contig_list = []
+        for index, row in sag_contig_best_df.iterrows():
+            sag_id = row['sag_id']
+            jacc_sim = row['jacc_sim']
+            sub_sag_contig_df = sag_contig_df.query('sag_id == @sag_id and '
+                                                    'jacc_sim >= @jacc_sim'
+                                                    )
+            sag_contig_list.append(sub_sag_contig_df)
+
+        if sag_label_list:
+            label_pruned_df = pd.concat(sag_label_list)
+            sag_denovo_df = label_pruned_df.merge(no_noise_df, on='best_label', how='left')
+        else:
+            sag_denovo_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
+
+        if sag_contig_list:
+            contig_pruned_df = pd.concat(sag_contig_list)
+            sag_noise_df = contig_pruned_df.merge(noise_df, on='contig_id', how='left')
+        else:
+            sag_noise_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
+
+        print('Building Trusted Clusters...')
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
+        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
+            arg_list.append([mh_trusted_df, sag_denovo_df, sag_noise_df, sag_id])
+        trust_recruit_list = []
+        results = pool.imap_unordered(trust_build, arg_list)
+        for i, output in tqdm(enumerate(results, 1)):
+            trust_recruit_list.append(output)
+        pool.close()
+        pool.join()
+        trust_recruit_df = pd.concat(trust_recruit_list)
+        trust_recruit_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
+        trust_recruit_df.to_csv(trust_out_file, sep='\t', index=False)
+    elif trust_out_file.is_file():
+        print('Trust Clusters already exist...')
+        trust_recruit_df = pd.read_csv(trust_out_file, sep='\t', header=0)
+    else:
+        print('No Trusted Contigs Provided...')
+        trust_recruit_df = False
+
+    # Run OC-SVM recruiting
+    ocsvm_out_file = Path(o_join(clst_path, mg_id + '.ocsvm_clusters.tsv'))
+    if minhash_dict and not ocsvm_out_file.is_file():
+        print('Performing Anchored Recruitment with OC-SVM...')
         # Convert CovM to UMAP feature table
         set_init = 'random'
         anchor_emb = Path(o_join(tmp_path, mg_id + '.anchored.merged_emb.tsv'))
@@ -277,81 +355,6 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
             print('Loading Merged Embedding...')
             anchor_df = pd.read_csv(anchor_emb, sep='\t', header=0, index_col='subcontig_id')
 
-        # Group clustered and noise contigs by trusted contigs
-        print('Re-grouping with Trusted Contigs...')
-        mh_trusted_df = minhash_dict[201]
-        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
-            arg_list.append([mh_trusted_df, no_noise_df, noise_df, sag_id])
-        label_max_list = []
-        contig_max_list = []
-        results = pool.imap_unordered(trust_clust, arg_list)
-        for i, output in tqdm(enumerate(results, 1)):
-            label_max_list.append(output[0])
-            if isinstance(output[1], pd.DataFrame):
-                contig_max_list.append(output[1])
-        pool.close()
-        pool.join()
-        sag_label_df = pd.concat(label_max_list)
-        sag_contig_df = pd.concat(contig_max_list)
-        sag_label_best_df = sag_label_df.sort_values(by='jacc_sim', ascending=False
-                                                     ).drop_duplicates(subset='best_label')
-        sag_contig_best_df = sag_contig_df.sort_values(by='jacc_sim', ascending=False
-                                                       ).drop_duplicates(subset='contig_id')
-        sag_label_list = []
-        for index, row in sag_label_best_df.iterrows():
-            best_label = row['best_label']
-            jacc_sim = row['jacc_sim']
-            sub_sag_label_df = sag_label_df.query('best_label == @best_label and '
-                                                  'jacc_sim == @jacc_sim'
-                                                  )
-            sag_label_list.append(sub_sag_label_df)
-
-        sag_contig_list = []
-        for index, row in sag_contig_best_df.iterrows():
-            sag_id = row['sag_id']
-            jacc_sim = row['jacc_sim']
-            sub_sag_contig_df = sag_contig_df.query('sag_id == @sag_id and '
-                                                    'jacc_sim >= @jacc_sim'
-                                                    )
-            sag_contig_list.append(sub_sag_contig_df)
-
-        if sag_label_list:
-            label_pruned_df = pd.concat(sag_label_list)
-            sag_denovo_df = label_pruned_df.merge(no_noise_df, on='best_label', how='left')
-        else:
-            sag_denovo_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
-
-        contig_pruned_df = pd.concat(sag_contig_list)
-        sag_noise_df = contig_pruned_df.merge(noise_df, on='contig_id', how='left')
-
-        print('Building Trusted Clusters...')
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
-            arg_list.append([mh_trusted_df, sag_denovo_df, sag_noise_df, sag_id])
-        trust_recruit_list = []
-        results = pool.imap_unordered(trust_build, arg_list)
-        for i, output in tqdm(enumerate(results, 1)):
-            trust_recruit_list.append(output)
-        pool.close()
-        pool.join()
-        trust_recruit_df = pd.concat(trust_recruit_list)
-        trust_recruit_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
-        trust_recruit_df.to_csv(trust_out_file, sep='\t', index=False)
-    elif trust_out_file.is_file():
-        print('Trust Clusters already exist...')
-        trust_recruit_df = pd.read_csv(trust_out_file, sep='\t', header=0)
-    else:
-        print('No Trusted Contigs Provided...')
-        trust_recruit_df = False
-
-    # Run OC-SVM recruiting
-    ocsvm_out_file = Path(o_join(clst_path, mg_id + '.ocsvm_clusters.tsv'))
-    if minhash_dict and not ocsvm_out_file.is_file():
-        print('Performing Anchored Recruitment with OC-SVM...')
         mh_trusted_df = minhash_dict[201]
         mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
         pool = multiprocessing.Pool(processes=nthreads)
@@ -376,7 +379,11 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                                                       'percent >= @percent'
                                                       )
             sag_contig_list.append(sub_sag_contig_df)
-        contig_pruned_df = pd.concat(sag_contig_list)
+
+        if sag_contig_list:
+            contig_pruned_df = pd.concat(sag_contig_list)
+        else:
+            contig_pruned_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
 
         print('Building OC-SVM Clusters...')
         ocsvm_clust_list = []

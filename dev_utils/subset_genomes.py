@@ -67,7 +67,10 @@ def sel_contig(real_contig_df, sub_sag_df):
 src_gen_path = sys.argv[1]  # path containing the reference genomes, e.g., synthetic_SAGs/
 syn_out_path = sys.argv[2]  # output dir, e.g., Final_SAGs_20k/
 synth_sag_file = sys.argv[3]  # file containing SAGs ditributions, Synth-SAG_contig_length.tsv
-replicates = sys.argv[4]  # number of synSAGs per genome to create
+replicates = int(sys.argv[4])  # number of synSAGs per genome to create
+
+if not os.path.exists(syn_out_path):
+    os.makedirs(syn_out_path)
 
 src_gen_list = [os.path.join(src_gen_path, f) for f in os.listdir(src_gen_path)
                 if (('.fa' in f) | ('.fna' in f) | ('.fasta' in f))

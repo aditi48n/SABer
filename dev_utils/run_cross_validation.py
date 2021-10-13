@@ -30,12 +30,12 @@ hdbscan_combo = list(itertools.product(*[min_cluster_size, min_samples]))
 dataset_dir = sys.argv[1]
 synthdata_dir = sys.argv[2]
 mg_asm = sys.argv[3]
+threads = sys.argv[4]
 
 dataset_reps = glob.glob(os.path.join(dataset_dir, '*'))
 for rep in dataset_reps:
     print('Running CV on ', rep)
     working_dir = os.path.join(rep, 'tmp')
-    threads = 10
     # Find previously run files and build needed inputs
     mhr_recruits = glob.glob(os.path.join(working_dir, '*.201.mhr_contig_recruits.tsv'))
     if mhr_recruits:

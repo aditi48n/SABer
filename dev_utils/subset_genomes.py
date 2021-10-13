@@ -64,8 +64,10 @@ def sel_contig(real_contig_df, sub_sag_df):
     return concat_df, fail_checker
 
 
-src_gen_path = sys.argv[1]  # path containing the reference genomes
-syn_out_path = sys.argv[2]
+src_gen_path = sys.argv[1]  # path containing the reference genomes, e.g., synthetic_SAGs/
+syn_out_path = sys.argv[2]  # output dir, e.g., Final_SAGs_20k/
+replicates = sys.argv[3]  # number of synSAGs per genome to create
+
 src_gen_list = [os.path.join(src_gen_path, f) for f in os.listdir(src_gen_path)
                 if (('.fa' in f) | ('.fna' in f) | ('.fasta' in f))
                 ]
@@ -97,7 +99,7 @@ for gen_id in gen_dict.keys():
     sag_id_list = list(synth_sag_df['sag_id'].unique())
     sag_counter = 0
     sag_done_list = []
-    while sag_counter < 10:
+    while sag_counter < replicates:
         sag_rand = random.choices(sag_id_list)[0]
         sag_id_list.remove(sag_rand)
         sub_df = synth_sag_df[['sag_id', 'contig_id', 'seq_len', 'statistic', 'p_value'

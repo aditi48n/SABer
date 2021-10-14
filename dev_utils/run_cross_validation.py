@@ -22,7 +22,7 @@ import hdbscan_errstat as err
 nu = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 gamma = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 'scale']
 min_cluster_size = [15, 25, 50, 75, 100, 125, 150, 200]
-min_samples = [5, 10, 15, 25, 35, 45, 55]
+min_samples = [5, 10, 15, 25, 40, 50, 75, 100, 125]
 ocsvm_combo = list(itertools.product(*[nu, gamma]))
 hdbscan_combo = list(itertools.product(*[min_cluster_size, min_samples]))
 
@@ -30,7 +30,7 @@ hdbscan_combo = list(itertools.product(*[min_cluster_size, min_samples]))
 dataset_dir = sys.argv[1]
 synthdata_dir = sys.argv[2]
 mg_asm = sys.argv[3]
-threads = sys.argv[4]
+threads = int(sys.argv[4])
 
 dataset_reps = glob.glob(os.path.join(dataset_dir, '*'))
 for rep in dataset_reps:

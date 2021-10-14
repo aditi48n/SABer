@@ -734,7 +734,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
                 mq_avg_r = mq_df['sensitivity'].mean()
                 nc_avg_r = nc_df['sensitivity'].mean()
                 mq_cnt = mq_df['MQ_bins'].count()
-                nc_cnt = mq_df['NC_bins'].count()
+                nc_cnt = nc_df['NC_bins'].count()
                 err_list = [cv_algo, cv_param1, cv_param2, cv_val1, cv_val2, algo, level,
                             mq_avg_p, mq_avg_r, mq_avg_mcc, mq_cnt, nc_avg_p, nc_avg_r,
                             nc_avg_mcc, nc_cnt

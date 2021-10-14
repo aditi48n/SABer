@@ -114,8 +114,14 @@ def calc_fn(y_truth, y_pred, bp_cnt):
 
 
 def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
-    precision = TP / (TP + FP)
-    sensitivity = TP / (TP + FN)
+    if TP + FP == 0:
+        precision = 0
+    else:
+        precision = TP / (TP + FP)
+    if TP + FN == 0:
+        sensitivity = 0
+    else:
+        sensitivity = TP / (TP + FN)
     N = TN + TP + FN + FP
     S = (TP + FN) / N
     P = (TP + FP) / N
@@ -123,7 +129,10 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
     if D == 0:
         D = 1
     MCC = ((TP / N) - S * P) / D
-    F1 = 2 * (precision * sensitivity) / (precision + sensitivity)
+    if precision + sensitivity == 0:
+        F1 = 0
+    else:
+        F1 = 2 * (precision * sensitivity) / (precision + sensitivity)
     oc_precision, oc_recall, _ = precision_recall_curve(y_truth, y_pred)
     AUC = auc(oc_recall, oc_precision)
     stat_list = [sag_id, level, algo, precision, sensitivity, MCC, AUC, F1,
@@ -359,6 +368,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'
                                       ]].drop_duplicates()
     # setup multithreading pool
+    print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     for clust in tqdm(clust2contig_df['best_label'].unique()):
@@ -432,278 +442,281 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     stat_df.to_csv(denovo_mean_file, index=False, sep='\t'
                    )
 
-    try:
-        ##################################################################################################
-        # Trusted Contigs errstats
-        # setup mapping to CAMI ref genomes
-        score_df_list = []
-        stats_df_list = []
+    # try:
+    ##################################################################################################
+    # Trusted Contigs errstats
+    # setup mapping to CAMI ref genomes
+    score_df_list = []
+    stats_df_list = []
 
-        cluster_df = pd.read_csv(trusted_out_file, header=0, sep='\t')
+    cluster_df = pd.read_csv(trusted_out_file, header=0, sep='\t')
 
-        src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
-        src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-        sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
-        sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
+    src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+    src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
+    sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+    sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
 
-        # setup multithreading pool
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for clust in tqdm(cluster_df['best_label'].unique()):
-            # subset recruit dataframes
-            sub_clust_df = cluster_df.query('best_label == @clust')
-            dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
-            # Map Sources/SAGs to Strain IDs
-            src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
-            strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
-            src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-            strain_sub_df = src2contig_df.query('strain == @strain_id')
-            src2contig_list = list(set(src_sub_df['contig_id'].values))
-            src2strain_list = list(set(strain_sub_df['contig_id'].values))
-            arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'hdbscan'
-                             ])
+    # setup multithreading pool
+    print("HDBSCAN-Anchored error analysis started...")
+    pool = multiprocessing.Pool(processes=nthreads)
+    arg_list = []
+    for clust in tqdm(cluster_df['best_label'].unique()):
+        # subset recruit dataframes
+        sub_clust_df = cluster_df.query('best_label == @clust')
+        dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
+        # Map Sources/SAGs to Strain IDs
+        src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
+        strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
+        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+        strain_sub_df = src2contig_df.query('strain == @strain_id')
+        src2contig_list = list(set(src_sub_df['contig_id'].values))
+        src2strain_list = list(set(strain_sub_df['contig_id'].values))
+        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+                         src2strain_list, 'hdbscan'
+                         ])
 
-        results = pool.imap_unordered(EArecruit, arg_list)
-        score_list = []
-        for i, output in tqdm(enumerate(results, 1)):
-            score_list.extend(output)
-        logging.info('\n')
-        pool.close()
-        pool.join()
-        score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                     'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
-                                                     'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
-                                                     ])
-        score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-        score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                      on='CAMI_genomeID', how='left'
-                                      )
-        score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
-        score_tax_df['>20Kb'] = 'No'
-        score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
-        score_tax_df['NC_bins'] = 'No'
-        score_tax_df.loc[(score_tax_df['precision'] >= 0.95) &
-                         (score_tax_df['sensitivity'] >= 0.9), 'NC_bins'] = 'Yes'
-        score_tax_df['MQ_bins'] = 'No'
-        score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
-                         (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    results = pool.imap_unordered(EArecruit, arg_list)
+    score_list = []
+    for i, output in tqdm(enumerate(results, 1)):
+        score_list.extend(output)
+    logging.info('\n')
+    pool.close()
+    pool.join()
+    score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
+                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 ])
+    score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
+    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
+                                  on='CAMI_genomeID', how='left'
+                                  )
+    score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
+    score_tax_df['>20Kb'] = 'No'
+    score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
+    score_tax_df['NC_bins'] = 'No'
+    score_tax_df.loc[(score_tax_df['precision'] >= 0.95) &
+                     (score_tax_df['sensitivity'] >= 0.9), 'NC_bins'] = 'Yes'
+    score_tax_df['MQ_bins'] = 'No'
+    score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
+                     (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
 
-        sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
-                                                  'sensitivity'],
-                                                 ascending=[False, False, True, True]
-                                                 )
+    sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
+                                              'sensitivity'],
+                                             ascending=[False, False, True, True]
+                                             )
 
-        stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                              'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                           'AUC', 'F1']].mean().reset_index()
-        cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                             'MQ_bins']).size().reset_index()
-        cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                               'bin_cnt'
-                               ]
-        cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                              'MQ_bins'])[['CAMI_genomeID']
-        ].nunique().reset_index()
-        cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                                'genome_cnt'
-                                ]
-        cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                               'MQ_bins'])[['strain']
-        ].nunique().reset_index()
-        cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                                 'strain_cnt'
-                                 ]
-        dfs = [stat_mean_df, cnt_bins_df, cnt_genos_df, cnt_strain_df]
-        stat_df = reduce(lambda left, right: pd.merge(left, right, on=['level',
-                                                                       'algorithm', '>20Kb',
-                                                                       'NC_bins', 'MQ_bins'
-                                                                       ]), dfs
-                         )
-        sort_score_df.to_csv(trusted_errstat_file, index=False, sep='\t')
-        stat_df.to_csv(trusted_mean_file, index=False, sep='\t')
+    stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
+                                                       'AUC', 'F1']].mean().reset_index()
+    cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                         'MQ_bins']).size().reset_index()
+    cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                           'bin_cnt'
+                           ]
+    cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                          'MQ_bins'])[['CAMI_genomeID']
+    ].nunique().reset_index()
+    cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                            'genome_cnt'
+                            ]
+    cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                           'MQ_bins'])[['strain']
+    ].nunique().reset_index()
+    cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                             'strain_cnt'
+                             ]
+    dfs = [stat_mean_df, cnt_bins_df, cnt_genos_df, cnt_strain_df]
+    stat_df = reduce(lambda left, right: pd.merge(left, right, on=['level',
+                                                                   'algorithm', '>20Kb',
+                                                                   'NC_bins', 'MQ_bins'
+                                                                   ]), dfs
+                     )
+    sort_score_df.to_csv(trusted_errstat_file, index=False, sep='\t')
+    stat_df.to_csv(trusted_mean_file, index=False, sep='\t')
 
-        ##################################################################################################
-        # OC-SVM Contigs errstats
-        # setup mapping to CAMI ref genomes
-        score_df_list = []
-        stats_df_list = []
+    ##################################################################################################
+    # OC-SVM Contigs errstats
+    # setup mapping to CAMI ref genomes
+    score_df_list = []
+    stats_df_list = []
 
-        cluster_df = pd.read_csv(ocsvm_out_file, header=0, sep='\t')
+    cluster_df = pd.read_csv(ocsvm_out_file, header=0, sep='\t')
 
-        src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
-        src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-        sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
-        sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
+    src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+    src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
+    sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+    sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
 
-        # setup multithreading pool
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for clust in tqdm(cluster_df['best_label'].unique()):
-            # subset recruit dataframes
-            sub_clust_df = cluster_df.query('best_label == @clust')
-            dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
-            # Map Sources/SAGs to Strain IDs
-            src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
-            strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
-            src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-            strain_sub_df = src2contig_df.query('strain == @strain_id')
-            src2contig_list = list(set(src_sub_df['contig_id'].values))
-            src2strain_list = list(set(strain_sub_df['contig_id'].values))
-            arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'ocsvm'
-                             ])
+    # setup multithreading pool
+    print("OCSVM-Anchored error analysis started...")
+    pool = multiprocessing.Pool(processes=nthreads)
+    arg_list = []
+    for clust in tqdm(cluster_df['best_label'].unique()):
+        # subset recruit dataframes
+        sub_clust_df = cluster_df.query('best_label == @clust')
+        dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
+        # Map Sources/SAGs to Strain IDs
+        src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
+        strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
+        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+        strain_sub_df = src2contig_df.query('strain == @strain_id')
+        src2contig_list = list(set(src_sub_df['contig_id'].values))
+        src2strain_list = list(set(strain_sub_df['contig_id'].values))
+        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+                         src2strain_list, 'ocsvm'
+                         ])
 
-        results = pool.imap_unordered(EArecruit, arg_list)
-        score_list = []
-        for i, output in tqdm(enumerate(results, 1)):
-            score_list.extend(output)
-        logging.info('\n')
-        pool.close()
-        pool.join()
-        score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                     'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
-                                                     'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
-                                                     ])
-        score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-        score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                      on='CAMI_genomeID', how='left'
-                                      )
-        score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
-        score_tax_df['>20Kb'] = 'No'
-        score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
-        score_tax_df['NC_bins'] = 'No'
-        score_tax_df.loc[(score_tax_df['precision'] >= 0.95) &
-                         (score_tax_df['sensitivity'] >= 0.9), 'NC_bins'] = 'Yes'
-        score_tax_df['MQ_bins'] = 'No'
-        score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
-                         (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    results = pool.imap_unordered(EArecruit, arg_list)
+    score_list = []
+    for i, output in tqdm(enumerate(results, 1)):
+        score_list.extend(output)
+    logging.info('\n')
+    pool.close()
+    pool.join()
+    score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
+                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 ])
+    score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
+    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
+                                  on='CAMI_genomeID', how='left'
+                                  )
+    score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
+    score_tax_df['>20Kb'] = 'No'
+    score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
+    score_tax_df['NC_bins'] = 'No'
+    score_tax_df.loc[(score_tax_df['precision'] >= 0.95) &
+                     (score_tax_df['sensitivity'] >= 0.9), 'NC_bins'] = 'Yes'
+    score_tax_df['MQ_bins'] = 'No'
+    score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
+                     (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
 
-        sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
-                                                  'sensitivity'],
-                                                 ascending=[False, False, True, True]
-                                                 )
+    sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
+                                              'sensitivity'],
+                                             ascending=[False, False, True, True]
+                                             )
 
-        stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                              'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                           'AUC', 'F1']].mean().reset_index()
-        cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                             'MQ_bins']).size().reset_index()
-        cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                               'bin_cnt'
-                               ]
-        cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                              'MQ_bins'])[['CAMI_genomeID']
-        ].nunique().reset_index()
-        cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                                'genome_cnt'
-                                ]
-        cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                               'MQ_bins'])[['strain']
-        ].nunique().reset_index()
-        cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                                 'strain_cnt'
-                                 ]
-        dfs = [stat_mean_df, cnt_bins_df, cnt_genos_df, cnt_strain_df]
-        stat_df = reduce(lambda left, right: pd.merge(left, right, on=['level',
-                                                                       'algorithm', '>20Kb',
-                                                                       'NC_bins', 'MQ_bins'
-                                                                       ]), dfs
-                         )
-        sort_score_df.to_csv(ocsvm_errstat_file, index=False, sep='\t')
-        stat_df.to_csv(ocsvm_mean_file, index=False, sep='\t')
+    stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
+                                                       'AUC', 'F1']].mean().reset_index()
+    cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                         'MQ_bins']).size().reset_index()
+    cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                           'bin_cnt'
+                           ]
+    cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                          'MQ_bins'])[['CAMI_genomeID']
+    ].nunique().reset_index()
+    cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                            'genome_cnt'
+                            ]
+    cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                           'MQ_bins'])[['strain']
+    ].nunique().reset_index()
+    cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                             'strain_cnt'
+                             ]
+    dfs = [stat_mean_df, cnt_bins_df, cnt_genos_df, cnt_strain_df]
+    stat_df = reduce(lambda left, right: pd.merge(left, right, on=['level',
+                                                                   'algorithm', '>20Kb',
+                                                                   'NC_bins', 'MQ_bins'
+                                                                   ]), dfs
+                     )
+    sort_score_df.to_csv(ocsvm_errstat_file, index=False, sep='\t')
+    stat_df.to_csv(ocsvm_mean_file, index=False, sep='\t')
 
-        ##################################################################################################
-        # Combined Contigs errstats
-        # setup mapping to CAMI ref genomes
-        score_df_list = []
-        stats_df_list = []
+    ##################################################################################################
+    # Combined Contigs errstats
+    # setup mapping to CAMI ref genomes
+    score_df_list = []
+    stats_df_list = []
 
-        cluster_df = pd.read_csv(inter_out_file, header=0, sep='\t')
+    cluster_df = pd.read_csv(inter_out_file, header=0, sep='\t')
 
-        src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
-        src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-        sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
-        sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
+    src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+    src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
+    sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
+    sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
 
-        # setup multithreading pool
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for clust in tqdm(cluster_df['best_label'].unique()):
-            # subset recruit dataframes
-            sub_clust_df = cluster_df.query('best_label == @clust')
-            dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
-            # Map Sources/SAGs to Strain IDs
-            src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
-            strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
-            src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-            strain_sub_df = src2contig_df.query('strain == @strain_id')
-            src2contig_list = list(set(src_sub_df['contig_id'].values))
-            src2strain_list = list(set(strain_sub_df['contig_id'].values))
-            arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'intersect'
-                             ])
+    # setup multithreading pool
+    print("Combined-Anchors error analysis started...")
+    pool = multiprocessing.Pool(processes=nthreads)
+    arg_list = []
+    for clust in tqdm(cluster_df['best_label'].unique()):
+        # subset recruit dataframes
+        sub_clust_df = cluster_df.query('best_label == @clust')
+        dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
+        # Map Sources/SAGs to Strain IDs
+        src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
+        strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
+        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+        strain_sub_df = src2contig_df.query('strain == @strain_id')
+        src2contig_list = list(set(src_sub_df['contig_id'].values))
+        src2strain_list = list(set(strain_sub_df['contig_id'].values))
+        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+                         src2strain_list, 'intersect'
+                         ])
 
-        results = pool.imap_unordered(EArecruit, arg_list)
-        score_list = []
-        for i, output in tqdm(enumerate(results, 1)):
-            score_list.extend(output)
-        logging.info('\n')
-        pool.close()
-        pool.join()
-        score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                     'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
-                                                     'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
-                                                     ])
-        score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-        score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                      on='CAMI_genomeID', how='left'
-                                      )
-        score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
-        score_tax_df['>20Kb'] = 'No'
-        score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
-        score_tax_df['NC_bins'] = 'No'
-        score_tax_df.loc[(score_tax_df['precision'] >= 0.95) &
-                         (score_tax_df['sensitivity'] >= 0.9), 'NC_bins'] = 'Yes'
-        score_tax_df['MQ_bins'] = 'No'
-        score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
-                         (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    results = pool.imap_unordered(EArecruit, arg_list)
+    score_list = []
+    for i, output in tqdm(enumerate(results, 1)):
+        score_list.extend(output)
+    logging.info('\n')
+    pool.close()
+    pool.join()
+    score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
+                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 ])
+    score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
+    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
+                                  on='CAMI_genomeID', how='left'
+                                  )
+    score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
+    score_tax_df['>20Kb'] = 'No'
+    score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
+    score_tax_df['NC_bins'] = 'No'
+    score_tax_df.loc[(score_tax_df['precision'] >= 0.95) &
+                     (score_tax_df['sensitivity'] >= 0.9), 'NC_bins'] = 'Yes'
+    score_tax_df['MQ_bins'] = 'No'
+    score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
+                     (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
 
-        sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
-                                                  'sensitivity'],
-                                                 ascending=[False, False, True, True]
-                                                 )
+    sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
+                                              'sensitivity'],
+                                             ascending=[False, False, True, True]
+                                             )
 
-        stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                              'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                           'AUC', 'F1']].mean().reset_index()
-        cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                             'MQ_bins']).size().reset_index()
-        cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                               'bin_cnt'
-                               ]
-        cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                              'MQ_bins'])[['CAMI_genomeID']
-        ].nunique().reset_index()
-        cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                                'genome_cnt'
-                                ]
-        cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                               'MQ_bins'])[['strain']
-        ].nunique().reset_index()
-        cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
-                                 'strain_cnt'
-                                 ]
-        dfs = [stat_mean_df, cnt_bins_df, cnt_genos_df, cnt_strain_df]
-        stat_df = reduce(lambda left, right: pd.merge(left, right, on=['level',
-                                                                       'algorithm', '>20Kb',
-                                                                       'NC_bins', 'MQ_bins'
-                                                                       ]), dfs
-                         )
-        sort_score_df.to_csv(inter_errstat_file, index=False, sep='\t')
-        stat_df.to_csv(inter_mean_file, index=False, sep='\t')
-    except:
-        print('Skipped Anchored Bin Error Analysis...')
+    stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
+                                                       'AUC', 'F1']].mean().reset_index()
+    cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                         'MQ_bins']).size().reset_index()
+    cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                           'bin_cnt'
+                           ]
+    cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                          'MQ_bins'])[['CAMI_genomeID']
+    ].nunique().reset_index()
+    cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                            'genome_cnt'
+                            ]
+    cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
+                                           'MQ_bins'])[['strain']
+    ].nunique().reset_index()
+    cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
+                             'strain_cnt'
+                             ]
+    dfs = [stat_mean_df, cnt_bins_df, cnt_genos_df, cnt_strain_df]
+    stat_df = reduce(lambda left, right: pd.merge(left, right, on=['level',
+                                                                   'algorithm', '>20Kb',
+                                                                   'NC_bins', 'MQ_bins'
+                                                                   ]), dfs
+                     )
+    sort_score_df.to_csv(inter_errstat_file, index=False, sep='\t')
+    stat_df.to_csv(inter_mean_file, index=False, sep='\t')
+    # except:
+    #    print('Skipped Anchored Bin Error Analysis...')
 
     ###########################################################################
     # Compile all results tables from analysis

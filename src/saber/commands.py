@@ -110,7 +110,7 @@ def recruit(sys_args):
     mg_id = mg_sub_file[0]
     clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], save_dirs_dict['tmp'],
                                  abund_file, tetra_file,
-                                 minhash_df_dict, 100, 25, 0.5, 'scale',
+                                 minhash_df_dict, 5, 5, 0.5, 'scale',
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits

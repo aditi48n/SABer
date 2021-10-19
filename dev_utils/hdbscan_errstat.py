@@ -11,8 +11,6 @@ from os.path import join as joinpath
 
 import pandas as pd
 import pyfastx
-from sklearn.metrics import auc
-from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 
 
@@ -133,9 +131,9 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
         F1 = 0
     else:
         F1 = 2 * (precision * sensitivity) / (precision + sensitivity)
-    oc_precision, oc_recall, _ = precision_recall_curve(y_truth, y_pred)
-    AUC = auc(oc_recall, oc_precision)
-    stat_list = [sag_id, level, algo, precision, sensitivity, MCC, AUC, F1,
+    # oc_precision, oc_recall, _ = precision_recall_curve(y_truth, y_pred)
+    # AUC = auc(oc_recall, oc_precision)
+    stat_list = [sag_id, level, algo, precision, sensitivity, MCC, F1,
                  N, S, P, TP, FP, TN, FN
                  ]
 
@@ -174,7 +172,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     # INPUT files
     # saberout_path = sys.argv[1]
     # synsrc_path = sys.argv[2]
-    mocksag_path = joinpath(synsrc_path, 'Final_SAGs_20k/')
+    mocksag_path = joinpath(synsrc_path, 'Final_SAGs_20k_rep1/')
     src_genome_path = joinpath(synsrc_path, 'fasta/')
     sag_tax_map = joinpath(synsrc_path, 'genome_taxa_info.tsv')
     mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
@@ -187,9 +185,9 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     denovo_errstat_file = joinpath(err_path, 'denovo.errstat.tsv')
     denovo_mean_file = joinpath(err_path, 'denovo.errstat.mean.tsv')
     try:
-        trusted_out_file = glob.glob(joinpath(saberout_path, '*.trusted_clusters.tsv'))[0]
-        trusted_errstat_file = joinpath(err_path, 'trusted_clusters.errstat.tsv')
-        trusted_mean_file = joinpath(err_path, 'trusted_clusters.errstat.mean.tsv')
+        trusted_out_file = glob.glob(joinpath(saberout_path, '*.hdbscan_clusters.tsv'))[0]
+        trusted_errstat_file = joinpath(err_path, 'hdbscan_clusters.errstat.tsv')
+        trusted_mean_file = joinpath(err_path, 'hdbscan_clusters.errstat.mean.tsv')
         ocsvm_out_file = glob.glob(joinpath(saberout_path, '*.ocsvm_clusters.tsv'))[0]
         ocsvm_errstat_file = joinpath(err_path, 'ocsvm_clusters.errstat.tsv')
         ocsvm_mean_file = joinpath(err_path, 'ocsvm_clusters.errstat.mean.tsv')
@@ -245,7 +243,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
         else:
             # list all source genomes
             src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
-                               if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna') and
+                               if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna' or
+                                    f.split('.')[-1] == 'fa') and
                                    'Sample' not in f)
                                ]
             # list all mockSAGs
@@ -254,21 +253,38 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
                             ]
             src_mock_list = src_genome_list + mocksag_list
             # count total bp's for each src and mock fasta
-            fa_bp_cnt_list = []
+            print('Counting basepairs of trusted contigs...')
+            pool = multiprocessing.Pool(processes=nthreads)
+            arg_list = []
             for fa_file in mocksag_list:
+                arg_list.append(fa_file)
+            results = pool.imap_unordered(cnt_total_bp, arg_list)
+            fa_bp_cnt_list = []
+            for i, output in tqdm(enumerate(results, 1)):
+                fa_file, fa_bp_cnt = output
                 f_id = fa_file.split('/')[-1].rsplit('.', 2)[0]
                 u_id = fa_file.split('/')[-1].split('.fasta')[0]
                 f_type = 'synSAG'
-                fa_file, fa_bp_cnt = cnt_total_bp(fa_file)
-                print(f_id, u_id, f_type, fa_bp_cnt)
                 fa_bp_cnt_list.append([f_id, u_id, f_type, fa_bp_cnt])
-            src_bp_cnt_list = []
+            logging.info('\n')
+            pool.close()
+            pool.join()
+
+            print('Counting basepairs of source genomes...')
+            pool = multiprocessing.Pool(processes=nthreads)
+            arg_list = []
             for fa_file in src_genome_list:
+                arg_list.append(fa_file)
+            results = pool.imap_unordered(cnt_total_bp, arg_list)
+            src_bp_cnt_list = []
+            for i, output in tqdm(enumerate(results, 1)):
+                fa_file, fa_bp_cnt = output
                 f_id = fa_file.split('/')[-1].rsplit('.', 1)[0]
                 f_type = 'src_genome'
-                fa_file, fa_bp_cnt = cnt_total_bp(fa_file)
-                print(f_id, f_type, fa_bp_cnt)
                 src_bp_cnt_list.append([f_id, f_type, fa_bp_cnt])
+            logging.info('\n')
+            pool.close()
+            pool.join()
             fa_bp_cnt_df = pd.DataFrame(fa_bp_cnt_list, columns=['sag_id', 'u_id', 'data_type',
                                                                  'tot_bp_cnt'
                                                                  ])
@@ -395,7 +411,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     pool.join()
 
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
                                                  ])
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
@@ -414,7 +430,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                      'AUC', 'F1']].mean().reset_index()
+                                                      'F1']].mean().reset_index()
     cnt_bins_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                         'MQ_bins']).size().reset_index()
     cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
@@ -483,7 +499,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     pool.close()
     pool.join()
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
@@ -507,7 +523,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
 
     stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                           'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                       'AUC', 'F1']].mean().reset_index()
+                                                       'F1']].mean().reset_index()
     cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins']).size().reset_index()
     cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
@@ -574,7 +590,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     pool.close()
     pool.join()
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
@@ -598,7 +614,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
 
     stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                           'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                       'AUC', 'F1']].mean().reset_index()
+                                                       'F1']].mean().reset_index()
     cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins']).size().reset_index()
     cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
@@ -665,7 +681,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     pool.close()
     pool.join()
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
-                                                 'precision', 'sensitivity', 'MCC', 'AUC', 'F1',
+                                                 'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
@@ -689,7 +705,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
 
     stat_mean_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                           'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                       'AUC', 'F1']].mean().reset_index()
+                                                       'F1']].mean().reset_index()
     cnt_bins_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins']).size().reset_index()
     cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',

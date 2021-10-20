@@ -121,19 +121,32 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                                               random_state=42, metric='manhattan', init=set_init
                                               ).fit_transform(cov_df)
         except:
-            print('Spectral Initialization Failed!')
-            print('Running 2-stage DR to provide Initial Embedding...')
-            tmp_nn = 50
-            tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                      n_components=len(cov_df.columns),
-                                      random_state=42, metric='manhattan', init=set_init
-                                      ).fit_transform(cov_df)
-            print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                              n_components=len(cov_df.columns),
-                                              random_state=42, metric='manhattan',
-                                              init=tmp_embedding
-                                              ).fit_transform(cov_df)
+            try:
+                print('Spectral Initialization Failed!')
+                print('Running 2-stage DR to provide Initial Embedding...')
+                tmp_nn = 50
+                tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
+                                          n_components=len(cov_df.columns),
+                                          random_state=42, metric='manhattan',
+                                          init=set_init
+                                          ).fit_transform(cov_df)
+                print('Initialization worked with n_neighbors=50, moving to Stage 2...')
+                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
+                                                  n_components=len(cov_df.columns),
+                                                  random_state=42, metric='manhattan',
+                                                  init=tmp_embedding
+                                                  ).fit_transform(cov_df)
+            except:
+                print('2-Stage Initialization Failed!')
+                print('Running PCA to provide Initial Embedding...')
+                pca = PCA(n_components=len(cov_df.columns))
+                pca_emb = pca.fit_transform(cov_df)
+                print('Fitting Coverage Data with Anchors...')
+                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
+                                                  n_components=len(cov_df.columns),
+                                                  random_state=42, metric='manhattan',
+                                                  init=pca_emb
+                                                  ).fit_transform(cov_df)
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
@@ -149,19 +162,32 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                                               random_state=42, metric='manhattan', init=set_init
                                               ).fit_transform(tetra_df)
         except:
-            print('Spectral Initialization Failed!')
-            print('Running 2-stage DR to provide Initial Embedding...')
-            tmp_nn = 50
-            tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                      n_components=40,
-                                      random_state=42, metric='manhattan', init=set_init
-                                      ).fit_transform(tetra_df)
-            print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                              n_components=40,
-                                              random_state=42, metric='manhattan',
-                                              init=tmp_embedding
-                                              ).fit_transform(tetra_df)
+            try:
+                print('Spectral Initialization Failed!')
+                print('Running 2-stage DR to provide Initial Embedding...')
+                tmp_nn = 50
+                tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
+                                          n_components=40,
+                                          random_state=42, metric='manhattan',
+                                          init=set_init
+                                          ).fit_transform(tetra_df)
+                print('Initialization worked with n_neighbors=50, moving to Stage 2...')
+                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
+                                                  n_components=40,
+                                                  random_state=42, metric='manhattan',
+                                                  init=tmp_embedding
+                                                  ).fit_transform(tetra_df)
+            except:
+                print('2-Stage Initialization Failed!')
+                print('Running PCA to provide Initial Embedding...')
+                pca = PCA(n_components=40)
+                pca_emb = pca.fit_transform(tetra_df)
+                print('Fitting Coverage Data with Anchors...')
+                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
+                                                  n_components=40,
+                                                  random_state=42, metric='manhattan',
+                                                  init=pca_emb
+                                                  ).fit(tetra_df)
         umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
@@ -404,7 +430,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                     print('2-Stage Initialization Failed!')
                     print('Running PCA to provide Initial Embedding...')
                     pca = PCA(n_components=40)
-                    pca_emb = pca.fit_transform(cat_cov_df)
+                    pca_emb = pca.fit_transform(cat_tetra_df)
                     print('Fitting Coverage Data with Anchors...')
                     mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
                                        n_components=40,

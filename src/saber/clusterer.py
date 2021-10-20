@@ -403,7 +403,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                 except:
                     print('2-Stage Initialization Failed!')
                     print('Running PCA to provide Initial Embedding...')
-                    pca = PCA(n_components=len(cov_df.columns))
+                    pca = PCA(n_components=40)
                     pca_emb = pca.fit_transform(cat_cov_df)
                     print('Fitting Coverage Data with Anchors...')
                     mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,

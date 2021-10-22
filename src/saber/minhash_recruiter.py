@@ -114,9 +114,9 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
             sbt_out = mg_sbt.search(sig, threshold=0.000000000001)
             sbt_out_cont = mg_sbt.search(sig, threshold=0.000000000001, do_containment=True)
             sbt_out.extend(sbt_out_cont)
-            r_contig = sig.name()
+            r_contig = sig
             for similarity, t_sig, filename in sbt_out:
-                q_contig = t_sig.name()
+                q_contig = t_sig
                 search_list.append([sag_id, r_contig, q_contig, similarity])
         search_df = pd.DataFrame(search_list, columns=['sag_id', 'r_contig_id', 'q_contig_id',
                                                        'jacc_sim'

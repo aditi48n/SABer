@@ -9,7 +9,6 @@ from pathlib import Path
 import hdbscan
 import pandas as pd
 import umap
-from joblib import parallel_backend
 from sklearn import svm
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.decomposition import PCA
@@ -24,10 +23,9 @@ warnings.simplefilter("ignore", category=DeprecationWarning)
 
 def runOCSVM(tc_df, mg_df, tc_id, n, gam):
     # fit OCSVM
-    with parallel_backend('threading', n_jobs=1):
-        clf = svm.OneClassSVM(nu=n, gamma=gam)
-        clf.fit(tc_df.values)
-        mg_pred = clf.predict(mg_df.values)
+    clf = svm.OneClassSVM(nu=n, gamma=gam)
+    clf.fit(tc_df.values)
+    mg_pred = clf.predict(mg_df.values)
     contig_id_list = [x.rsplit('_', 1)[0] for x in mg_df.index.values]
     pred_df = pd.DataFrame(zip(mg_df.index.values, contig_id_list, mg_pred),
                            columns=['subcontig_id', 'contig_id', 'pred']

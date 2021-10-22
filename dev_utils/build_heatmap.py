@@ -31,6 +31,7 @@ for cv_algo in cv_df['cv_algo'].unique():
                     hoverongaps=False, colorscale='Viridis'))
                 sv2_file = sv_dir + '_'.join([cv_algo, algo, level]) + '.NC_BINS.png'
                 fig2.write_image(sv2_file)
+                '''
                 fig3 = go.Figure(data=go.Heatmap(
                     z=level_df['mq_avg_mcc'],
                     x=[str(x) for x in level_df['cv_val1']],
@@ -45,3 +46,4 @@ for cv_algo in cv_df['cv_algo'].unique():
                     hoverongaps=False, colorscale='Viridis'))
                 sv4_file = sv_dir + '_'.join([cv_algo, algo, level]) + '.NC_MCC_BINS.png'
                 fig4.write_image(sv4_file)
+                '''

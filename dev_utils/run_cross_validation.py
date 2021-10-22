@@ -46,9 +46,9 @@ if mhr_recruits:
 else:
     minhash_df_dict = False
 
-abr_recruits = glob.glob(os.path.join(working_dir, '*.covM.scaled.tsv'))
+abr_recruits = glob.glob(os.path.join(working_dir, '*.ss.scaled.tsv'))
 abr_file = os.path.basename(abr_recruits[0])
-mg_file = [abr_file.replace('.covM.scaled.tsv', ''), None]
+mg_file = [abr_file.replace('.ss.scaled.tsv', ''), None]
 # Build abundance tables
 abund_file = abr.runAbundRecruiter(working_dir,
                                    working_dir, mg_file,

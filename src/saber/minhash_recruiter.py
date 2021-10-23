@@ -20,15 +20,8 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
     kmer_list = [201]
     mh_kmer_recruits_dict = {}
     for kmer in kmer_list:
-        if isfile(o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_contig_recruits.tsv')):
-            logging.info('MinHash already done\n')
-            mh_max_df = pd.read_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
-                                           '.mhr_contig_recruits.tsv'), header=0,
-                                    sep='\t'
-                                    )
-            mh_kmer_recruits_dict[kmer] = mh_max_df
-
-        else:
+        mh_recruit_file = o_join(mhr_path, mg_id + '.' + str(kmer) + '.mhr_contig_recruits.tsv')
+        if isfile(mh_recruit_file) == False:
             build_list, minhash_pass_list = sag_recruit_checker(mhr_path, sag_sub_files, kmer)
             if len(build_list) != 0:
                 sag_sig_dict = build_sag_sig_dict(build_list, nthreads, sig_path, kmer)
@@ -69,12 +62,11 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
 
             minhash_df['jacc_sim'] = minhash_df['jacc_sim'].astype(float)
             minhash_recruit_df = minhash_df.copy()
-            minhash_recruit_df.to_csv(o_join(mhr_path, mg_id + '.' + str(kmer) +
-                                             '.mhr_contig_recruits.tsv'),
-                                      sep='\t',
-                                      index=False
-                                      )
-            mh_kmer_recruits_dict[kmer] = minhash_recruit_df
+            minhash_recruit_df.to_csv(mh_recruit_file, sep='\t', index=False)
+        else:
+            logging.info('MinHash already done\n')
+        mh_recruit_df = pd.read_csv(mh_recruit_file, header=0, sep='\t')
+        mh_kmer_recruits_dict[kmer] = mh_recruit_df
     logging.info('Cleaning up intermediate files...\n')
     for s in ["*.sig", "*.mhr_recruits.tsv", "*.sbt.zip"]:
         s_utils.runCleaner(mhr_path, s)

@@ -79,11 +79,11 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
 
 
 def recruitOCSVM(p):
-    merge_df, sub_trusted_df, sag_id, nu, gamma = p
+    m_df, sub_trusted_df, sag_id, nu, gamma = p
     tc_contig_list = list(sub_trusted_df['contig_id'].unique())
-    merge_df['contig_id'] = [x.rsplit('_', 1)[0] for x in merge_df.index.values]
-    tc_feat_df = merge_df.query('contig_id in @tc_contig_list')
-    mg_feat_df = merge_df.copy()  # .query('contig_id in @sub_contig_list')
+    m_df['contig_id'] = [x.rsplit('_', 1)[0] for x in m_df.index.values]
+    tc_feat_df = m_df.query('contig_id in @tc_contig_list')
+    mg_feat_df = m_df.copy()  # .query('contig_id in @sub_contig_list')
     mg_feat_df.drop(columns=['contig_id'], inplace=True)
     tc_feat_df.drop(columns=['contig_id'], inplace=True)
     major_df = False
@@ -204,17 +204,16 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         cov_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_feat_df['subcontig_id']]
         cov_feat_df.set_index('subcontig_id', inplace=True)
         cov_feat_df.columns = [str(x) + '_cov' for x in cov_feat_df.columns]
-        merge_df = tetra_feat_df.join(cov_feat_df)
+        merge_df = cov_feat_df.merge(tetra_feat_df, left_index=True, right_index=True, how='left')
         merge_df.drop(columns=['contig_id_tetra', 'contig_id_cov'], inplace=True)
         tetra_feat_df.drop(columns=['contig_id_tetra'], inplace=True)
         cov_feat_df.drop(columns=['contig_id_cov'], inplace=True)
         merge_df.to_csv(merged_emb, sep='\t')
-    else:
-        print('Loading Merged Embedding...')
-        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
+
     hdbscan_out_file = Path(o_join(clst_path, mg_id + '.denovo_hdbscan.tsv'))
     if not hdbscan_out_file.is_file():
         print('Performing De Novo Clustering...')
+        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
         clusterer = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
                                     min_samples=min_samp
@@ -497,6 +496,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
             anchor_df = pd.read_csv(anchor_emb, sep='\t', header=0, index_col='subcontig_id')
         '''
         print('Clustering with HDBSCAN and Anchored Settings...')
+        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
         clusterer = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
                                     min_samples=min_samp
@@ -561,7 +561,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         if label_max_list:
             sag_label_df = pd.concat(label_max_list)
         else:
-            sag_label_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
+            sag_label_df = pd.DataFrame(columns=['sag_id', 'contig_id', 'anch_cnt'])
         if contig_max_list:
             sag_contig_df = pd.concat(contig_max_list)
         else:
@@ -609,6 +609,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
     ocsvm_out_file = Path(o_join(clst_path, mg_id + '.ocsvm_clusters.tsv'))
     if minhash_dict and not ocsvm_out_file.is_file():
         print('Performing Anchored Recruitment with OC-SVM...')
+        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
         print('Running OC-SVM algorithm...')
         mh_trusted_df = minhash_dict[201]
         mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
@@ -620,7 +621,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
             sub_mh_df = mh_trusted_df.query('sag_id == @sag_id')
             arg_list.append([merge_df, sub_mh_df, sag_id, nu, gamma])
         ocsvm_recruit_list = []
-        results = pool.imap_unordered(recruitOCSVM, arg_list)  # TODO: denovo doesn't need to be added to arglist
+        results = pool.imap_unordered(recruitOCSVM, arg_list)
         for i, output in tqdm(enumerate(results, 1)):
             if isinstance(output, pd.DataFrame):
                 ocsvm_recruit_list.append(output)
@@ -750,7 +751,8 @@ def trust_clust(p):
         for label in sub_label_df['best_label'].unique():
             label_denovo_df = sub_denovo_df.query('best_label == @label')
             anch_cnt = label_denovo_df.shape[0]
-            lab2anch[label] = anch_cnt
+            if anch_cnt != '':
+                lab2anch[label] = anch_cnt
         sub_label_df['sag_id'] = sag_id
         sub_label_df['anch_cnt'] = [lab2anch[x] for x in sub_label_df['best_label']]
     else:

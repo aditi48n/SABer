@@ -341,8 +341,14 @@ def tetra_cnt(fasta):  # TODO: add multi-processing to this function
 
 def runCleaner(dir_path, ptrn):
     ptrn_glob = glob.glob(os.path.join(dir_path, ptrn))
-    for file in ptrn_glob:
-        try:
-            os.remove(file)
-        except:
-            print("Error while deleting file : ", file)
+    for ent in ptrn_glob:
+        if os.path.isfile(ent):
+            try:
+                os.remove(ent)
+            except:
+                print("Error while deleting file : ", ent)
+        elif os.path.isdir(ent):
+            try:
+                os.rmdir(ent)
+            except:
+                print("Error while deleting file : ", ent)

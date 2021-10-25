@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pandas as pd
@@ -7,7 +8,7 @@ pd.set_option('display.max_columns', None)
 
 cv_file = sys.argv[1]
 cv_df = pd.read_csv(cv_file, sep='\t', header=0)
-sv_dir = '/home/ryan/Desktop/SABer_CV/'
+sv_dir = os.path.split(cv_file)[0] + '/'
 for cv_algo in cv_df['cv_algo'].unique():
     cv_algo_df = cv_df.query('cv_algo == @cv_algo')
     for algo in cv_algo_df['algo'].unique():

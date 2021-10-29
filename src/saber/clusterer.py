@@ -101,7 +101,7 @@ def recruitOCSVM(p):
         major_df = pos_perc.copy()  # .loc[pos_perc['percent'] >= 0.51]
         major_df['sag_id'] = sag_id
 
-    return major_df
+    return sag_id, major_df
 
 def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                  min_clust_size, min_samp, nu, gamma, nthreads
@@ -621,29 +621,26 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
             sub_mh_df = mh_trusted_df.query('sag_id == @sag_id')
             arg_list.append([merge_df, sub_mh_df, sag_id, nu, gamma])
         ocsvm_recruit_list = []
+        ocsvm_recruit_dict = {}
         results = pool.imap_unordered(recruitOCSVM, arg_list)
         for i, output in tqdm(enumerate(results, 1)):
-            if isinstance(output, pd.DataFrame):
-                ocsvm_recruit_list.append(output)
+            sag_id, ocsvm_recruits = output
+            if isinstance(ocsvm_recruits, pd.DataFrame):
+                ocsvm_recruit_list.append(ocsvm_recruits)
+                ocsvm_recruit_dict[sag_id] = ocsvm_recruits
         pool.close()
         pool.join()
         ocsvm_contig_df = pd.concat(ocsvm_recruit_list)
         ocsvm_contig_best_df = ocsvm_contig_df.sort_values(by='percent', ascending=False
                                                            ).drop_duplicates(subset='contig_id')
         print('Compiling OC-SVM recruited contigs...')
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
+        ocsvm_contig_dict = {}
         for index, row in tqdm(list(ocsvm_contig_best_df.iterrows())):
             sag_id = row['sag_id']
             percent = row['percent']
-            arg_list.append([sag_id, percent, ocsvm_contig_df])
-        ocsvm_contig_dict = {}
-        results = pool.imap_unordered(get_ocsvm_recruits, arg_list)
-        for i, output in tqdm(enumerate(results, 1)):
-            sag_id, sub_sag_contig_df = output
+            sub_ocsvm_df = ocsvm_recruit_dict[sag_id]
+            sub_sag_contig_df = sub_ocsvm_df.query('percent >= @percent')
             ocsvm_contig_dict[sag_id] = sub_sag_contig_df
-        pool.close()
-        pool.join()
 
         print('Building OC-SVM Clusters...')
         ocsvm_clust_list = []
@@ -695,14 +692,6 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         s_utils.runCleaner(clst_path, s)
 
     return denovo_clusters_df, trust_recruit_df, ocsvm_clust_df, inter_clust_df
-
-
-def get_ocsvm_recruits(p):
-    sag_id, percent, ocsvm_contig_df = p
-    sub_sag_contig_df = ocsvm_contig_df.query('sag_id == @sag_id and '
-                                              'percent >= @percent'
-                                              )
-    return sag_id, sub_sag_contig_df
 
 
 def sag_compare(p):

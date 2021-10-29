@@ -72,6 +72,9 @@ def recruit(sys_args):
     # Build save dir structure
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
 
+    # TODO: should check for prebuilt files before anything else to avoid rebuilding things
+    # TODO: think about setting a default upper and lower bp size for bins to filter bad ones
+
     # Build subcontigs for MG
     mg_file = tuple([recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0],
                      recruit_s.mg_file])  # TODO: needs to support multiple MetaGs

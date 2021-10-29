@@ -9,6 +9,7 @@ from os import makedirs, path, listdir
 from os.path import isfile
 from os.path import join as joinpath
 
+import numpy as np
 import pandas as pd
 import pyfastx
 from tqdm import tqdm
@@ -167,12 +168,12 @@ def get_seqs(fasta_file):
     return fasta
 
 
-def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
+def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, nthreads):
     ##################################################################################################
     # INPUT files
     # saberout_path = sys.argv[1]
     # synsrc_path = sys.argv[2]
-    mocksag_path = joinpath(synsrc_path, 'Final_SAGs_20k_rep1/')
+    # mocksag_path = joinpath(synsrc_path, 'Final_SAGs_20k_rep1/')
     src_genome_path = joinpath(synsrc_path, 'fasta/')
     sag_tax_map = joinpath(synsrc_path, 'genome_taxa_info.tsv')
     mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
@@ -196,7 +197,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
         inter_mean_file = joinpath(err_path, 'inter_clusters.errstat.mean.tsv')
     except:
         print('No Anchored Bins Provided...')
-
     ##################################################################################################
     # Make working dir
     if not path.exists(err_path):
@@ -222,13 +222,12 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     # mg_contig_map_df['TAXID'] = [str(x) for x in mg_contig_map_df['TAXID']]
 
     # Merge contig map and taxpath DFs
-    tax_mg_df = taxpath_df.merge(mg_contig_map_df, left_on='CAMI_genomeID', right_on='BINID',
-                                 how='right'
-                                 )
+    tax_mg_df = mg_contig_map_df.merge(taxpath_df, right_on='CAMI_genomeID', left_on='BINID',
+                                       how='right'
+                                       )
     tax_mg_df = tax_mg_df[['@@SEQUENCEID', 'CAMI_genomeID', 'domain', 'phylum', 'class', 'order',
                            'family', 'genus', 'species', 'strain'
                            ]]
-
     # count all bp's for Source genomes, Source MetaG, MockSAGs
     # count all bp's for each read in metaG
     src_metag_cnt_dict = cnt_contig_bp(src_metag_file)
@@ -237,6 +236,19 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     # Add to tax DF
     tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
+
+    # builds the sag to cami ID mapping file
+    if 'CAMI_II' in synsrc_path:
+        cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')
+        cami_genome2id_df = pd.read_csv(cami_genome2id_file, sep='\t', header=None)
+        cami_genome2id_df.columns = ['CAMI_genomeID', 'src_genome']
+        cami_genome2id_df['src_genome'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for
+                                           x in cami_genome2id_df['src_genome']
+                                           ]
+        cami_genome2id_dict = dict(zip(cami_genome2id_df['src_genome'],
+                                       cami_genome2id_df['CAMI_genomeID']
+                                       ))
+
     try:
         if isfile(src2mock_file):
             src_mock_err_df = pd.read_csv(src2mock_file, sep='\t', header=0)
@@ -325,36 +337,41 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
         if isfile(sag2cami_file):
             sag2cami_df = pd.read_csv(sag2cami_file, sep='\t', header=0)
         else:
-            # builds the sag to cami ID mapping file
             mh_list = list(src_mock_err_df['sag_id'].unique())
             cami_list = [str(x) for x in tax_mg_df['CAMI_genomeID'].unique()]
             sag2cami_list = []
             print('Mapping Sources to Synthetic SAGs...')
             for sag_id in mh_list:
                 tmp_sag_id = sag_id
+                # special formmatting for CAMI Low Complexity data
                 if 'LC_' in tmp_sag_id[:3]:
                     tmp_sag_id = tmp_sag_id.strip('LC_')
-                match = difflib.get_close_matches(str(tmp_sag_id), cami_list, n=1, cutoff=0)[0]
-                m_len = len(match)
-                sub_sag_id = tmp_sag_id[:m_len]
-                if sub_sag_id != match:
-                    match = difflib.get_close_matches(str(sub_sag_id), cami_list, n=1, cutoff=0)[0]
-                    if match == sub_sag_id:
-                        print("PASSED:", tmp_sag_id, sub_sag_id, match)
-                    else:
-                        m1_len = len(match)
-                        sub_sag_id = tmp_sag_id[:m_len]
-                        sub_sub_id = sub_sag_id[:m1_len].split('.')[0]
-                        match = difflib.get_close_matches(str(sub_sub_id), cami_list, n=1, cutoff=0)[0]
-                        print("PASSED:", tmp_sag_id, sub_sag_id, sub_sub_id, match)
+                # special formatting for CAMI II data
+                if 'CAMI_II' in synsrc_path:
+                    src_id = tmp_sag_id.rsplit('.', 1)[0]
+                    match = cami_genome2id_dict[src_id]
+                    print("PASSED:", sag_id, src_id, match)
+                else:
+                    match = difflib.get_close_matches(str(tmp_sag_id), cami_list, n=1, cutoff=0)[0]
+                    m_len = len(match)
+                    sub_sag_id = tmp_sag_id[:m_len]
+                    if sub_sag_id != match:
+                        match = difflib.get_close_matches(str(sub_sag_id), cami_list, n=1, cutoff=0)[0]
+                        if match == sub_sag_id:
+                            print("PASSED:", tmp_sag_id, sub_sag_id, match)
+                        else:
+                            m1_len = len(match)
+                            sub_sag_id = tmp_sag_id[:m_len]
+                            sub_sub_id = sub_sag_id[:m1_len].split('.')[0]
+                            match = difflib.get_close_matches(str(sub_sub_id), cami_list, n=1, cutoff=0)[0]
+                            print("PASSED:", tmp_sag_id, sub_sag_id, sub_sub_id, match)
                 sag2cami_list.append([sag_id, match])
             sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
-
     ###################################################################################################
-
+    # De novo error analysis
     # setup mapping to CAMI ref genomes
     cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
@@ -476,21 +493,23 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
     print("HDBSCAN-Anchored error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
+    sumit = 0
     for clust in tqdm(cluster_df['best_label'].unique()):
         # subset recruit dataframes
         sub_clust_df = cluster_df.query('best_label == @clust')
         dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
+        sumit = sumit + dedup_clust_df.shape[0]
         # Map Sources/SAGs to Strain IDs
         src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
         strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
-        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-        strain_sub_df = src2contig_df.query('strain == @strain_id')
-        src2contig_list = list(set(src_sub_df['contig_id'].values))
-        src2strain_list = list(set(strain_sub_df['contig_id'].values))
-        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                         src2strain_list, 'hdbscan'
-                         ])
-
+        if not np.isnan(strain_id):  # if the sample didn't contain the genome in the first place skip it
+            src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+            strain_sub_df = src2contig_df.query('strain == @strain_id')
+            src2contig_list = list(set(src_sub_df['contig_id'].values))
+            src2strain_list = list(set(strain_sub_df['contig_id'].values))
+            arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+                             src2strain_list, 'hdbscan'
+                             ])
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
@@ -574,13 +593,14 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
         # Map Sources/SAGs to Strain IDs
         src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
         strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
-        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-        strain_sub_df = src2contig_df.query('strain == @strain_id')
-        src2contig_list = list(set(src_sub_df['contig_id'].values))
-        src2strain_list = list(set(strain_sub_df['contig_id'].values))
-        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                         src2strain_list, 'ocsvm'
-                         ])
+        if not np.isnan(strain_id):  # if the sample didn't contain the genome in the first place skip it
+            src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+            strain_sub_df = src2contig_df.query('strain == @strain_id')
+            src2contig_list = list(set(src_sub_df['contig_id'].values))
+            src2strain_list = list(set(strain_sub_df['contig_id'].values))
+            arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+                             src2strain_list, 'ocsvm'
+                             ])
 
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
@@ -665,13 +685,14 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, nthreads):
         # Map Sources/SAGs to Strain IDs
         src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
         strain_id = sag2contig_df.query('sag_id == @clust')['strain'].values[0]
-        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-        strain_sub_df = src2contig_df.query('strain == @strain_id')
-        src2contig_list = list(set(src_sub_df['contig_id'].values))
-        src2strain_list = list(set(strain_sub_df['contig_id'].values))
-        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                         src2strain_list, 'intersect'
-                         ])
+        if not np.isnan(strain_id):  # if the sample didn't contain the genome in the first place skip it
+            src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+            strain_sub_df = src2contig_df.query('strain == @strain_id')
+            src2contig_list = list(set(src_sub_df['contig_id'].values))
+            src2strain_list = list(set(strain_sub_df['contig_id'].values))
+            arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+                             src2strain_list, 'intersect'
+                             ])
 
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []

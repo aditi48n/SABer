@@ -30,7 +30,8 @@ hdbscan_combo = list(itertools.product(*[min_cluster_size, min_samples]))
 working_dir = sys.argv[1]
 synthdata_dir = sys.argv[2]
 mg_asm = sys.argv[3]
-threads = int(sys.argv[4])
+sample = sys.argv[4]
+threads = int(sys.argv[5])
 
 # Find previously run files and build needed inputs
 mhr_recruits = glob.glob(os.path.join(working_dir, '*.201.mhr_contig_recruits.tsv'))
@@ -63,6 +64,7 @@ tetra_file = tra.run_tetra_recruiter(working_dir,
 # Run iterative clusterings using all the different params from above
 # First do HDBSCAN and keep OCSVM static
 cat_err_list = []
+mockpath = os.path.join(synthdata_dir, 'Final_SAGs_20k_rep1_' + str(sample) + '/')
 for mcs, mss in hdbscan_combo:
     if mcs >= mss:
         print("Running HDBSCAN with min_cluster_size=" + str(mcs) + " and min_samples=" + str(mss))
@@ -73,7 +75,7 @@ for mcs, mss in hdbscan_combo:
         clusters = clst.runClusterer(mg_id, working_dir, output_path, abund_file, tetra_file,
                                      minhash_df_dict, mcs, mss, 0.5, 'scale', threads
                                      )
-        run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, threads)
+        run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, mockpath, threads)
         cat_err_list.append(run_err_df)
 
 # Next do the OCSVM
@@ -86,7 +88,7 @@ for nu, gamma in ocsvm_combo:
     clusters = clst.runClusterer(mg_id, working_dir, output_path, abund_file, tetra_file,
                                  minhash_df_dict, 100, 25, nu, gamma, threads
                                  )
-    run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, threads)
+    run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, mockpath, threads)
     cat_err_list.append(run_err_df)
 
 cat_err_df = pd.concat(cat_err_list)

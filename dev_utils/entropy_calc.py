@@ -83,14 +83,13 @@ euc_unstack_df = euc_df.unstack().reset_index()
 euc_unstack_df.columns = ['sample1', 'sample2', 'euclidean_distances']
 euc_unstack_df['samp1_label'] = [samp2type[x] for x in euc_unstack_df['sample1']]
 euc_unstack_df['samp2_label'] = [samp2type[x] for x in euc_unstack_df['sample2']]
-filter_df = euc_unstack_df  # .query("euclidean_distances != 0")
 sns.set(rc={'figure.figsize': (12, 8)})
 sns.set_style("white")
 b = sns.catplot(x="samp1_label", y="euclidean_distances", hue="samp2_label", col="samp2_label",
-                data=filter_df, palette=cpal, col_wrap=3, legend_out=True
+                data=euc_unstack_df, palette=cpal, col_wrap=3, legend_out=True
                 )
 b.map_dataframe(sns.boxplot, x="samp1_label", y="euclidean_distances",
-                data=filter_df, boxprops={'facecolor': 'None'},
+                data=euc_unstack_df, boxprops={'facecolor': 'None'},
                 whiskerprops={'linewidth': 1},
                 showfliers=False,  # showcaps=False,
                 )
@@ -101,7 +100,7 @@ b.savefig(os.path.join(working_dir, 'similarity_plot.png'), bbox_inches='tight')
 plt.clf()
 plt.close()
 
-umap_emb = umap.UMAP(n_neighbors=2, min_dist=0.1, n_components=2,
+umap_emb = umap.UMAP(n_neighbors=3, min_dist=0.0, n_components=2,
                      random_state=42
                      ).fit_transform(A)
 umap_df = pd.DataFrame(umap_emb, columns=['1', '2'], index=A.index.values)
@@ -117,10 +116,11 @@ umap_df['sample_id'] = umap_df.index.values
 umap_df['cluster'] = cluster_labels
 umap_df['probabilities'] = cluster_probs
 umap_df['outlier_scores'] = cluster_outlier
+samp2clust = {x: y for x, y in zip(umap_df['sample_id'], umap_df['cluster'])}
 
 sns.set(rc={'figure.figsize': (12, 8)})
 sns.set_style("white")
-b = sns.scatterplot(x="1", y="2", hue="sample_type",
+b = sns.scatterplot(x="1", y="2", hue="sample_type", style='cluster',
                     data=umap_df, palette=cpal
                     )
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)

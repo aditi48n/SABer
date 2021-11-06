@@ -11,7 +11,7 @@ import umap
 working_dir = '/home/ryan/Desktop/renyi_entropy/references/'
 sample_list = glob.glob(os.path.join(working_dir, "*.tsv"))
 ############################################################################################
-'''
+
 # Calculate entropy for all references
 entropy_list = []
 for samp_file in sample_list:
@@ -43,7 +43,7 @@ ent_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 ent_df.to_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', index=False)
-'''
+
 ############################################################################################
 # Build all the reference plots and run clustering
 ent_df = pd.read_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', header=0)
@@ -156,7 +156,7 @@ plt.close()
 # Cluster real samples
 real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
 real_list = glob.glob(os.path.join(real_dir, "*.tsv"))
-'''
+
 entropy_list = []
 for samp_file in real_list:
     samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
@@ -187,7 +187,7 @@ real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 real_df.to_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', index=False)
-'''
+
 real_df = pd.read_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', header=0)
 samp2type = {x: y for x, y in zip(real_df['sample_id'], real_df['sample_type'])}
 

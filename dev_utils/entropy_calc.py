@@ -11,12 +11,12 @@ import umap
 working_dir = '/home/ryan/Desktop/renyi_entropy/references/'
 sample_list = glob.glob(os.path.join(working_dir, "*.tsv"))
 ############################################################################################
-
+'''
 # Calculate entropy for all references
 entropy_list = []
 for samp_file in sample_list:
     samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-    if 'entropy' not in samp_id:
+    if 'entropy' not in samp_id and 'table' not in samp_id:
         print(samp_id)
         if samp_id.rsplit('_', 1)[1][0].isdigit():
             samp_label = samp_id.rsplit('_', 1)[0]
@@ -43,7 +43,7 @@ ent_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 ent_df.to_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', index=False)
-
+'''
 ############################################################################################
 # Build all the reference plots and run clustering
 ent_df = pd.read_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', header=0)
@@ -152,15 +152,29 @@ p.add_legend(legend_data={x: lgd_dat[x] for x in lgd_dat.keys() if x in cpal.key
 p.savefig(os.path.join(working_dir, 'clustent_plot.png'), bbox_inches='tight')
 plt.clf()
 plt.close()
+
+# Closest ref sample methods
+cmpr_list = []
+for r1, row1 in A.iterrows():
+    keep_diff = [r1, '', np.inf]
+    for r2, row2 in A.iterrows():
+        diff = ((row1 - row2).abs()).sum()
+        if diff < keep_diff[2] and r1 != r2:
+            keep_diff = [r1, r2, diff]
+    cmpr_list.append(keep_diff)
+cmpr_df = pd.DataFrame(cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+ent_best_df = ent_umap_df.merge(cmpr_df, on='sample_id', how='left')
+ent_best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', index=False)
+
 ############################################################################################
 # Cluster real samples
 real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
 real_list = glob.glob(os.path.join(real_dir, "*.tsv"))
-
+'''
 entropy_list = []
 for samp_file in real_list:
     samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-    if 'entropy' not in samp_id:
+    if 'entropy' not in samp_id and 'table' not in samp_id:
         print(samp_id)
         if samp_id.rsplit('_', 1)[1][0].isdigit():
             samp_label = samp_id.rsplit('_', 1)[0]
@@ -187,7 +201,7 @@ real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 real_df.to_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', index=False)
-
+'''
 real_df = pd.read_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', header=0)
 samp2type = {x: y for x, y in zip(real_df['sample_id'], real_df['sample_type'])}
 
@@ -203,4 +217,16 @@ umap_df['sample_type'] = [samp2type[x] for x in umap_df.index.values]
 umap_df['sample_id'] = umap_df.index.values
 umap_df['cluster'] = cluster_labels
 umap_df['probabilities'] = cluster_probs
-umap_df.to_csv(os.path.join(real_dir, 'cluster_table.tsv'), sep='\t', index=False)
+
+# Closest ref sample methods
+r_cmpr_list = []
+for r1, row1 in real_A.iterrows():
+    keep_diff = [r1, '', np.inf]
+    for r2, row2 in A.iterrows():
+        diff = ((row1 - row2).abs()).sum()
+        if diff < keep_diff[2] and r1 != r2:
+            keep_diff = [r1, r2, diff]
+    r_cmpr_list.append(keep_diff)
+r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+best_df = umap_df.merge(r_cmpr_df, on='sample_id', how='left')
+best_df.to_csv(os.path.join(real_dir, 'cluster_table.tsv'), sep='\t', index=False)

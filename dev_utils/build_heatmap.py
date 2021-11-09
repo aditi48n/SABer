@@ -74,65 +74,93 @@ clust_all_df.drop(['mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
                    ], axis=1, inplace=True
                   )
 clust_all_df.drop_duplicates(inplace=True)
+clust_cv_df['majority_rule'] = 'MR'
+clust_all_df['majority_rule'] = 'MR'
+
+group_list = ['sample_type', 'cluster', 'sample_id', 'best_match', 'majority_rule']
 agg_list = []
 for config in config_list:
     cv_algo = config[0]
     algo = config[1]
     config_df = clust_cv_df.query("cv_algo == @cv_algo & algo == @algo")
-    group_list = ['sample_type', 'cluster', 'sample_id', 'best_match']
-    for group in group_list:
-        nc_max_list = []
-        mq_max_list = []
-        for type in config_df[group].unique():
-            type_df = config_df.loc[config_df[group] == type]
-            nc_max = type_df['nc_cnt'].max()
-            mq_max = type_df['mq_cnt'].max()
-            nc_max_df = type_df.query('nc_cnt == @nc_max')
-            mq_max_df = type_df.query('mq_cnt == @mq_max')
-            type_nc_cnt_df = nc_max_df.groupby(['cv_algo', 'cv_param1', 'cv_param2', 'cv_val1',
-                                                'cv_val2', 'algo', 'level', group]
-                                               )['nc_cnt'].count().reset_index()
-            type_mq_cnt_df = mq_max_df.groupby(['cv_algo', 'cv_param1', 'cv_param2', 'cv_val1',
-                                                'cv_val2', 'algo', 'level', group]
-                                               )['mq_cnt'].count().reset_index()
-            for i, row in type_nc_cnt_df.iterrows():
-                g_type = row[group]
-                cv_algo = row['cv_algo']
-                cv_param1 = row['cv_param1']
-                cv_param2 = row['cv_param2']
-                cv_val1 = row['cv_val1']
-                cv_val2 = row['cv_val2']
-                algo = row['algo']
-                level = row['level']
-                sub_type_df = clust_all_df.loc[clust_all_df[group] == g_type]
-                sub_cv_df = sub_type_df.query("cv_algo == @cv_algo &"
-                                              "cv_param1 == @cv_param1 &"
-                                              "cv_param2 == @cv_param2 &"
-                                              "cv_val1 == @cv_val1 &"
-                                              "cv_val2 == @cv_val2 &"
-                                              "algo == @algo &"
-                                              "level == @level"
-                                              )
-                nc_sum_df = sub_cv_df.groupby([group, 'cv_algo', 'cv_param1', 'cv_param2',
-                                               'cv_val1', 'cv_val2', 'algo', 'level']
-                                              )['nc_cnt'].sum().reset_index()
-                mq_sum_df = sub_cv_df.groupby([group, 'cv_algo', 'cv_param1', 'cv_param2',
-                                               'cv_val1', 'cv_val2', 'algo', 'level']
-                                              )['mq_cnt'].sum().reset_index()
+    for level in config_df['level'].unique():
+        level_df = config_df.query("level == @level")
+        for group in group_list:
+            nc_max_list = []
+            mq_max_list = []
+            for type in level_df[group].unique():
+                type_df = level_df.loc[level_df[group] == type]
+                nc_max = type_df['nc_cnt'].max()
+                mq_max = type_df['mq_cnt'].max()
+                type_df['nc_exp_R'] = type_df['nc_cnt'] / nc_max
+                type_df['mq_exp_R'] = type_df['mq_cnt'] / mq_max
+                nc_max_df = type_df.query('nc_cnt == @nc_max')
+                mq_max_df = type_df.query('mq_cnt == @mq_max')
+                type_nc_cnt_df = nc_max_df.groupby(['cv_algo', 'cv_param1', 'cv_param2', 'cv_val1',
+                                                    'cv_val2', 'algo', 'level', group]
+                                                   )['nc_exp_R'].sum().reset_index()
+                type_mq_cnt_df = mq_max_df.groupby(['cv_algo', 'cv_param1', 'cv_param2', 'cv_val1',
+                                                    'cv_val2', 'algo', 'level', group]
+                                                   )['mq_exp_R'].sum().reset_index()
+                for i, row in type_nc_cnt_df.iterrows():
+                    g_type = row[group]
+                    cv_algo = row['cv_algo']
+                    cv_param1 = row['cv_param1']
+                    cv_param2 = row['cv_param2']
+                    cv_val1 = row['cv_val1']
+                    cv_val2 = row['cv_val2']
+                    algo = row['algo']
+                    level = row['level']
+                    sub_type_df = clust_all_df.loc[clust_all_df[group] == g_type]
+                    sub_cv_df = sub_type_df.query("cv_algo == @cv_algo &"
+                                                  "cv_param1 == @cv_param1 &"
+                                                  "cv_param2 == @cv_param2 &"
+                                                  "cv_val1 == @cv_val1 &"
+                                                  "cv_val2 == @cv_val2 &"
+                                                  "algo == @algo &"
+                                                  "level == @level"
+                                                  )
+                    sub_cv_df['nc_exp_R'] = sub_cv_df['nc_cnt'] / nc_max
+                    nc_sum_df = sub_cv_df.groupby([group, 'cv_algo', 'cv_param1', 'cv_param2',
+                                                   'cv_val1', 'cv_val2', 'algo', 'level']
+                                                  )['nc_exp_R'].sum().reset_index()
+                    nc_max_list.append(nc_sum_df)
+                for i, row in type_mq_cnt_df.iterrows():
+                    g_type = row[group]
+                    cv_algo = row['cv_algo']
+                    cv_param1 = row['cv_param1']
+                    cv_param2 = row['cv_param2']
+                    cv_val1 = row['cv_val1']
+                    cv_val2 = row['cv_val2']
+                    algo = row['algo']
+                    level = row['level']
+                    sub_type_df = clust_all_df.loc[clust_all_df[group] == g_type]
+                    sub_cv_df = sub_type_df.query("cv_algo == @cv_algo &"
+                                                  "cv_param1 == @cv_param1 &"
+                                                  "cv_param2 == @cv_param2 &"
+                                                  "cv_val1 == @cv_val1 &"
+                                                  "cv_val2 == @cv_val2 &"
+                                                  "algo == @algo &"
+                                                  "level == @level"
+                                                  )
+                    sub_cv_df['mq_exp_R'] = sub_cv_df['mq_cnt'] / mq_max
+                    mq_sum_df = sub_cv_df.groupby([group, 'cv_algo', 'cv_param1', 'cv_param2',
+                                                   'cv_val1', 'cv_val2', 'algo', 'level']
+                                                  )['mq_exp_R'].sum().reset_index()
+                    mq_max_list.append(mq_sum_df)
+            nc_best_df = pd.concat(nc_max_list)
+            nc_best_df.drop_duplicates(subset=[group], inplace=True)
+            mq_best_df = pd.concat(mq_max_list)
+            mq_best_df.drop_duplicates(subset=[group], inplace=True)
+            nc_agg = nc_best_df['nc_exp_R'].sum() / 13
+            mq_agg = mq_best_df['mq_exp_R'].sum() / 13
+            agg_list.append([group, cv_algo, algo, level, nc_agg, mq_agg])
 
-                nc_max_list.append(nc_sum_df)
-                mq_max_list.append(mq_sum_df)
-        nc_best_df = pd.concat(nc_max_list)
-        nc_best_df.drop_duplicates(subset=[group], inplace=True)
-        mq_best_df = pd.concat(mq_max_list)
-        mq_best_df.drop_duplicates(subset=[group], inplace=True)
-        nc_agg = nc_best_df['nc_cnt'].sum()
-        mq_agg = mq_best_df['mq_cnt'].sum()
-        agg_list.append([group, cv_algo, algo, nc_agg, mq_agg])
-
-agg_df = pd.DataFrame(agg_list, columns=['grouping', 'cv_algo', 'algo', 'nc_agg', 'mq_agg'])
+agg_df = pd.DataFrame(agg_list, columns=['grouping', 'cv_algo', 'algo', 'level',
+                                         'nc_agg', 'mq_agg'
+                                         ])
 print(agg_df)
-
+sys.exit()
 # Assign the best match params to the SI data
 real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
 best_df = pd.read_csv(os.path.join(real_dir, 'cluster_table.tsv'), sep='\t', header=0)

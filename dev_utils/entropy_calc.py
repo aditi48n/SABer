@@ -108,7 +108,7 @@ b.savefig(os.path.join(working_dir, 'similarity_plot.png'), bbox_inches='tight')
 plt.clf()
 plt.close()
 
-umap_fit = umap.UMAP(n_neighbors=2, min_dist=0.0, n_components=8,
+umap_fit = umap.UMAP(n_neighbors=2, min_dist=0.0, n_components=2,
                      random_state=42
                      ).fit(A)
 umap_emb = umap_fit.transform(A)
@@ -131,7 +131,7 @@ samp2clust = {x: y for x, y in zip(umap_df['sample_id'], umap_df['cluster'])}
 
 sns.set(rc={'figure.figsize': (12, 8)})
 sns.set_style("white")
-mark_list = ['.', 'v', '^', '<', '>', 's', 'P', 'D', 'p']
+mark_list = ['.', 'v', '^', '<', '>', 's', 'P', 'D', 'p', '*']
 b = sns.scatterplot(x=0, y=1, hue="sample_type", style='cluster',
                     data=umap_df, palette=cpal, markers=mark_list, s=200
                     )

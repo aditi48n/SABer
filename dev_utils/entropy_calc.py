@@ -1,20 +1,17 @@
 import glob
-import hashlib
 import os
 
-import dit
 import hdbscan
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import umap
-from dit.other import renyi_entropy
 
 working_dir = '/home/ryan/Desktop/renyi_entropy/references/'
 sample_list = glob.glob(os.path.join(working_dir, "*.tsv"))
 ############################################################################################
-
+'''
 # Calculate entropy for all references
 entropy_list = []
 for samp_file in sample_list:
@@ -36,7 +33,7 @@ for samp_file in sample_list:
         cov_dist = dit.Distribution(cov_df['hash_id'].tolist(),
                                     cov_df['relative_depth'].tolist()
                                     )
-        q_list = [0, 1, 2, 4, 16, 32, np.inf]
+        q_list = [0, 1, 2, 4, 8, 16, 32, np.inf]
         for q in q_list:
             r_ent = renyi_entropy(cov_dist, q)
             print(q, r_ent)
@@ -46,7 +43,7 @@ ent_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 ent_df.to_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', index=False)
-
+'''
 ############################################################################################
 # Build all the reference plots and run clustering
 ent_df = pd.read_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', header=0)
@@ -55,12 +52,13 @@ rep_list = ent_df['sample_id'].unique()
 samp2type = {x: y for x, y in zip(ent_df['sample_id'], ent_df['sample_type'])}
 # Have to replace the np.inf with a real value for plotting
 ent_df['alpha'].replace(4, 3, inplace=True)
-ent_df['alpha'].replace(16, 4, inplace=True)
-ent_df['alpha'].replace(32, 5, inplace=True)
-ent_df['alpha'].replace(np.inf, 6, inplace=True)
+ent_df['alpha'].replace(8, 4, inplace=True)
+ent_df['alpha'].replace(16, 5, inplace=True)
+ent_df['alpha'].replace(32, 6, inplace=True)
+ent_df['alpha'].replace(np.inf, 7, inplace=True)
 x_labels = {0: 'Richness (a=0)', 1: 'Shannon (a=1)',
-            2: 'Simpson (a=2)', 3: '4', 4: '16', 5: '32',
-            6: 'Berger–Parker (a=inf)'
+            2: 'Simpson (a=2)', 3: '4', 4: '8', 5: '16',
+            6: '32', 7: 'Berger–Parker (a=inf)'
             }
 ent_df['x_labels'] = [x_labels[x] for x in ent_df['alpha']]
 cpal = {x: y for x, y in zip(type_list, sns.color_palette(n_colors=len(type_list)))}
@@ -110,7 +108,7 @@ b.savefig(os.path.join(working_dir, 'similarity_plot.png'), bbox_inches='tight')
 plt.clf()
 plt.close()
 
-umap_fit = umap.UMAP(n_neighbors=2, min_dist=0.0, n_components=7,
+umap_fit = umap.UMAP(n_neighbors=2, min_dist=0.0, n_components=8,
                      random_state=42
                      ).fit(A)
 umap_emb = umap_fit.transform(A)
@@ -133,8 +131,9 @@ samp2clust = {x: y for x, y in zip(umap_df['sample_id'], umap_df['cluster'])}
 
 sns.set(rc={'figure.figsize': (12, 8)})
 sns.set_style("white")
-b = sns.scatterplot(x=1, y=2, hue="sample_type", style='cluster',
-                    data=umap_df, palette=cpal
+mark_list = ['.', 'v', '^', '<', '>', 's', 'P', 'D', 'p']
+b = sns.scatterplot(x=0, y=1, hue="sample_type", style='cluster',
+                    data=umap_df, palette=cpal, markers=mark_list, s=200
                     )
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 fig = b.get_figure()
@@ -151,7 +150,7 @@ p = sns.catplot(x="x_labels", y="Renyi_Entropy", hue="sample_type",
 p.map_dataframe(sns.boxplot, x="x_labels", y="Renyi_Entropy",
                 data=ent_umap_df, boxprops={'facecolor': 'None'},
                 whiskerprops={'linewidth': 1},
-                showfliers=False,  # showcaps=False,
+                showfliers=False
                 )
 p.set_xticklabels(rotation=45)
 lgd_dat = p._legend_data
@@ -177,7 +176,7 @@ ent_best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', ind
 # Cluster real samples
 real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
 real_list = glob.glob(os.path.join(real_dir, "*.tsv"))
-
+'''
 entropy_list = []
 for samp_file in real_list:
     samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
@@ -198,7 +197,7 @@ for samp_file in real_list:
         cov_dist = dit.Distribution(cov_df['hash_id'].tolist(),
                                     cov_df['relative_depth'].tolist()
                                     )
-        q_list = [0, 1, 2, 4, 16, 32, np.inf]
+        q_list = [0, 1, 2, 4, 8, 16, 32, np.inf]
         for q in q_list:
             r_ent = renyi_entropy(cov_dist, q)
             print(q, r_ent)
@@ -208,7 +207,7 @@ real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 real_df.to_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', index=False)
-
+'''
 real_df = pd.read_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', header=0)
 samp2type = {x: y for x, y in zip(real_df['sample_id'], real_df['sample_type'])}
 

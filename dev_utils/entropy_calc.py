@@ -1,17 +1,20 @@
 import glob
+import hashlib
 import os
 
+import dit
 import hdbscan
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import umap
+from dit.other import renyi_entropy
 
 working_dir = '/home/ryan/Desktop/renyi_entropy/references/'
 sample_list = glob.glob(os.path.join(working_dir, "*.tsv"))
 ############################################################################################
-'''
+
 # Calculate entropy for all references
 entropy_list = []
 for samp_file in sample_list:
@@ -43,7 +46,7 @@ ent_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 ent_df.to_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', index=False)
-'''
+
 ############################################################################################
 # Build all the reference plots and run clustering
 ent_df = pd.read_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', header=0)
@@ -131,7 +134,7 @@ samp2clust = {x: y for x, y in zip(umap_df['sample_id'], umap_df['cluster'])}
 
 sns.set(rc={'figure.figsize': (12, 8)})
 sns.set_style("white")
-mark_list = ['.', 'v', '^', '<', '>', 's', 'P', 'D', 'p', '*']
+mark_list = ['.', 'v', '^', '<', '>', 's', 'P', 'D', 'p', '*', 'X', 'p']
 b = sns.scatterplot(x=0, y=1, hue="sample_type", style='cluster',
                     data=umap_df, palette=cpal, markers=mark_list, s=200
                     )
@@ -176,11 +179,12 @@ ent_best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', ind
 # Cluster real samples
 real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
 real_list = glob.glob(os.path.join(real_dir, "*.tsv"))
-'''
+
 entropy_list = []
 for samp_file in real_list:
     samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-    if 'entropy' not in samp_id and 'table' not in samp_id:
+    if 'entropy' not in samp_id and 'table' not in samp_id \
+            and 'params' not in samp_id:
         print(samp_id)
         if samp_id.rsplit('_', 1)[1][0].isdigit():
             samp_label = samp_id.rsplit('_', 1)[0]
@@ -207,7 +211,7 @@ real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                              'Renyi_Entropy'
                                              ])
 real_df.to_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', index=False)
-'''
+
 real_df = pd.read_csv(os.path.join(real_dir, 'entropy_table.tsv'), sep='\t', header=0)
 samp2type = {x: y for x, y in zip(real_df['sample_id'], real_df['sample_type'])}
 

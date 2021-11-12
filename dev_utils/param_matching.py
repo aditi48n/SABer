@@ -8,7 +8,9 @@ import pandas as pd
 
 pd.set_option('display.max_columns', None)
 
-working_dir = '/home/ryan/Desktop/SABer_CV/'
+working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                           'renyi_entropy/SABer_CV/'
+                           )
 sample_list = glob.glob(os.path.join(working_dir, "*/CV_*.tsv"))
 ############################################################################################
 cv_concat_list = []
@@ -55,7 +57,9 @@ cv_concat_df.to_csv(os.path.join(working_dir, "CV_best_table.tsv"), sep='\t', in
 cv_all_df = pd.concat(cv_all_list)
 cv_all_df.to_csv(os.path.join(working_dir, "CV_all_table.tsv"), sep='\t', index=False)
 
-cluster_file = '/home/ryan/Desktop/renyi_entropy/references/cluster_table.tsv'
+cluster_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                            'renyi_entropy/references/cluster_table.tsv'
+                            )
 cluster_df = pd.read_csv(cluster_file, sep='\t', header=0)
 clust_cv_df = cv_concat_df.merge(cluster_df[['sample_id', 'sample_type', 'cluster', 'best_match']],
                                  on='sample_id', how='left'
@@ -184,12 +188,11 @@ mq_group_df = mq_agg_df.groupby(['grouping', 'cv_algo', 'algo', 'level']
 nc_group_df['nc_r'] = nc_group_df['nc_cnt'] / nc_group_df['nc_expected']
 mq_group_df['mq_r'] = mq_group_df['mq_cnt'] / mq_group_df['mq_expected']
 
-print(nc_group_df)
-print(mq_group_df)
-
 # Need to get best params for best_match, cluster, and majority_rule
 # Assign the best match params to the SI data
-real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
+real_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                        'renyi_entropy/SI/'
+                        )
 real_df = pd.read_csv(os.path.join(real_dir, 'cluster_table.tsv'), sep='\t', header=0)
 real_df = real_df[['sample_type', 'sample_id', 'best_match', 'cluster']]
 # best_match

@@ -11,7 +11,9 @@ import seaborn as sns
 import umap
 from dit.other import renyi_entropy
 
-working_dir = '/home/ryan/Desktop/renyi_entropy/references/'
+working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                           'renyi_entropy/references/'
+                           )
 sample_list = glob.glob(os.path.join(working_dir, "*.tsv"))
 ############################################################################################
 
@@ -177,7 +179,9 @@ ent_best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', ind
 
 ############################################################################################
 # Cluster real samples
-real_dir = '/home/ryan/Desktop/renyi_entropy/SI/'
+real_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                        'renyi_entropy/SI/'
+                        )
 real_list = glob.glob(os.path.join(real_dir, "*.tsv"))
 
 entropy_list = []

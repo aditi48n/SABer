@@ -104,7 +104,8 @@ def recruitOCSVM(p):
     return sag_id, major_df
 
 def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
-                 min_clust_size, min_samp, nu, gamma, nthreads
+                 denovo_min_clust, denovo_min_samp, anchor_min_clust, anchor_min_samp,
+                 nu, gamma, nthreads
                  ):  # TODO: need to add multithreading where ever possible
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
@@ -214,9 +215,9 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
     if not hdbscan_out_file.is_file():
         print('Performing De Novo Clustering...')
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, cluster_selection_method='eom',
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=denovo_min_clust, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
-                                    min_samples=min_samp
+                                    min_samples=denovo_min_samp
                                     ).fit(merge_df.values)
 
         cluster_labels = clusterer.labels_
@@ -497,9 +498,9 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         '''
         print('Clustering with HDBSCAN and Anchored Settings...')
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, cluster_selection_method='eom',
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=anchor_min_clust, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
-                                    min_samples=min_samp
+                                    min_samples=anchor_min_samp
                                     ).fit(merge_df.values)
 
         cluster_labels = clusterer.labels_

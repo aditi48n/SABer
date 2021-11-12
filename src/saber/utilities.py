@@ -352,3 +352,34 @@ def runCleaner(dir_path, ptrn):
                 os.rmdir(ent)
             except:
                 print("Error while deleting file : ", ent)
+
+
+def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
+                     anchor_min_samp, nu, gamma, vr, r, s, vs
+                     ):
+    params_tmp = [denovo_min_clust, denovo_min_samp, anchor_min_clust,
+                  anchor_min_samp, nu, gamma
+                  ]
+
+    cust_params = False
+    params_list = [75.0, 10.0, 125.0, 10.0, 0.3, 0.1]  # TODO: should probs have a config file for all of these presets
+    for i, p in enumerate(params_tmp):
+        if p is not None:
+            params_list[i] = float(p)
+            cust_params = True
+    if vr:
+        params_list = [50.0, 5.0, 75.0, 10.0, 0.7, 10.0]
+        cust_params = True
+    elif r:
+        params_list = [50.0, 10.0, 75.0, 10.0, 0.7, 10.0]
+        cust_params = True
+    elif s:
+        params_list = [75.0, 10.0, 125.0, 10.0, 0.3, 0.1]
+        cust_params = True
+    elif vs:
+        params_list = [75.0, 10.0, 125.0, 5.0, 0.3, 0.1]
+        cust_params = True
+    if not cust_params:  # No custom params have been set, proceed with automatic param algo
+        params_list = auto_params()
+
+    return params_list

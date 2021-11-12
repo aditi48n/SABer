@@ -1,6 +1,7 @@
 __author__ = 'Ryan J McLaughlin'
 
 import argparse
+from argparse import RawTextHelpFormatter
 
 
 class SABerArgumentParser(argparse.ArgumentParser):
@@ -18,7 +19,10 @@ class SABerArgumentParser(argparse.ArgumentParser):
             for example verbose, help, num_threads
         :param kwargs:
         """
-        super(SABerArgumentParser, self).__init__(add_help=False, **kwargs)
+        super(SABerArgumentParser, self).__init__(add_help=False,
+                                                  formatter_class=RawTextHelpFormatter,
+                                                  **kwargs
+                                                  )
         self.reqs = self.add_argument_group("Required parameters")
         self.seqops = self.add_argument_group("Sequence operation arguments")
         self.optopt = self.add_argument_group("Optional options")
@@ -40,9 +44,9 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                help="Path to a metagenome assembly [FASTA format only]."
                                )
         self.reqs.add_argument("-l", "--metaraw", required=True, dest="mg_raw_file_list",
-                               help="Text file containing paths to raw FASTQ files for samples. "
-                                    "One file per line, supports interleaved and separate PE reads. "
-                                    "For separate PE files, both file paths on one line sep by [tab]."
+                               help="Text file containing paths to raw FASTQ files for samples.\n"
+                                    "One file per line, supports interleaved and separate PE reads.\n"
+                                    "For separate PE files, both file paths on one line sep by [tab].\n"
                                )
         self.reqs.add_argument("-o", "--output-dir", required=True, dest="save_path",
                                help="Path to directory for all outputs."
@@ -51,6 +55,52 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                default=False, help="Path to reference FASTA file or directory "
                                                    "containing only FASTA files."
                                )
+        self.optopt.add_argument("--auto", action="store_true", dest="param_set",
+                                 help="run SABer automatic optimization algorithm, this will\n"
+                                      "likely provide better results than any others [Default]"
+                                 )
+        self.optopt.add_argument("--very_relaxed", action="store_true", dest="vr_params",
+                                 help="parameter-set that maximizes recall at approximately strain-level\n"
+                                      "[denovo_min_clust=50, denovo_min_samp=5\n"
+                                      " anchor_min_clust=75, anchor_min_samp=10\n"
+                                      " nu=0.7, gamma=10]"
+                                 )
+        self.optopt.add_argument("--relaxed", action="store_true", dest="r_params",
+                                 help="parameter-set that maximizes recall at substrain-level\n"
+                                      "[denovo_min_clust=50, denovo_min_samp=10\n"
+                                      " anchor_min_clust=75, anchor_min_samp=10\n"
+                                      " nu=0.7, gamma=10]"
+                                 )
+        self.optopt.add_argument("--strict", action="store_true", dest="s_params",
+                                 help="parameter-set that maximizes precision at approximately strain-level\n"
+                                      "[denovo_min_clust=75, denovo_min_samp=10\n"
+                                      " anchor_min_clust=125, anchor_min_samp=10\n"
+                                      " nu=0.3, gamma=0.1]"
+                                 )
+        self.optopt.add_argument("--very_strict", action="store_true", dest="vs_params",
+                                 help="parameter-set that maximizes precision at substrain-level\n"
+                                      "[denovo_min_clust=75, denovo_min_samp=10\n"
+                                      " anchor_min_clust=125, anchor_min_samp=5\n"
+                                      " nu=0.3, gamma=0.1]"
+                                 )
+        self.optopt.add_argument("--denovo_min_clust", required=False, dest="denovo_min_clust",
+                                 help="minimum cluster size for De Novo HDBSCAN clustering."
+                                 )
+        self.optopt.add_argument("--anchor_min_clust", required=False, dest="anchor_min_clust",
+                                 help="minimum cluster size for Anchored HDBSCAN clustering."
+                                 )
+        self.optopt.add_argument("--denovo_min_samp", required=False, dest="denovo_min_samp",
+                                 help="minimum sample number for De Novo HDBSCAN clustering."
+                                 )
+        self.optopt.add_argument("--anchor_min_samp", required=False, dest="anchor_min_samp",
+                                 help="minimum sample number for De Anchored HDBSCAN clustering."
+                                 )
+        self.optopt.add_argument("--nu", required=False, dest="nu",
+                                 help="nu setting for Anchored OC-SVM clustering."
+                                 )
+        self.optopt.add_argument("--gamma", required=False, dest="gamma",
+                                 help="gamma setting for Anchored OC-SVM clustering."
+                                 )
         self.optopt.add_argument("--max_contig_len", required=False, default=10000,
                                  dest="max_contig_len",
                                  help="Max subcontig length in basepairs [10000]."
@@ -59,12 +109,12 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                  dest="overlap_len",
                                  help="subcontig overlap in basepairs [2000]."
                                  )
-        self.optopt.add_argument("-t", "--num_threads", required=False, default=1,
-                                 dest="nthreads",
-                                 help="Number of threads [1]."
-                                 )
-        self.optopt.add_argument("--force", required=False, default=False,
-                                 action="store_true",
-                                 help="Force SABer to run even if final recruits files exist [False]"
-                                 )
+        self.miscellany.add_argument("-t", "--num_threads", required=False, default=1,
+                                     dest="nthreads",
+                                     help="Number of threads [1]."
+                                     )
+        self.miscellany.add_argument("--force", required=False, default=False,
+                                     action="store_true",
+                                     help="Force SABer to run even if final recruits files exist [False]"
+                                     )
         return

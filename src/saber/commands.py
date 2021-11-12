@@ -14,6 +14,7 @@ import minhash_recruiter as mhr
 import s_args
 import tetranuc_recruiter as tra
 import utilities as s_utils
+from __init__ import version
 
 
 def info(sys_args):
@@ -30,7 +31,7 @@ def info(sys_args):
     s_log.prep_logging()
     info_s = s_class.SABerBase("info")
 
-    logging.info("SABer version " + saber.version + ".\n")
+    logging.info("SABer version " + version + ".\n")
 
     # Write the version of all python deps
     py_deps = {x.split('==')[0]: x.split('==')[1] for x in freeze.freeze()}
@@ -69,6 +70,13 @@ def recruit(sys_args):
     recruit_s.overlap_len = int(args.overlap_len)
     recruit_s.nthreads = int(args.nthreads)
     recruit_s.force = args.force
+    # Collect args for clustering
+    recruit_s.denovo_min_clust, recruit_s.denovo_min_samp = args.denovo_min_clust, args.denovo_min_samp
+    recruit_s.anchor_min_clust, recruit_s.anchor_min_samp = args.anchor_min_clust, args.anchor_min_samp
+    recruit_s.nu, recruit_s.gamma = args.nu, args.gamma
+    recruit_s.vr, recruit_s.r = args.vr_params, args.r_params
+    recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
+
     # Build save dir structure
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
 
@@ -110,10 +118,19 @@ def recruit(sys_args):
                                          mg_sub_file
                                          )
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
+    recruit_s.params_list = s_utils.set_clust_params(recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
+                                                     recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
+                                                     recruit_s.nu, recruit_s.gamma, recruit_s.vr, recruit_s.r,
+                                                     recruit_s.s, recruit_s.vs,
+                                                     )
+
     mg_id = mg_sub_file[0]
     clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], save_dirs_dict['tmp'],
                                  abund_file, tetra_file,
-                                 minhash_df_dict, 5, 5, 0.5, 'scale',
+                                 minhash_df_dict,
+                                 recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
+                                 recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
+                                 recruit_s.nu, recruit_s.gamma,
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits

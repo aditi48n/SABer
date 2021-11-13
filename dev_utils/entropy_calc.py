@@ -293,7 +293,8 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
     sns.set(rc={'figure.figsize': (12, 8)})
     sns.set_style("white")
     p = sns.catplot(x="x_labels", y="Renyi_Entropy", hue="sample_type",
-                    col="cluster", data=ent_umap_df, col_wrap=3, legend=False
+                    col="cluster", data=ent_umap_df, col_wrap=4, palette=cpal,
+                    legend=False
                     )
     p.map_dataframe(sns.boxplot, x="x_labels", y="Renyi_Entropy",
                     data=ent_umap_df, boxprops={'facecolor': 'None'},

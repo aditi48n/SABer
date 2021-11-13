@@ -80,7 +80,6 @@ clust_all_df.drop(['mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
 clust_all_df.drop_duplicates(inplace=True)
 clust_cv_df['majority_rule'] = 'MR'
 clust_all_df['majority_rule'] = 'MR'
-
 group_list = ['sample_type', 'cluster', 'sample_id', 'best_match', 'majority_rule']
 nc_agg_list = []
 mq_agg_list = []
@@ -180,10 +179,14 @@ for config in config_list:
 
 nc_agg_df = pd.concat(nc_agg_list)
 mq_agg_df = pd.concat(mq_agg_list)
+
+nc_agg_df.to_csv(os.path.join(working_dir, "NC_agg_params.tsv"), sep='\t', index=False)
+mq_agg_df.to_csv(os.path.join(working_dir, "MQ_agg_params.tsv"), sep='\t', index=False)
+
 nc_group_df = nc_agg_df.groupby(['grouping', 'cv_algo', 'algo', 'level']
-                                )['nc_cnt', 'nc_expected'].sum().reset_index()
+                                )[['nc_cnt', 'nc_expected']].sum().reset_index()
 mq_group_df = mq_agg_df.groupby(['grouping', 'cv_algo', 'algo', 'level']
-                                )['mq_cnt', 'mq_expected'].sum().reset_index()
+                                )[['mq_cnt', 'mq_expected']].sum().reset_index()
 
 nc_group_df['nc_r'] = nc_group_df['nc_cnt'] / nc_group_df['nc_expected']
 mq_group_df['mq_r'] = mq_group_df['mq_cnt'] / mq_group_df['mq_expected']
@@ -198,10 +201,10 @@ real_df = real_df[['sample_type', 'sample_id', 'best_match', 'cluster']]
 # best_match
 nc_max_df = clust_all_df.groupby(['sample_id', 'cv_algo', 'algo', 'level',
                                   'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
-                                 )['nc_cnt'].max().reset_index()
+                                 )[['nc_cnt']].max().reset_index()
 mq_max_df = clust_all_df.groupby(['sample_id', 'cv_algo', 'algo', 'level',
                                   'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
-                                 )['mq_cnt'].max().reset_index()
+                                 )[['mq_cnt']].max().reset_index()
 nc_hdb_df = nc_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
 nc_ocs_df = nc_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
 mq_hdb_df = mq_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")

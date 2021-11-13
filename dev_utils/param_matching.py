@@ -192,6 +192,9 @@ mq_group_df = mq_agg_df.groupby(['grouping', 'cv_algo', 'algo', 'level']
 nc_group_df['nc_r'] = nc_group_df['nc_cnt'] / nc_group_df['nc_expected']
 mq_group_df['mq_r'] = mq_group_df['mq_cnt'] / mq_group_df['mq_expected']
 
+nc_group_df.to_csv(os.path.join(working_dir, "NC_agg_stats.tsv"), sep='\t', index=False)
+mq_group_df.to_csv(os.path.join(working_dir, "MQ_agg_stats.tsv"), sep='\t', index=False)
+
 # Need to get best params for best_match, cluster, and majority_rule
 # Assign the best match params to the SI data
 real_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),

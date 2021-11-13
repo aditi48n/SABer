@@ -311,7 +311,7 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
 
 def calc_real_entropy(working_dir, mba_cov_list):
     rerun_ref = False  # to re-calc reference profiles, set to True
-    make_plots = True  # if you want plots, set to True
+    make_plots = False  # if you want plots, set to True
 
     # Calculate entropy for all references
     ref_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),

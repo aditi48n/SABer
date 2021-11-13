@@ -58,10 +58,11 @@ cv_all_df = pd.concat(cv_all_list)
 cv_all_df.to_csv(os.path.join(working_dir, "CV_all_table.tsv"), sep='\t', index=False)
 
 cluster_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            'renyi_entropy/references/cluster_table.tsv'
+                            'renyi_entropy/references/cluster_clean.tsv'
                             )
 cluster_df = pd.read_csv(cluster_file, sep='\t', header=0)
-clust_cv_df = cv_concat_df.merge(cluster_df[['sample_id', 'sample_type', 'cluster', 'best_match']],
+cluster_sub_df = cluster_df[['sample_id', 'sample_type', 'cluster', 'best_match']].drop_duplicates()
+clust_cv_df = cv_concat_df.merge(cluster_sub_df[['sample_id', 'sample_type', 'cluster', 'best_match']],
                                  on='sample_id', how='left'
                                  )
 clust_cv_df.drop(['mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
@@ -70,7 +71,7 @@ clust_cv_df.drop(['mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
                  )
 clust_cv_df.drop_duplicates(inplace=True)
 
-clust_all_df = cv_all_df.merge(cluster_df[['sample_id', 'sample_type', 'cluster', 'best_match']],
+clust_all_df = cv_all_df.merge(cluster_sub_df[['sample_id', 'sample_type', 'cluster', 'best_match']],
                                on='sample_id', how='left'
                                )
 clust_all_df.drop(['mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
@@ -196,7 +197,7 @@ mq_group_df['mq_r'] = mq_group_df['mq_cnt'] / mq_group_df['mq_expected']
 real_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                         'renyi_entropy/SI/'
                         )
-real_df = pd.read_csv(os.path.join(real_dir, 'cluster_table.tsv'), sep='\t', header=0)
+real_df = pd.read_csv(os.path.join(real_dir, 'cluster_clean.tsv'), sep='\t', header=0)
 real_df = real_df[['sample_type', 'sample_id', 'best_match', 'cluster']]
 # best_match
 nc_max_df = clust_all_df.groupby(['sample_id', 'cv_algo', 'algo', 'level',
@@ -231,7 +232,8 @@ keep_cols = ['sample_type', 'sample_id_x', 'best_match', 'cv_algo', 'algo', 'lev
 best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
                          best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
                          ])
-best_cat_df.to_csv(os.path.join(real_dir, 'best_match_params.tsv'), sep='\t', index=False)
+best_dup_df = best_cat_df.drop_duplicates()
+best_dup_df.to_csv(os.path.join(real_dir, 'best_match_params.tsv'), sep='\t', index=False)
 
 # cluster
 nc_clust_df = nc_agg_df.query("grouping == 'cluster'")
@@ -268,7 +270,8 @@ keep_cols = ['sample_type', 'sample_id', 'cluster', 'cv_algo', 'algo', 'level',
 best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
                          best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
                          ])
-best_cat_df.to_csv(os.path.join(real_dir, 'cluster_params.tsv'), sep='\t', index=False)
+best_dup_df = best_cat_df.drop_duplicates()
+best_dup_df.to_csv(os.path.join(real_dir, 'cluster_params.tsv'), sep='\t', index=False)
 
 # majority_rule
 nc_major_df = nc_agg_df.query("grouping == 'majority_rule'")
@@ -310,7 +313,8 @@ keep_cols = ['sample_type', 'sample_id', 'cv_algo', 'algo', 'level',
 best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
                          best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
                          ])
-best_cat_df.to_csv(os.path.join(real_dir, 'majority_rule_params.tsv'), sep='\t', index=False)
+best_dup_df = best_cat_df.drop_duplicates()
+best_dup_df.to_csv(os.path.join(real_dir, 'majority_rule_params.tsv'), sep='\t', index=False)
 sys.exit()
 
 cv_file = sys.argv[1]

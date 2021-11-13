@@ -223,11 +223,11 @@ def remove_outliers(ent_best_df, real_merge_df):
     return best_merge_df
 
 
-def plot_renyi_entropy(working_dir, ent_df, read_type):
+def plot_renyi_entropy(working_dir, ent_df, real_type):
     # Build all the reference plots and run clustering
     type_list = ent_df['sample_type'].unique()
     cpal = {x: y for x, y in zip(type_list, sns.color_palette(n_colors=len(type_list)))}
-    cpal[read_type] = 'black'
+    cpal[real_type] = 'black'
     sns.set(rc={'figure.figsize': (12, 8)})
     sns.set_style("white")
     p = sns.catplot(x="x_labels", y="Renyi_Entropy", hue="sample_type", col="sample_type",
@@ -342,7 +342,15 @@ def calc_real_entropy(working_dir, mba_cov_list):
         plot_euc_dist(ref_dir, best_merge_df, cpal)
         plot_ent_clust(ref_dir, best_merge_df, cpal)
 
-    return real_merge_df
+    # Save final files
+    ref_only_df = best_merge_df.query('sample_type != @real_type')
+    ref_clean = os.path.join(ref_dir, 'cluster_clean.tsv')
+    ref_only_df.to_csv(ref_clean, sep='\t', index=False)
+    real_only_df = best_merge_df.query('sample_type == @real_type')
+    real_clean = os.path.join(working_dir, 'cluster_clean.tsv')
+    real_only_df.to_csv(real_clean, sep='\t', index=False)
+
+    return real_only_df
 
 
 ###############################################################################################

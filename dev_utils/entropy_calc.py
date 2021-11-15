@@ -88,7 +88,7 @@ def entropy_cluster(working_dir, ent_df):
                          random_state=42
                          ).fit(piv_df)
     umap_emb = umap_fit.transform(piv_df)
-    umap_df = pd.DataFrame(umap_emb, index=piv_df.index.values)
+    umap_df = pd.DataFrame(umap_emb, index=piv_df.index.values, columns=['u0', 'u1'])
 
     clusterer = hdbscan.HDBSCAN(min_cluster_size=2, allow_single_cluster=False,
                                 prediction_data=True
@@ -144,11 +144,11 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     return best_df
 
 
-def real_cluster(clusterer, real_df, umap_df, umap_fit):
+def real_cluster(clusterer, real_df, umap_fit):
     # Assign real data to clusters
     real_piv_df = real_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
     umap_emb = umap_fit.transform(real_piv_df)
-    umap_df = pd.DataFrame(umap_emb, index=real_piv_df.index.values)
+    umap_df = pd.DataFrame(umap_emb, index=real_piv_df.index.values, columns=['u0', 'u1'])
     test_labels, strengths = hdbscan.approximate_predict(clusterer, umap_df)
     cluster_labels = test_labels
     cluster_probs = strengths
@@ -209,7 +209,7 @@ def calc_real_entrophy(mba_cov_list, working_dir):
 def remove_outliers(ent_best_df, real_merge_df):
     # If labeled as an outlier, take the closest match
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
-                 'x_labels', 0, 1, 'cluster', 'probabilities', 'best_match', 'diff'
+                 'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'diff'
                  ]
     best_merge_df = pd.concat([ent_best_df[keep_cols], real_merge_df[keep_cols]])
     samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
@@ -281,8 +281,11 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
     sns.set(rc={'figure.figsize': (12, 8)})
     sns.set_style("white")
     mark_list = ['.', 'v', '^', '<', '>', '8', 's', 'p', 'P', '*', 'H', 'X', 'D', 'd', 'o']
-    b = sns.scatterplot(x=0, y=1, hue="sample_type", style='cluster',
-                        data=ent_umap_df, palette=cpal, markers=mark_list, s=200
+    ent_umap_df['0_jit'] = jitter(ent_umap_df['u0'], 2)
+    ent_umap_df['1_jit'] = jitter(ent_umap_df['u1'], 2)
+    ent_dup_df = ent_umap_df.drop_duplicates(subset=['sample_id'])
+    b = sns.scatterplot(x='0_jit', y='1_jit', hue="sample_type", style='cluster',
+                        data=ent_dup_df, palette=cpal, markers=mark_list, s=200
                         )
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     fig = b.get_figure()
@@ -309,9 +312,13 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
     plt.close()
 
 
-def calc_real_entropy(working_dir, mba_cov_list):
+def jitter(values, j):
+    return values + np.random.normal(j, 0.5, values.shape)
+
+
+def calc_entropy(working_dir, mba_cov_list):
     rerun_ref = False  # to re-calc reference profiles, set to True
-    make_plots = False  # if you want plots, set to True
+    make_plots = True  # if you want plots, set to True
 
     # Calculate entropy for all references
     ref_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -328,7 +335,7 @@ def calc_real_entropy(working_dir, mba_cov_list):
 
     # Cluster real samples
     real_df = calc_real_entrophy(mba_cov_list, working_dir)
-    real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_df, umap_fit)
+    real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit)
     real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
     real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
 
@@ -359,4 +366,4 @@ working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                            'renyi_entropy/SI/'
                            )
 mba_cov_list = glob.glob(os.path.join(working_dir, "SI*.tsv"))
-best_params_df = calc_real_entropy(working_dir, mba_cov_list)
+best_params_df = calc_entropy(working_dir, mba_cov_list)

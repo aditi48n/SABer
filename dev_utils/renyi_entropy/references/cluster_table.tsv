@@ -1,4 +1,4 @@
-sample_id	sample_type	sample_rep	alpha	Renyi_Entropy	alpha_int	x_labels	0	1	cluster	probabilities	outlier_scores	best_match	diff
+sample_id	sample_type	sample_rep	alpha	Renyi_Entropy	alpha_int	x_labels	u0	u1	cluster	probabilities	outlier_scores	best_match	diff
 High_Complexity	High_Complexity	0	0.0	18.337177611172603	0.0	Richness (a=0)	0.98565054	8.910943	7	1.0	0.0	Skin_19	13.288405469318835
 High_Complexity	High_Complexity	0	1.0	18.115971767098475	1.0	Shannon (a=1)	0.98565054	8.910943	7	1.0	0.0	Skin_19	13.288405469318835
 High_Complexity	High_Complexity	0	2.0	17.861736476038406	2.0	Simpson (a=2)	0.98565054	8.910943	7	1.0	0.0	Skin_19	13.288405469318835

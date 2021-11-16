@@ -73,7 +73,7 @@ for mcs, mss in hdbscan_combo:
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         clusters = clst.runClusterer(mg_id, working_dir, output_path, abund_file, tetra_file,
-                                     minhash_df_dict, mcs, mss, 0.5, 'scale', threads
+                                     minhash_df_dict, mcs, mss, mcs, mss, 0.5, 'scale', threads
                                      )
         run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, mockpath, threads)
         cat_err_list.append(run_err_df)
@@ -86,7 +86,7 @@ for nu, gamma in ocsvm_combo:
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     clusters = clst.runClusterer(mg_id, working_dir, output_path, abund_file, tetra_file,
-                                 minhash_df_dict, 100, 25, nu, gamma, threads
+                                 minhash_df_dict, 100, 25, 100, 25, nu, gamma, threads
                                  )
     run_err_df = err.runErrorAnalysis(output_path, synthdata_dir, mg_asm, mockpath, threads)
     cat_err_list.append(run_err_df)

@@ -165,6 +165,7 @@ def cnt_total_bp(fasta_file):
 
 
 def get_seqs(fasta_file):
+    print(fasta_file)
     fasta = pyfastx.Fasta(fasta_file)
     return fasta
 

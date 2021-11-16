@@ -146,7 +146,6 @@ def cnt_contig_bp(fasta_file):
     # returns dictionary of {read_header:bp_count}
 
     fasta_records = get_seqs(fasta_file)
-    print(fasta_records)
     fa_cnt_dict = {}
     for f_rec in fasta_records:
         fa_cnt_dict[f_rec.name] = len(f_rec.seq)
@@ -165,7 +164,6 @@ def cnt_total_bp(fasta_file):
 
 
 def get_seqs(fasta_file):
-    print(fasta_file)
     fasta = pyfastx.Fasta(fasta_file)
     return fasta
 

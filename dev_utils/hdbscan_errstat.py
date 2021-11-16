@@ -230,6 +230,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                            ]]
     # count all bp's for Source genomes, Source MetaG, MockSAGs
     # count all bp's for each read in metaG
+    print(src_metag_file)
     src_metag_cnt_dict = cnt_contig_bp(src_metag_file)
     src_contig_list = list(src_metag_cnt_dict.keys())
     tax_mg_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(src_contig_list)]

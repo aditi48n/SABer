@@ -146,6 +146,7 @@ def cnt_contig_bp(fasta_file):
     # returns dictionary of {read_header:bp_count}
 
     fasta_records = get_seqs(fasta_file)
+    print(fasta_records)
     fa_cnt_dict = {}
     for f_rec in fasta_records:
         fa_cnt_dict[f_rec.name] = len(f_rec.seq)
@@ -230,7 +231,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                            ]]
     # count all bp's for Source genomes, Source MetaG, MockSAGs
     # count all bp's for each read in metaG
-    print(src_metag_file)
     src_metag_cnt_dict = cnt_contig_bp(src_metag_file)
     src_contig_list = list(src_metag_cnt_dict.keys())
     tax_mg_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(src_contig_list)]

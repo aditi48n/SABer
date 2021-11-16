@@ -5,9 +5,9 @@ import sys
 
 import pandas as pd
 
-sys.path.append('/home/ubuntu/deployment/SABer')
-sys.path.append('/home/ubuntu/deployment/SABer/src')
-sys.path.append('/home/ubuntu/deployment/SABer/src/saber')
+sys.path.append('/home/ubuntu/dev/SABer')
+sys.path.append('/home/ubuntu/dev/SABer/src')
+sys.path.append('/home/ubuntu/dev/SABer/src/saber')
 import src.saber.abundance_recruiter as abr
 import src.saber.clusterer as clst
 import src.saber.minhash_recruiter as mhr

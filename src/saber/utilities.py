@@ -1,6 +1,7 @@
 __author__ = 'Ryan J McLaughlin'
 
 import glob
+import hashlib
 import logging
 import os
 import re
@@ -9,8 +10,13 @@ import sys
 from collections import Counter
 from itertools import product, islice
 
+import dit
+import hdbscan
+import numpy as np
 import pandas as pd
 import pyfastx
+import umap
+from dit.other import renyi_entropy
 from skbio.stats.composition import clr
 from sklearn.preprocessing import StandardScaler
 
@@ -151,6 +157,8 @@ def get_SAGs(sag_path):
                      % os.path.basename(sag_path)
                      )
         sag_list = [sag_path]
+    else:
+        pass  # TODO: add error exception for bad file path
 
     return sag_list
 
@@ -354,32 +362,469 @@ def runCleaner(dir_path, ptrn):
                 print("Error while deleting file : ", ent)
 
 
+##########################################################################
+# Below is a work in progress for the entropy/param matching for AutoOpt #
+##########################################################################
 def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
-                     anchor_min_samp, nu, gamma, vr, r, s, vs
+                     anchor_min_samp, nu, gamma, vr, r, s, vs, a, abund_file,
+                     working_dir
                      ):
     params_tmp = [denovo_min_clust, denovo_min_samp, anchor_min_clust,
                   anchor_min_samp, nu, gamma
                   ]
+    clust_match_df = calc_entropy(working_dir, [abund_file])
+    params_list = run_param_match(working_dir, a, vr, r, s, vs)  # TODO: draw from dev_utils/param_matching.py
 
-    cust_params = False
-    params_list = [75.0, 10.0, 125.0, 10.0, 0.3, 0.1]  # TODO: should probs have a config file for all of these presets
-    for i, p in enumerate(params_tmp):
+    for i, p in enumerate(params_tmp):  # if user wants one custom param, but maybe this should be allow?
         if p is not None:
             params_list[i] = float(p)
-            cust_params = True
-    if vr:
-        params_list = [50.0, 5.0, 75.0, 10.0, 0.7, 10.0]
-        cust_params = True
-    elif r:
-        params_list = [50.0, 10.0, 75.0, 10.0, 0.7, 10.0]
-        cust_params = True
-    elif s:
-        params_list = [75.0, 10.0, 125.0, 10.0, 0.3, 0.1]
-        cust_params = True
-    elif vs:
-        params_list = [75.0, 10.0, 125.0, 5.0, 0.3, 0.1]
-        cust_params = True
-    if not cust_params:  # No custom params have been set, proceed with automatic param algo
-        params_list = auto_params()
 
     return params_list
+
+
+def entropy_cluster(ent_df):
+    samp2type = {x: y for x, y in zip(ent_df['sample_id'], ent_df['sample_type'])}
+    piv_df = ent_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
+    umap_fit = umap.UMAP(n_neighbors=2, min_dist=0.0, n_components=2,
+                         random_state=42
+                         ).fit(piv_df)
+    umap_emb = umap_fit.transform(piv_df)
+    umap_df = pd.DataFrame(umap_emb, index=piv_df.index.values, columns=['u0', 'u1'])
+
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=2, allow_single_cluster=False,
+                                prediction_data=True
+                                ).fit(umap_df)
+
+    cluster_labels = clusterer.labels_
+    cluster_probs = clusterer.probabilities_
+    cluster_outlier = clusterer.outlier_scores_
+
+    umap_df['sample_type'] = [samp2type[x] for x in umap_df.index.values]
+    umap_df['sample_id'] = umap_df.index.values
+    umap_df['cluster'] = cluster_labels
+    umap_df['probabilities'] = cluster_probs
+    umap_df['outlier_scores'] = cluster_outlier
+
+    ent_umap_df = ent_df.merge(umap_df, on=['sample_id', 'sample_type'], how='left')
+    ent_best_df = find_best_match(piv_df, ent_umap_df)
+
+    return umap_df, ent_best_df, piv_df, umap_fit, clusterer
+
+
+def find_best_match(piv_df, ent_umap_df):
+    # Closest ref sample methods
+    outlier_list = list(ent_umap_df.query("cluster == -1")['sample_id'])
+    cmpr_list = []
+    for r1, row1 in piv_df.iterrows():
+        keep_diff = [r1, '', np.inf]
+        for r2, row2 in piv_df.iterrows():
+            diff = ((row1 - row2).abs()).sum()
+            if diff < keep_diff[2] and r1 != r2 and r2 not in outlier_list:
+                keep_diff = [r1, r2, diff]
+        cmpr_list.append(keep_diff)
+    cmpr_df = pd.DataFrame(cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+    ent_best_df = ent_umap_df.merge(cmpr_df, on='sample_id', how='left')
+
+    return ent_best_df
+
+
+def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
+    # Closest ref sample methods
+    r_cmpr_list = []
+    for r1, row1 in real_piv_df.iterrows():
+        keep_diff = [r1, '', np.inf]
+        for r2, row2 in piv_df.iterrows():
+            diff = ((row1 - row2).abs()).sum()
+            if diff < keep_diff[2] and r1 != r2:
+                keep_diff = [r1, r2, diff]
+        r_cmpr_list.append(keep_diff)
+    r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+    best_df = real_umap_df.merge(r_cmpr_df, on='sample_id', how='left')
+    best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', index=False)
+    return best_df
+
+
+def real_cluster(clusterer, real_df, umap_fit):
+    # Assign real data to clusters
+    real_piv_df = real_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
+    umap_emb = umap_fit.transform(real_piv_df)
+    umap_df = pd.DataFrame(umap_emb, index=real_piv_df.index.values, columns=['u0', 'u1'])
+    test_labels, strengths = hdbscan.approximate_predict(clusterer, umap_df)
+    cluster_labels = test_labels
+    cluster_probs = strengths
+    samp2type = {x: y for x, y in zip(real_df['sample_id'], real_df['sample_type'])}
+    umap_df['sample_type'] = [samp2type[x] for x in umap_df.index.values]
+    umap_df['sample_id'] = umap_df.index.values
+    umap_df['cluster'] = cluster_labels
+    umap_df['probabilities'] = cluster_probs
+    return real_piv_df, umap_df
+
+
+def calc_real_entrophy(mba_cov_list, working_dir):
+    entropy_list = []
+    for samp_file in mba_cov_list:
+        samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
+        print(samp_id)
+        if samp_id.rsplit('_', 1)[1][0].isdigit():
+            samp_label = samp_id.rsplit('_', 1)[0]
+            samp_rep = samp_id.rsplit('_', 1)[1]
+        else:
+            samp_label = samp_id
+            samp_rep = 0
+        cov_df = pd.read_csv(samp_file, sep='\t', header=0)
+        cov_df['hash_id'] = [hashlib.sha256(x.encode(encoding='utf-8')).hexdigest()
+                             for x in cov_df['contigName']
+                             ]
+        depth_sum = cov_df['totalAvgDepth'].sum()
+        cov_df['relative_depth'] = [x / depth_sum for x in cov_df['totalAvgDepth']]
+        cov_dist = dit.Distribution(cov_df['hash_id'].tolist(),
+                                    cov_df['relative_depth'].tolist()
+                                    )
+        q_list = [0, 1, 2, 4, 8, 16, 32, np.inf]
+        for q in q_list:
+            r_ent = renyi_entropy(cov_dist, q)
+            print(q, r_ent)
+            entropy_list.append([samp_id, samp_label, samp_rep, q, r_ent])
+    real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
+                                                  'sample_rep', 'alpha',
+                                                  'Renyi_Entropy'
+                                                  ])
+    # Have to replace the np.inf with a real value for plotting
+    real_df['alpha_int'] = real_df['alpha'].copy()
+    real_df['alpha_int'].replace(4, 3, inplace=True)
+    real_df['alpha_int'].replace(8, 4, inplace=True)
+    real_df['alpha_int'].replace(16, 5, inplace=True)
+    real_df['alpha_int'].replace(32, 6, inplace=True)
+    real_df['alpha_int'].replace(np.inf, 7, inplace=True)
+    x_labels = {0: 'Richness (a=0)', 1: 'Shannon (a=1)',
+                2: 'Simpson (a=2)', 3: '4', 4: '8', 5: '16',
+                6: '32', 7: 'Berger–Parker (a=inf)'
+                }
+    real_df['x_labels'] = [x_labels[x] for x in real_df['alpha_int']]
+    real_df.to_csv(os.path.join(working_dir, 'entropy_table.tsv'), sep='\t', index=False)
+
+    return real_df
+
+
+def remove_outliers(ent_best_df, real_merge_df):
+    # If labeled as an outlier, take the closest match
+    keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
+                 'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'diff'
+                 ]
+    best_merge_df = pd.concat([ent_best_df[keep_cols], real_merge_df[keep_cols]])
+    samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
+    best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
+                                zip(best_merge_df['best_match'], best_merge_df['cluster'])
+                                ]
+    best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
+                                zip(best_merge_df['best_match'], best_merge_df['cluster'])
+                                ]
+
+    return best_merge_df
+
+
+def calc_entropy(working_dir, mba_cov_list):
+    ent_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
+                            'configs/entropy_table.tsv'
+                            )
+    ent_df = pd.read_csv(ent_file, sep='\t', header=0)
+    ent_results = entropy_cluster(ent_df)
+    ent_best_df = ent_results[1]
+    piv_df = ent_results[2]
+    umap_fit = ent_results[3]
+    clusterer = ent_results[4]
+
+    # Cluster real samples
+    real_df = calc_real_entrophy(mba_cov_list, working_dir)
+    real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit)
+    real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
+    real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
+
+    # Replace outliers with best match
+    best_merge_df = remove_outliers(ent_best_df, real_merge_df)
+
+    # Save final files
+    real_only_df = best_merge_df.query('sample_type == @real_type')
+    real_clean = os.path.join(working_dir, 'cluster_clean.tsv')
+    real_only_df.to_csv(real_clean, sep='\t', index=False)
+
+    return real_only_df
+
+
+#####################################################################################################################################################################################################################
+def best_match_params(real_dir):
+    clust_all_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
+                                  'configs/CV_clust_table.tsv'
+                                  )
+    clust_all_df = pd.read_csv(clust_all_file, sep='\t', header=0)
+    real_df = pd.read_csv(os.path.join(real_dir, 'cluster_clean.tsv'), sep='\t', header=0)
+    real_df = real_df[['sample_type', 'sample_id', 'best_match', 'cluster']]
+    # best_match
+    nc_max_df = clust_all_df.groupby(['sample_id', 'cv_algo', 'algo', 'level',
+                                      'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
+                                     )[['nc_cnt']].max().reset_index()
+    mq_max_df = clust_all_df.groupby(['sample_id', 'cv_algo', 'algo', 'level',
+                                      'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
+                                     )[['mq_cnt']].max().reset_index()
+    nc_hdb_df = nc_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
+    nc_ocs_df = nc_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
+    mq_hdb_df = mq_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
+    mq_ocs_df = mq_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
+    nc_hdb_sort_df = nc_hdb_df.sort_values(['nc_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, True, True]
+                                           )
+    nc_ocs_sort_df = nc_ocs_df.sort_values(['nc_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, False, True]
+                                           )
+    mq_hdb_sort_df = mq_hdb_df.sort_values(['mq_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, True, True]
+                                           )
+    mq_ocs_sort_df = mq_ocs_df.sort_values(['mq_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, False, True]
+                                           )
+    nc_hdb_dup_df = nc_hdb_sort_df.drop_duplicates(subset=['sample_id', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    nc_ocs_dup_df = nc_ocs_sort_df.drop_duplicates(subset=['sample_id', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    mq_hdb_dup_df = mq_hdb_sort_df.drop_duplicates(subset=['sample_id', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    mq_ocs_dup_df = mq_ocs_sort_df.drop_duplicates(subset=['sample_id', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, left_on='best_match',
+                                   right_on='sample_id', how='left'
+                                   )
+    best_nc_ocs_df = real_df.merge(nc_ocs_dup_df, left_on='best_match',
+                                   right_on='sample_id', how='left'
+                                   )
+    best_mq_hdb_df = real_df.merge(mq_hdb_dup_df, left_on='best_match',
+                                   right_on='sample_id', how='left'
+                                   )
+    best_mq_ocs_df = real_df.merge(mq_ocs_dup_df, left_on='best_match',
+                                   right_on='sample_id', how='left'
+                                   )
+    best_nc_hdb_df['mq_nc'] = 'nc'
+    best_nc_ocs_df['mq_nc'] = 'nc'
+    best_mq_hdb_df['mq_nc'] = 'mq'
+    best_mq_ocs_df['mq_nc'] = 'mq'
+    keep_cols = ['sample_type', 'sample_id_x', 'best_match', 'cv_algo', 'algo', 'level',
+                 'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2', 'mq_nc'
+                 ]
+    best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
+                             best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
+                             ])
+    best_dup_df = best_cat_df.drop_duplicates()
+    best_dup_df.to_csv(os.path.join(real_dir, 'best_match_params.tsv'), sep='\t', index=False)
+
+    return best_dup_df, real_df
+
+
+def best_cluster_params(real_dir, real_df):
+    nc_agg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
+                               'configs/NC_agg_params.tsv'
+                               )
+    nc_agg_df = pd.read_csv(nc_agg_file, sep='\t', header=0)
+    mq_agg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
+                               'configs/MQ_agg_params.tsv'
+                               )
+    mq_agg_df = pd.read_csv(mq_agg_file, sep='\t', header=0)
+    nc_clust_df = nc_agg_df.query("grouping == 'cluster'")
+    mq_clust_df = mq_agg_df.query("grouping == 'cluster'")
+    nc_max_df = nc_clust_df.groupby(['group_val', 'cv_algo', 'algo', 'level',
+                                     'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
+                                    )['nc_cnt'].max().reset_index()
+    mq_max_df = mq_clust_df.groupby(['group_val', 'cv_algo', 'algo', 'level',
+                                     'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
+                                    )['mq_cnt'].max().reset_index()
+    nc_hdb_df = nc_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
+    nc_ocs_df = nc_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
+    mq_hdb_df = mq_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
+    mq_ocs_df = mq_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
+    nc_hdb_sort_df = nc_hdb_df.sort_values(['nc_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, True, True]
+                                           )
+    nc_ocs_sort_df = nc_ocs_df.sort_values(['nc_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, False, True]
+                                           )
+    mq_hdb_sort_df = mq_hdb_df.sort_values(['mq_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, True, True]
+                                           )
+    mq_ocs_sort_df = mq_ocs_df.sort_values(['mq_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, False, True]
+                                           )
+    nc_hdb_dup_df = nc_hdb_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    nc_ocs_dup_df = nc_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    mq_hdb_dup_df = mq_hdb_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    mq_ocs_dup_df = mq_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, left_on='cluster',
+                                   right_on='group_val', how='left'
+                                   )
+    best_nc_ocs_df = real_df.merge(nc_ocs_dup_df, left_on='cluster',
+                                   right_on='group_val', how='left'
+                                   )
+    best_mq_hdb_df = real_df.merge(mq_hdb_dup_df, left_on='cluster',
+                                   right_on='group_val', how='left'
+                                   )
+    best_mq_ocs_df = real_df.merge(mq_ocs_dup_df, left_on='cluster',
+                                   right_on='group_val', how='left'
+                                   )
+    best_nc_hdb_df['mq_nc'] = 'nc'
+    best_nc_ocs_df['mq_nc'] = 'nc'
+    best_mq_hdb_df['mq_nc'] = 'mq'
+    best_mq_ocs_df['mq_nc'] = 'mq'
+    keep_cols = ['sample_type', 'sample_id', 'cluster', 'cv_algo', 'algo', 'level',
+                 'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2', 'mq_nc'
+                 ]
+    best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
+                             best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
+                             ])
+    best_dup_df = best_cat_df.drop_duplicates()
+    best_dup_df.to_csv(os.path.join(real_dir, 'cluster_params.tsv'), sep='\t', index=False)
+
+    return best_dup_df, nc_agg_df, mq_agg_df
+
+
+def majority_rule_params(real_dir, nc_agg_df, mq_agg_df, real_df):
+    nc_major_df = nc_agg_df.query("grouping == 'majority_rule'")
+    mq_major_df = mq_agg_df.query("grouping == 'majority_rule'")
+    nc_max_df = nc_major_df.groupby(['group_val', 'cv_algo', 'algo', 'level',
+                                     'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
+                                    )['nc_cnt'].max().reset_index()
+    mq_max_df = mq_major_df.groupby(['group_val', 'cv_algo', 'algo', 'level',
+                                     'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
+                                    )['mq_cnt'].max().reset_index()
+    nc_hdb_df = nc_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
+    nc_ocs_df = nc_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
+    mq_hdb_df = mq_max_df.query("cv_algo == 'hdbscan' & (algo == 'hdbscan' | algo == 'denovo')")
+    mq_ocs_df = mq_max_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'")
+    nc_hdb_sort_df = nc_hdb_df.sort_values(['nc_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, True, True]
+                                           )
+    nc_ocs_sort_df = nc_ocs_df.sort_values(['nc_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, False, True]
+                                           )
+    mq_hdb_sort_df = mq_hdb_df.sort_values(['mq_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, True, True]
+                                           )
+    mq_ocs_sort_df = mq_ocs_df.sort_values(['mq_cnt', 'cv_val1', 'cv_val2'],
+                                           ascending=[False, False, True]
+                                           )
+    nc_hdb_dup_df = nc_hdb_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    nc_ocs_dup_df = nc_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    mq_hdb_dup_df = mq_hdb_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    mq_ocs_dup_df = mq_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
+                                                           'algo', 'level']
+                                                   )
+    nc_hdb_dup_df['tmp_key'] = 0
+    nc_ocs_dup_df['tmp_key'] = 0
+    mq_hdb_dup_df['tmp_key'] = 0
+    mq_ocs_dup_df['tmp_key'] = 0
+    real_df['tmp_key'] = 0
+    best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, on='tmp_key', how='left')
+    best_nc_ocs_df = real_df.merge(nc_ocs_dup_df, on='tmp_key', how='left')
+    best_mq_hdb_df = real_df.merge(mq_hdb_dup_df, on='tmp_key', how='left')
+    best_mq_ocs_df = real_df.merge(mq_ocs_dup_df, on='tmp_key', how='left')
+    best_nc_hdb_df['mq_nc'] = 'nc'
+    best_nc_ocs_df['mq_nc'] = 'nc'
+    best_mq_hdb_df['mq_nc'] = 'mq'
+    best_mq_ocs_df['mq_nc'] = 'mq'
+    keep_cols = ['sample_type', 'sample_id', 'cv_algo', 'algo', 'level',
+                 'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2', 'mq_nc'
+                 ]
+    best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
+                             best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
+                             ])
+    best_dup_df = best_cat_df.drop_duplicates()
+    best_dup_df.to_csv(os.path.join(real_dir, 'majority_rule_params.tsv'), sep='\t', index=False)
+
+    return best_dup_df
+
+
+def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
+    # Need to get best params for best_match, cluster, and majority_rule
+    # Assign the best match params to the SI data
+    best_match_df, real_df = best_match_params(real_dir)
+    # cluster
+    best_cluster_df, nc_agg_df, mq_agg_df = best_cluster_params(real_dir, real_df)
+    # majority_rule
+    majority_rule_df = majority_rule_params(real_dir, nc_agg_df, mq_agg_df, real_df)
+    opt_param_dict = {'majority_rule': majority_rule_df,
+                      'cluster': best_cluster_df,
+                      'best_match': best_match_df
+                      }
+    opt_df = opt_param_dict[autoopt_setting]
+    if vr:  # TODO: this can be refactored, and should be at some point
+        d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
+                                "& mq_nc == 'mq' & level == 'strain'"
+                                )
+        a_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'hdbscan'"
+                                "& mq_nc == 'mq' & level == 'strain'"
+                                )
+        ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
+                              "& mq_nc == 'mq' & level == 'strain'"
+                              )
+    elif r:
+        d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
+                                "& mq_nc == 'mq' & level == 'exact'"
+                                )
+        a_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'hdbscan'"
+                                "& mq_nc == 'mq' & level == 'exact'"
+                                )
+        ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
+                              "& mq_nc == 'mq' & level == 'exact'"
+                              )
+    elif s:
+        d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
+                                "& mq_nc == 'nc' & level == 'strain'"
+                                )
+        a_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'hdbscan'"
+                                "& mq_nc == 'nc' & level == 'strain'"
+                                )
+        ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
+                              "& mq_nc == 'nc' & level == 'strain'"
+                              )
+    elif vs:
+        d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
+                                "& mq_nc == 'nc' & level == 'exact'"
+                                )
+        a_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'hdbscan'"
+                                "& mq_nc == 'nc' & level == 'exact'"
+                                )
+        ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
+                              "& mq_nc == 'nc' & level == 'exact'"
+                              )
+    else:  # else use strict settings
+        d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
+                                "& mq_nc == 'nc' & level == 'strain'"
+                                )
+        a_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'hdbscan'"
+                                "& mq_nc == 'nc' & level == 'strain'"
+                                )
+        ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
+                              "& mq_nc == 'nc' & level == 'strain'"
+                              )
+
+    opt_d_min_clust = d_hdb_df['cv_val1'].values[0]
+    opt_d_min_samp = d_hdb_df['cv_val2'].values[0]
+    opt_a_min_clust = a_hdb_df['cv_val1'].values[0]
+    opt_a_min_samp = a_hdb_df['cv_val2'].values[0]
+    opt_nu = ocs_df['cv_val1'].values[0]
+    opt_gamma = ocs_df['cv_val2'].values[0]
+    return [opt_d_min_clust, opt_d_min_samp, opt_a_min_clust, opt_a_min_samp, opt_nu, opt_gamma]

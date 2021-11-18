@@ -55,33 +55,21 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                default=False, help="Path to reference FASTA file or directory "
                                                    "containing only FASTA files."
                                )
-        self.optopt.add_argument("--auto", action="store_true", dest="param_set",
-                                 help="run SABer automatic optimization algorithm, this will\n"
-                                      "likely provide better results than any others [Default]"
+        self.optopt.add_argument("--autoopt", dest="auto_params", default='majority_rule',
+                                 help="select which automatic optimization algorithm parameter set to use,\n"
+                                      "majority_rule [DEFAULT], cluster, best_match."
                                  )
         self.optopt.add_argument("--very_relaxed", action="store_true", dest="vr_params",
-                                 help="parameter-set that maximizes recall at approximately strain-level\n"
-                                      "[denovo_min_clust=50, denovo_min_samp=5\n"
-                                      " anchor_min_clust=75, anchor_min_samp=10\n"
-                                      " nu=0.7, gamma=10]"
+                                 help="parameter-set that maximizes recall at approximately strain-level"
                                  )
         self.optopt.add_argument("--relaxed", action="store_true", dest="r_params",
-                                 help="parameter-set that maximizes recall at substrain-level\n"
-                                      "[denovo_min_clust=50, denovo_min_samp=10\n"
-                                      " anchor_min_clust=75, anchor_min_samp=10\n"
-                                      " nu=0.7, gamma=10]"
+                                 help="parameter-set that maximizes recall at substrain-level."
                                  )
         self.optopt.add_argument("--strict", action="store_true", dest="s_params",
-                                 help="parameter-set that maximizes precision at approximately strain-level\n"
-                                      "[denovo_min_clust=75, denovo_min_samp=10\n"
-                                      " anchor_min_clust=125, anchor_min_samp=10\n"
-                                      " nu=0.3, gamma=0.1]"
+                                 help="parameter-set that maximizes precision at approximately strain-level [DEFAULT]."
                                  )
         self.optopt.add_argument("--very_strict", action="store_true", dest="vs_params",
-                                 help="parameter-set that maximizes precision at substrain-level\n"
-                                      "[denovo_min_clust=75, denovo_min_samp=10\n"
-                                      " anchor_min_clust=125, anchor_min_samp=5\n"
-                                      " nu=0.3, gamma=0.1]"
+                                 help="parameter-set that maximizes precision at substrain-level."
                                  )
         self.optopt.add_argument("--denovo_min_clust", required=False, dest="denovo_min_clust",
                                  help="minimum cluster size for De Novo HDBSCAN clustering."

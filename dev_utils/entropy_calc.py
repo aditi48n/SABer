@@ -318,7 +318,7 @@ def jitter(values, j):
 
 def calc_entropy(working_dir, mba_cov_list):
     rerun_ref = False  # to re-calc reference profiles, set to True
-    make_plots = True  # if you want plots, set to True
+    make_plots = False  # if you want plots, set to True
 
     # Calculate entropy for all references
     ref_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -366,4 +366,4 @@ working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                            'renyi_entropy/SI/'
                            )
 mba_cov_list = glob.glob(os.path.join(working_dir, "SI*.tsv"))
-best_params_df = calc_entropy(working_dir, mba_cov_list)
+best_params_df = calc_entropy(working_dir, [mba_cov_list[0]])

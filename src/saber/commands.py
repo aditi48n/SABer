@@ -76,7 +76,7 @@ def recruit(sys_args):
     recruit_s.nu, recruit_s.gamma = args.nu, args.gamma
     recruit_s.vr, recruit_s.r = args.vr_params, args.r_params
     recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
-
+    recruit_s.a = args.auto_params
     # Build save dir structure
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
 
@@ -108,11 +108,11 @@ def recruit(sys_args):
         minhash_df_dict = False
 
     # Build abundance tables
-    abund_file = abr.runAbundRecruiter(save_dirs_dict['tmp'],
-                                       save_dirs_dict['tmp'], mg_sub_file,
-                                       recruit_s.mg_raw_file_list,
-                                       recruit_s.nthreads
-                                       )
+    abund_scale_file, abund_raw_file = abr.runAbundRecruiter(save_dirs_dict['tmp'],
+                                                             save_dirs_dict['tmp'], mg_sub_file,
+                                                             recruit_s.mg_raw_file_list,
+                                                             recruit_s.nthreads
+                                                             )
     # Build tetra hz tables
     tetra_file = tra.run_tetra_recruiter(save_dirs_dict['tmp'],
                                          mg_sub_file
@@ -121,16 +121,17 @@ def recruit(sys_args):
     recruit_s.params_list = s_utils.set_clust_params(recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
                                                      recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
                                                      recruit_s.nu, recruit_s.gamma, recruit_s.vr, recruit_s.r,
-                                                     recruit_s.s, recruit_s.vs,
+                                                     recruit_s.s, recruit_s.vs, recruit_s.a, abund_raw_file,
+                                                     save_dirs_dict['tmp']
                                                      )
 
     mg_id = mg_sub_file[0]
     clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], save_dirs_dict['tmp'],
-                                 abund_file, tetra_file,
+                                 abund_scale_file, tetra_file,
                                  minhash_df_dict,
-                                 recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
-                                 recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
-                                 recruit_s.nu, recruit_s.gamma,
+                                 recruit_s.params_list[0], recruit_s.params_list[0],
+                                 recruit_s.params_list[0], recruit_s.params_list[0],
+                                 recruit_s.params_list[0], recruit_s.params_list[0],
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits

@@ -20,20 +20,21 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
 
     if isfile(o_join(abr_path, mg_id + '.coverage.scaled.tsv')):
         logging.info('Loading Abundance matrix for %s\n' % mg_id)
-        mg_covm_out = o_join(abr_path, mg_id + '.coverage.scaled.tsv')
+        mg_scale_out = o_join(abr_path, mg_id + '.coverage.scaled.tsv')
+        mg_covm_out = o_join(abr_path, mg_id + '.mbacov.tsv')
     else:
         logging.info('Building %s abundance matrix\n' % mg_id)
         mg_sub_path = o_join(subcontig_path, mg_id + '.subcontigs.fasta')
         # Process raw metagenomes to calculate abundances
-        mg_covm_out = procMetaGs(abr_path, mg_id, mg_raw_file_list,
-                                 subcontig_path, nthreads
-                                 )
+        mg_scale_out, mg_covm_out = procMetaGs(abr_path, mg_id, mg_raw_file_list,
+                                               subcontig_path, nthreads
+                                               )
     # Clean up the directory
     logging.info('Cleaning up intermediate files...\n')
     for s in ["*.sam", "*.bam", "*.stderr.txt", "*.stdout.txt"]:
         s_utils.runCleaner(abr_path, s)
 
-    return mg_covm_out
+    return mg_scale_out, mg_covm_out
 
 
 def procMetaGs(abr_path, mg_id, mg_raw_file_list, subcontig_path, nthreads):
@@ -55,11 +56,11 @@ def procMetaGs(abr_path, mg_id, mg_raw_file_list, subcontig_path, nthreads):
         mg_sort_out = runSamTools(abr_path, pe_id, nthreads, mg_id, mg_sam_out)
         sorted_bam_list.append(mg_sort_out)
     logging.info('\n')
-    mg_covm_out = runMBAcov(abr_path, mg_id, sorted_bam_list)
+    mg_scale_out, mg_covm_out = runMBAcov(abr_path, mg_id, sorted_bam_list)
     # mg_covm_out = runCovM(abr_path, mg_id, nthreads, sorted_bam_list)
     # mg_covm_out = runSAMSAM(abr_path, subcontig_path, mg_id, sam_list, nthreads)
     # mg_covm_out = runPySAM(abr_path, subcontig_path, mg_id, sorted_bam_list, nthreads)
-    return mg_covm_out
+    return mg_scale_out, mg_covm_out
 
 
 def runMiniMap2(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
@@ -142,5 +143,4 @@ def runMBAcov(abr_path, mg_id, sorted_bam_list):
         std_merge_df = pd.DataFrame(scaled_data, index=mg_mba_df.index).reset_index()
         std_merge_df.to_csv(mg_mba_std, header=True, sep='\t', index=False)
 
-    return mg_mba_std
-
+    return mg_mba_std, mg_mba_out

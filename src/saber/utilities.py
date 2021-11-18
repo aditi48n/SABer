@@ -464,7 +464,6 @@ def calc_real_entrophy(mba_cov_list, working_dir):
     entropy_list = []
     for samp_file in mba_cov_list:
         samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-        print(samp_id)
         if samp_id.rsplit('_', 1)[1][0].isdigit():
             samp_label = samp_id.rsplit('_', 1)[0]
             samp_rep = samp_id.rsplit('_', 1)[1]
@@ -483,7 +482,6 @@ def calc_real_entrophy(mba_cov_list, working_dir):
         q_list = [0, 1, 2, 4, 8, 16, 32, np.inf]
         for q in q_list:
             r_ent = renyi_entropy(cov_dist, q)
-            print(q, r_ent)
             entropy_list.append([samp_id, samp_label, samp_rep, q, r_ent])
     real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
                                                   'sample_rep', 'alpha',

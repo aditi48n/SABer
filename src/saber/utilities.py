@@ -380,7 +380,9 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
     for i, p in enumerate(params_tmp):  # if user wants one custom param, but maybe this should be allow?
         if p is not None:
             params_list[i] = float(p)
-
+    print(a)
+    print(params_list)
+    sys.exit()
     logging.info('AutoOpt method:', a)
     logging.info('\tDe Novo min_cluster_size:', params_list[0])
     logging.info('\t        min_samples:', params_list[1])

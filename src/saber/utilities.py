@@ -369,6 +369,7 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
                      anchor_min_samp, nu, gamma, vr, r, s, vs, a, abund_file,
                      working_dir
                      ):
+    logging.info('Running AutoOpt to find optimal hyperparameters\n')
     params_tmp = [denovo_min_clust, denovo_min_samp, anchor_min_clust,
                   anchor_min_samp, nu, gamma
                   ]
@@ -522,6 +523,7 @@ def remove_outliers(ent_best_df, real_merge_df):
 
 
 def calc_entropy(working_dir, mba_cov_list):
+    logging.info('Calculating Renyi Entropy profile\n')
     ent_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
                             'configs/entropy_table.tsv'
                             )

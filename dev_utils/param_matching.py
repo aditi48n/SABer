@@ -82,7 +82,7 @@ def merge_cluster_table(working_dir, cv_concat_df, cv_all_df):
     clust_cv_df['majority_rule'] = 'MR'
     clust_all_df['majority_rule'] = 'MR'
     clust_all_file = os.path.join(working_dir, "CV_clust_table.tsv")
-    clust_all_df = pd.read_csv(clust_all_file, sep='\t', header=0)
+    clust_all_df.to_csv(clust_all_file, sep='\t', index=False)
 
     return clust_cv_df, clust_all_df
 

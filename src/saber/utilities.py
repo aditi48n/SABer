@@ -381,6 +381,14 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
         if p is not None:
             params_list[i] = float(p)
 
+    logging.info('AutoOpt method:', a)
+    logging.info('\tDe Novo min_cluster_size:', params_list[0])
+    logging.info('\t        min_samples:', params_list[1])
+    logging.info('\tAnchored min_cluster_size:', params_list[2])
+    logging.info('\t         min_samples:', params_list[3])
+    logging.info('\tAnchored nu:', params_list[4])
+    logging.info('           gamma:', params_list[5])
+
     return params_list
 
 

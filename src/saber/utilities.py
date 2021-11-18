@@ -383,11 +383,11 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
 
     logging.info('AutoOpt method: ' + str(a) + '\n')
     logging.info('\tDe Novo min_cluster_size: ' + str(params_list[0]) + '\n')
-    logging.info('\t        min_samples: ' + str(params_list[1]) + '\n')
+    logging.info('\tDe Novo min_samples: ' + str(params_list[1]) + '\n')
     logging.info('\tAnchored min_cluster_size: ' + str(params_list[2]) + '\n')
-    logging.info('\t         min_samples: ' + str(params_list[3]) + '\n')
+    logging.info('\tAnchored min_samples: ' + str(params_list[3]) + '\n')
     logging.info('\tAnchored nu: ' + str(params_list[4]) + '\n')
-    logging.info('           gamma: ' + str(params_list[5]) + '\n')
+    logging.info('\tAnchored gamma: ' + str(params_list[5]) + '\n')
 
     return params_list
 

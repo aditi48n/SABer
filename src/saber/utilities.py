@@ -667,8 +667,8 @@ def best_cluster_params(real_dir, real_df):
     mq_ocs_dup_df = mq_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
                                                            'algo', 'level']
                                                    )
-    print(real_df)
-    print(nc_hdb_dup_df)
+    print(real_df.head())
+    print(nc_hdb_dup_df.head())
     best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, left_on='cluster',
                                    right_on='group_val', how='left'
                                    )

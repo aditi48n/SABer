@@ -19,6 +19,7 @@ import umap
 from dit.other import renyi_entropy
 from skbio.stats.composition import clr
 from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
 
 
 def is_exe(fpath):
@@ -481,7 +482,7 @@ def calc_real_entrophy(mba_cov_list, working_dir):
                                     cov_df['relative_depth'].tolist()
                                     )
         q_list = [0, 1, 2, 4, 8, 16, 32, np.inf]
-        for q in q_list:
+        for q in tqdm(q_list):
             r_ent = renyi_entropy(cov_dist, q)
             entropy_list.append([samp_id, samp_label, samp_rep, q, r_ent])
     real_df = pd.DataFrame(entropy_list, columns=['sample_id', 'sample_type',
@@ -669,8 +670,6 @@ def best_cluster_params(real_dir, real_df):
     mq_ocs_dup_df = mq_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
                                                            'algo', 'level']
                                                    )
-    print(real_df.head())
-    print(nc_hdb_dup_df.head())
     best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, left_on='cluster',
                                    right_on='group_val', how='left'
                                    )

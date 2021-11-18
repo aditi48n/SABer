@@ -533,7 +533,7 @@ def remove_outliers(ent_best_df, real_merge_df):
 
 
 def calc_entropy(working_dir, mba_cov_list):
-    logging.info('Loading Reference Renyi Entropy profile\n')
+    logging.info('Loading Reference Renyi Entropy profiles\n')
     ent_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
                             'configs/entropy_table.tsv'
                             )

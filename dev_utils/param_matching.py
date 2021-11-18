@@ -409,13 +409,13 @@ def run_param_match(working_dir, real_dir):
 
 
 ############################################################################################
-working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                           'renyi_entropy/SABer_CV/'
-                           )
+ref_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                       'renyi_entropy/SABer_CV/'
+                       )
 real_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                         'renyi_entropy/SI/'
                         )
-best_match_df, best_cluster_df, majority_rule_df = run_param_match(working_dir, real_dir)
+best_match_df, best_cluster_df, majority_rule_df = run_param_match(ref_dir, real_dir)
 
 '''
 cv_file = sys.argv[1]

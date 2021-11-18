@@ -633,6 +633,8 @@ def best_cluster_params(real_dir, real_df):
     mq_agg_df = pd.read_csv(mq_agg_file, sep='\t', header=0)
     nc_clust_df = nc_agg_df.query("grouping == 'cluster'")
     mq_clust_df = mq_agg_df.query("grouping == 'cluster'")
+    nc_clust_df['group_val'] = nc_clust_df['group_val'].astype(int)
+    mq_clust_df['group_val'] = mq_clust_df['group_val'].astype(int)
     nc_max_df = nc_clust_df.groupby(['group_val', 'cv_algo', 'algo', 'level',
                                      'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
                                     )['nc_cnt'].max().reset_index()

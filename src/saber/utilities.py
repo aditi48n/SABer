@@ -542,7 +542,7 @@ def calc_entropy(working_dir, mba_cov_list):
 
     # Replace outliers with best match
     best_merge_df = remove_outliers(ent_best_df, real_merge_df)
-
+    real_type = real_df['sample_type'].values[0]
     # Save final files
     real_only_df = best_merge_df.query('sample_type == @real_type')
     real_clean = os.path.join(working_dir, 'cluster_clean.tsv')

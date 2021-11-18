@@ -54,7 +54,7 @@ def build_cv_tables(working_dir, sample_list, config_list):
     return cv_concat_df, cv_all_df
 
 
-def merge_cluster_table(cv_concat_df, cv_all_df):
+def merge_cluster_table(working_dir, cv_concat_df, cv_all_df):
     cluster_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                 'renyi_entropy/references/cluster_clean.tsv'
                                 )
@@ -81,6 +81,8 @@ def merge_cluster_table(cv_concat_df, cv_all_df):
     clust_all_df.drop_duplicates(inplace=True)
     clust_cv_df['majority_rule'] = 'MR'
     clust_all_df['majority_rule'] = 'MR'
+    clust_all_file = os.path.join(working_dir, "CV_clust_table.tsv")
+    clust_all_df = pd.read_csv(clust_all_file, sep='\t', header=0)
 
     return clust_cv_df, clust_all_df
 
@@ -395,7 +397,7 @@ def run_param_match(working_dir, real_dir):
     sample_list = glob.glob(os.path.join(working_dir, "*/CV_*.tsv"))
     config_list = [['hdbscan', 'denovo'], ['hdbscan', 'hdbscan'], ['ocsvm', 'ocsvm']]
     cv_concat_df, cv_all_df = build_cv_tables(working_dir, sample_list, config_list)
-    clust_cv_df, clust_all_df = merge_cluster_table(cv_concat_df, cv_all_df)
+    clust_cv_df, clust_all_df = merge_cluster_table(working_dir, cv_concat_df, cv_all_df)
     nc_agg_df, mq_agg_df = aggregate_best_params(working_dir, config_list, clust_all_df)
     # Need to get best params for best_match, cluster, and majority_rule
     # Assign the best match params to the SI data

@@ -374,16 +374,19 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
     clust_match_df = calc_entropy(working_dir, [abund_file])
     autoopt_params = run_param_match(working_dir, a, vr, r, s, vs)  # TODO: draw from dev_utils/param_matching.py
 
-    params_tmp_dict = {'d_min_clust': int(denovo_min_clust), 'd_min_samp': int(denovo_min_samp),
-                       'a_min_clust': int(anchor_min_clust), 'a_min_samp': int(anchor_min_samp),
-                       'nu': float(nu), 'gamma': float(gamma)
+    params_tmp_dict = {'d_min_clust': denovo_min_clust, 'd_min_samp': denovo_min_samp,
+                       'a_min_clust': anchor_min_clust, 'a_min_samp': anchor_min_samp,
+                       'nu': nu, 'gamma': gamma
                        }
 
     for k in params_tmp_dict.keys():
         v = params_tmp_dict[k]
         auto_v = autoopt_params[k]
-        if v is not None & v != auto_v:
-            autoopt_params[k] = v
+        if v is not None:
+            if 'clust' in k or 'samp' in k:
+                autoopt_params[k] = int(v)
+            else:
+                autoopt_params[k] = float(v)
 
     logging.info('AutoOpt method: ' + str(a) + '\n')
     logging.info('\tDe Novo min_cluster_size: ' + str(autoopt_params['d_min_clust']) + '\n')

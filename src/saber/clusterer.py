@@ -107,8 +107,6 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                  denovo_min_clust, denovo_min_samp, anchor_min_clust, anchor_min_samp,
                  nu, gamma, nthreads
                  ):  # TODO: need to add multithreading where ever possible
-    print(denovo_min_clust, denovo_min_samp, anchor_min_clust, anchor_min_samp,
-          nu, gamma)
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
     merged_emb = Path(o_join(tmp_path, mg_id + '.merged_emb.tsv'))

@@ -118,7 +118,7 @@ def recruit(sys_args):
                                          mg_sub_file
                                          )
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
-    recruit_s.params_list = s_utils.set_clust_params(recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
+    recruit_s.params_dict = s_utils.set_clust_params(recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
                                                      recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
                                                      recruit_s.nu, recruit_s.gamma, recruit_s.vr, recruit_s.r,
                                                      recruit_s.s, recruit_s.vs, recruit_s.a, abund_raw_file,
@@ -129,9 +129,12 @@ def recruit(sys_args):
     clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], save_dirs_dict['tmp'],
                                  abund_scale_file, tetra_file,
                                  minhash_df_dict,
-                                 recruit_s.params_list[0], recruit_s.params_list[0],
-                                 recruit_s.params_list[0], recruit_s.params_list[0],
-                                 recruit_s.params_list[0], recruit_s.params_list[0],
+                                 recruit_s.params_dict['d_min_clust'],
+                                 recruit_s.params_dict['d_min_samp'],
+                                 recruit_s.params_dict['a_min_clust'],
+                                 recruit_s.params_dict['a_min_samp'],
+                                 recruit_s.params_dict['nu'],
+                                 recruit_s.params_dict['gamma'],
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits

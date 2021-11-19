@@ -371,25 +371,29 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
                      working_dir
                      ):
     logging.info('Running AutoOpt to find optimal hyperparameters\n')
-    params_tmp = [denovo_min_clust, denovo_min_samp, anchor_min_clust,
-                  anchor_min_samp, nu, gamma
-                  ]
     clust_match_df = calc_entropy(working_dir, [abund_file])
-    params_list = run_param_match(working_dir, a, vr, r, s, vs)  # TODO: draw from dev_utils/param_matching.py
+    autoopt_params = run_param_match(working_dir, a, vr, r, s, vs)  # TODO: draw from dev_utils/param_matching.py
 
-    for i, p in enumerate(params_tmp):  # if user wants one custom param, but maybe this should be allow?
-        if p is not None:
-            params_list[i] = float(p)
+    params_tmp_dict = {'d_min_clust': int(denovo_min_clust), 'd_min_samp': int(denovo_min_samp),
+                       'a_min_clust': int(anchor_min_clust), 'a_min_samp': int(anchor_min_samp),
+                       'nu': float(nu), 'gamma': float(gamma)
+                       }
+
+    for k in params_tmp_dict.keys():
+        v = params_tmp_dict[k]
+        auto_v = autoopt_params[k]
+        if v is not None & v != auto_v:
+            autoopt_params[k] = v
 
     logging.info('AutoOpt method: ' + str(a) + '\n')
-    logging.info('\tDe Novo min_cluster_size: ' + str(params_list[0]) + '\n')
-    logging.info('\tDe Novo min_samples: ' + str(params_list[1]) + '\n')
-    logging.info('\tAnchored min_cluster_size: ' + str(params_list[2]) + '\n')
-    logging.info('\tAnchored min_samples: ' + str(params_list[3]) + '\n')
-    logging.info('\tAnchored nu: ' + str(params_list[4]) + '\n')
-    logging.info('\tAnchored gamma: ' + str(params_list[5]) + '\n')
+    logging.info('\tDe Novo min_cluster_size: ' + str(autoopt_params['d_min_clust']) + '\n')
+    logging.info('\tDe Novo min_samples: ' + str(autoopt_params['d_min_samp']) + '\n')
+    logging.info('\tAnchored min_cluster_size: ' + str(autoopt_params['a_min_clust']) + '\n')
+    logging.info('\tAnchored min_samples: ' + str(autoopt_params['a_min_samp']) + '\n')
+    logging.info('\tAnchored nu: ' + str(autoopt_params['nu']) + '\n')
+    logging.info('\tAnchored gamma: ' + str(autoopt_params['gamma']) + '\n')
 
-    return params_list
+    return autoopt_params
 
 
 def entropy_cluster(ent_df):
@@ -839,4 +843,8 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
     opt_a_min_samp = a_hdb_df['cv_val2'].values[0]
     opt_nu = ocs_df['cv_val1'].values[0]
     opt_gamma = ocs_df['cv_val2'].values[0]
-    return [opt_d_min_clust, opt_d_min_samp, opt_a_min_clust, opt_a_min_samp, opt_nu, opt_gamma]
+    params_dict = {'d_min_clust': int(opt_d_min_clust), 'd_min_samp': int(opt_d_min_samp),
+                   'a_min_clust': int(opt_a_min_clust), 'a_min_samp': int(opt_a_min_samp),
+                   'nu': float(opt_nu), 'gamma': float(opt_gamma)
+                   }
+    return params_dict

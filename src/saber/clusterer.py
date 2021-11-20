@@ -217,7 +217,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
         clusterer = hdbscan.HDBSCAN(min_cluster_size=denovo_min_clust, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
-                                    min_samples=denovo_min_samp
+                                    min_samples=denovo_min_samp, core_dist_n_jobs=nthreads
                                     ).fit(merge_df.values)
 
         cluster_labels = clusterer.labels_
@@ -500,7 +500,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
         clusterer = hdbscan.HDBSCAN(min_cluster_size=anchor_min_clust, cluster_selection_method='eom',
                                     prediction_data=True, cluster_selection_epsilon=0,
-                                    min_samples=anchor_min_samp
+                                    min_samples=anchor_min_samp, core_dist_n_jobs=nthreads
                                     ).fit(merge_df.values)
 
         cluster_labels = clusterer.labels_

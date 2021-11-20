@@ -385,6 +385,8 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
         if v is not None:
             if 'clust' in k or 'samp' in k:
                 autoopt_params[k] = int(v)
+            elif v == 'scale':
+                autoopt_params[k] = v
             else:
                 autoopt_params[k] = float(v)
 
@@ -840,14 +842,18 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
                               "& mq_nc == 'nc' & level == 'strain'"
                               )
 
-    opt_d_min_clust = d_hdb_df['cv_val1'].values[0]
-    opt_d_min_samp = d_hdb_df['cv_val2'].values[0]
-    opt_a_min_clust = a_hdb_df['cv_val1'].values[0]
-    opt_a_min_samp = a_hdb_df['cv_val2'].values[0]
-    opt_nu = ocs_df['cv_val1'].values[0]
-    opt_gamma = ocs_df['cv_val2'].values[0]
-    params_dict = {'d_min_clust': int(opt_d_min_clust), 'd_min_samp': int(opt_d_min_samp),
-                   'a_min_clust': int(opt_a_min_clust), 'a_min_samp': int(opt_a_min_samp),
-                   'nu': float(opt_nu), 'gamma': float(opt_gamma)
+    opt_d_min_clust = int(d_hdb_df['cv_val1'].values[0])
+    opt_d_min_samp = int(d_hdb_df['cv_val2'].values[0])
+    opt_a_min_clust = int(a_hdb_df['cv_val1'].values[0])
+    opt_a_min_samp = int(a_hdb_df['cv_val2'].values[0])
+    opt_nu = float(ocs_df['cv_val1'].values[0])
+    if ocs_df['cv_val2'].values[0] == 'scale':
+        opt_gamma = ocs_df['cv_val2'].values[0]
+    else:
+        opt_gamma = float(ocs_df['cv_val2'].values[0])
+
+    params_dict = {'d_min_clust': opt_d_min_clust, 'd_min_samp': opt_d_min_samp,
+                   'a_min_clust': opt_a_min_clust, 'a_min_samp': opt_a_min_samp,
+                   'nu': opt_nu, 'gamma': opt_gamma
                    }
     return params_dict

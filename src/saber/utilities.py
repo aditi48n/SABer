@@ -378,7 +378,6 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
                        'a_min_clust': anchor_min_clust, 'a_min_samp': anchor_min_samp,
                        'nu': nu, 'gamma': gamma
                        }
-    print(params_tmp_dict)
     for k in params_tmp_dict.keys():
         v = params_tmp_dict[k]
         auto_v = autoopt_params[k]

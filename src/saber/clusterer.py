@@ -84,17 +84,21 @@ def recruitOCSVM(p):
     m_df['contig_id'] = [x.rsplit('_', 1)[0] for x in m_df.index.values]
     tc_feat_df = m_df.query('contig_id in @tc_contig_list')
     mg_feat_df = m_df.copy()  # .query('contig_id in @sub_contig_list')
+    print(1, mg_feat_df.shape)
     mg_feat_df.drop(columns=['contig_id'], inplace=True)
     tc_feat_df.drop(columns=['contig_id'], inplace=True)
     major_df = False
     if (tc_feat_df.shape[0] != 0) & (mg_feat_df.shape[0] != 0):
         # Run KMEANS first
         kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
+        print(2, len(kmeans_pass_list))
         kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
                                       columns=['sag_id', 'subcontig_id', 'contig_id']
                                       )
         nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
+        print(3, nonrecruit_kmeans_df.shape)
         ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, nu, gamma)
+        print(4, ocsvm_recruit_df.shape)
         val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
             normalize=True).reset_index(name='percent')
         pos_perc = val_perc.loc[val_perc['pred'] == 1]

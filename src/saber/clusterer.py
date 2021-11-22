@@ -618,15 +618,8 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
         oc_sag_list = list(mh_trusted_df['sag_id'].unique())
-        ocsvm_recruit_list = []
-        ocsvm_recruit_dict = {}
         for sag_id in tqdm(oc_sag_list):
             sub_mh_df = mh_trusted_df.query('sag_id == @sag_id')
-            sag_id, ocsvm_recruits = recruitOCSVM([merge_df, sub_mh_df, sag_id, nu, gamma])
-            if isinstance(ocsvm_recruits, pd.DataFrame):
-                ocsvm_recruit_list.append(ocsvm_recruits)
-                ocsvm_recruit_dict[sag_id] = ocsvm_recruits
-        '''
             arg_list.append([merge_df, sub_mh_df, sag_id, nu, gamma])
         ocsvm_recruit_list = []
         ocsvm_recruit_dict = {}
@@ -638,7 +631,6 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                 ocsvm_recruit_dict[sag_id] = ocsvm_recruits
         pool.close()
         pool.join()
-        '''
         ocsvm_contig_df = pd.concat(ocsvm_recruit_list)
         ocsvm_contig_best_df = ocsvm_contig_df.sort_values(by='percent', ascending=False
                                                            ).drop_duplicates(subset='contig_id')

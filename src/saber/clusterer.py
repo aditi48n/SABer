@@ -89,6 +89,7 @@ def recruitOCSVM(p):
     major_df = False
     if (tc_feat_df.shape[0] != 0) & (mg_feat_df.shape[0] != 0):
         '''
+        # removed from preprocessing
         # Run KMEANS first
         kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
         kmeans_pass_df = pd.DataFrame(kmeans_pass_list,

@@ -105,7 +105,7 @@ def recruitOCSVM(p):
         val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
             normalize=True).reset_index(name='percent')
         pos_perc = val_perc.loc[val_perc['pred'] == 1]
-        major_df = pos_perc.copy()  # .loc[pos_perc['percent'] >= 0.51]
+        major_df = pos_perc.loc[pos_perc['percent'] >= 0.51]
         major_df['sag_id'] = sag_id
         print(major_df.shape)
 

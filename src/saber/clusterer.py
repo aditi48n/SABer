@@ -90,14 +90,14 @@ def recruitOCSVM(p):
     major_df = False
     if (tc_feat_df.shape[0] != 0) & (mg_feat_df.shape[0] != 0):
         # Run KMEANS first
-        kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
-        print(2, len(kmeans_pass_list))
-        kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
-                                      columns=['sag_id', 'subcontig_id', 'contig_id']
-                                      )
-        nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
-        print(3, nonrecruit_kmeans_df.shape)
-        ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, nu, gamma)
+        # kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
+        # print(2, len(kmeans_pass_list))
+        # kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
+        #                              columns=['sag_id', 'subcontig_id', 'contig_id']
+        #                              )
+        # nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
+        # print(3, nonrecruit_kmeans_df.shape)
+        ocsvm_recruit_df = runOCSVM(tc_feat_df, mg_feat_df, sag_id, nu, gamma)
         print(4, ocsvm_recruit_df.shape)
         val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
             normalize=True).reset_index(name='percent')

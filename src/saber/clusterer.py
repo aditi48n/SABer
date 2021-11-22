@@ -41,6 +41,7 @@ def runOCSVM(tc_df, mg_df, tc_id, n, gam):
 def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     temp_cat_df = std_merge_df.copy()
     last_len = 0
+    print(1)
     while temp_cat_df.shape[0] != last_len:
         last_len = temp_cat_df.shape[0]
         clusters = 10 if last_len >= 10 else last_len
@@ -55,12 +56,14 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
         )]
         subset_clust_df['kmeans_pred'] = 1
         temp_cat_df = temp_cat_df.loc[temp_cat_df.index.isin(list(subset_clust_df['subcontig_id']))]
+    print(2)
     cat_clust_df = subset_clust_df.copy()
     std_id_df = pd.DataFrame(std_merge_df.index.values, columns=['subcontig_id'])
     std_id_df['contig_id'] = [x.rsplit('_', 1)[0] for x in std_id_df['subcontig_id']]
     cat_clust_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cat_clust_df['subcontig_id']]
     sub_std_df = std_id_df.loc[std_id_df['contig_id'].isin(list(cat_clust_df['contig_id']))]
     std_clust_df = sub_std_df.merge(cat_clust_df, on=['subcontig_id', 'contig_id'], how='outer')
+    print(3)
     std_clust_df.fillna(-1, inplace=True)
     pred_df = std_clust_df[['subcontig_id', 'contig_id', 'kmeans_pred']]
     val_perc = pred_df.groupby('contig_id')['kmeans_pred'
@@ -72,6 +75,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
                                            how='left'
                                            )
     filter_clust_pred_df = std_clust_pred_df.loc[std_clust_pred_df['kmeans_pred_x'] == 1]
+    print(4)
     kmeans_pass_list = []
     for md_nm in major_pred_df['subcontig_id']:
         kmeans_pass_list.append([sag_id, md_nm, md_nm.rsplit('_', 1)[0]])
@@ -90,14 +94,14 @@ def recruitOCSVM(p):
     major_df = False
     if (tc_feat_df.shape[0] != 0) & (mg_feat_df.shape[0] != 0):
         # Run KMEANS first
-        # kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
-        # print(2, len(kmeans_pass_list))
-        # kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
-        #                              columns=['sag_id', 'subcontig_id', 'contig_id']
-        #                              )
-        # nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
-        # print(3, nonrecruit_kmeans_df.shape)
-        ocsvm_recruit_df = runOCSVM(tc_feat_df, mg_feat_df, sag_id, nu, gamma)
+        kmeans_pass_list, kclusters_df = runKMEANS(tc_feat_df, sag_id, mg_feat_df)
+        print(2, len(kmeans_pass_list))
+        kmeans_pass_df = pd.DataFrame(kmeans_pass_list,
+                                      columns=['sag_id', 'subcontig_id', 'contig_id']
+                                      )
+        nonrecruit_kmeans_df = mg_feat_df.loc[kmeans_pass_df['subcontig_id']]
+        print(3, nonrecruit_kmeans_df.shape)
+        ocsvm_recruit_df = runOCSVM(tc_feat_df, nonrecruit_kmeans_df, sag_id, nu, gamma)
         print(4, ocsvm_recruit_df.shape)
         val_perc = ocsvm_recruit_df.groupby('contig_id')['pred'].value_counts(
             normalize=True).reset_index(name='percent')

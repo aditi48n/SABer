@@ -46,17 +46,23 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
         last_len = temp_cat_df.shape[0]
         print(last_len)
         clusters = 10 if last_len >= 10 else last_len
+        print(1)
         kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=42).fit(temp_cat_df.values)
+        print(2)
         clust_labels = kmeans.labels_
         clust_df = pd.DataFrame(zip(temp_cat_df.index.values, clust_labels),
                                 columns=['subcontig_id', 'kmeans_clust']
                                 )
+        print(3)
         recruit_clust_df = clust_df.loc[clust_df['subcontig_id'].isin(list(recruit_contigs_df.index))]
+        print(4)
         subset_clust_df = clust_df.loc[clust_df['kmeans_clust'].isin(
             list(recruit_clust_df['kmeans_clust'].unique())
         )]
+        print(5)
         subset_clust_df['kmeans_pred'] = 1
         temp_cat_df = temp_cat_df.loc[temp_cat_df.index.isin(list(subset_clust_df['subcontig_id']))]
+        print(6)
     print(2)
     cat_clust_df = subset_clust_df.copy()
     std_id_df = pd.DataFrame(std_merge_df.index.values, columns=['subcontig_id'])

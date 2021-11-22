@@ -44,6 +44,7 @@ def runKMEANS(recruit_contigs_df, sag_id, std_merge_df):
     print(1)
     while temp_cat_df.shape[0] != last_len:
         last_len = temp_cat_df.shape[0]
+        print(last_len)
         clusters = 10 if last_len >= 10 else last_len
         kmeans = MiniBatchKMeans(n_clusters=clusters, random_state=42).fit(temp_cat_df.values)
         clust_labels = kmeans.labels_

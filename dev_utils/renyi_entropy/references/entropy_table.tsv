@@ -1,12 +1,4 @@
 sample_id	sample_type	sample_rep	alpha	Renyi_Entropy	alpha_int	x_labels
-High_Complexity	High_Complexity	0	0.0	18.337177611172603	0.0	Richness (a=0)
-High_Complexity	High_Complexity	0	1.0	18.115971767098475	1.0	Shannon (a=1)
-High_Complexity	High_Complexity	0	2.0	17.861736476038406	2.0	Simpson (a=2)
-High_Complexity	High_Complexity	0	4.0	17.14246625671518	3.0	4
-High_Complexity	High_Complexity	0	8.0	15.627341298910377	4.0	8
-High_Complexity	High_Complexity	0	16.0	14.739687082263938	5.0	16
-High_Complexity	High_Complexity	0	32.0	14.305126296247177	6.0	32
-High_Complexity	High_Complexity	0	inf	13.86408780713443	7.0	Berger–Parker (a=inf)
 Oral_7	Oral	7	0.0	14.47503673690146	0.0	Richness (a=0)
 Oral_7	Oral	7	1.0	12.918580735656237	1.0	Shannon (a=1)
 Oral_7	Oral	7	2.0	12.074133154614398	2.0	Simpson (a=2)
@@ -15,6 +7,14 @@ Oral_7	Oral	7	8.0	11.213641969917916	4.0	8
 Oral_7	Oral	7	16.0	10.821530448608037	5.0	16
 Oral_7	Oral	7	32.0	10.585687336534274	6.0	32
 Oral_7	Oral	7	inf	10.33010996443206	7.0	Berger–Parker (a=inf)
+High_Complexity_RH002	High_Complexity	2	0.0	18.337164541724032	0.0	Richness (a=0)
+High_Complexity_RH002	High_Complexity	2	1.0	17.92331956592776	1.0	Shannon (a=1)
+High_Complexity_RH002	High_Complexity	2	2.0	17.485025329091513	2.0	Simpson (a=2)
+High_Complexity_RH002	High_Complexity	2	4.0	16.5801377933782	3.0	4
+High_Complexity_RH002	High_Complexity	2	8.0	15.27310994962915	4.0	8
+High_Complexity_RH002	High_Complexity	2	16.0	14.471875997861602	5.0	16
+High_Complexity_RH002	High_Complexity	2	32.0	14.072476785536931	6.0	32
+High_Complexity_RH002	High_Complexity	2	inf	13.66638414657104	7.0	Berger–Parker (a=inf)
 Oral_19	Oral	19	0.0	15.071001390759177	0.0	Richness (a=0)
 Oral_19	Oral	19	1.0	13.619878530634447	1.0	Shannon (a=1)
 Oral_19	Oral	19	2.0	12.332210451367503	2.0	Simpson (a=2)
@@ -135,6 +135,14 @@ Skin_15	Skin	15	8.0	12.679311215950289	4.0	8
 Skin_15	Skin	15	16.0	12.002096773873914	5.0	16
 Skin_15	Skin	15	32.0	11.631078515883534	6.0	32
 Skin_15	Skin	15	inf	11.268217065752001	7.0	Berger–Parker (a=inf)
+High_Complexity_RH003	High_Complexity	3	0.0	18.337151472157068	0.0	Richness (a=0)
+High_Complexity_RH003	High_Complexity	3	1.0	18.046415180581587	1.0	Shannon (a=1)
+High_Complexity_RH003	High_Complexity	3	2.0	17.705358801712716	2.0	Simpson (a=2)
+High_Complexity_RH003	High_Complexity	3	4.0	16.79715683461779	3.0	4
+High_Complexity_RH003	High_Complexity	3	8.0	15.163567266442957	4.0	8
+High_Complexity_RH003	High_Complexity	3	16.0	14.258518681658112	5.0	16
+High_Complexity_RH003	High_Complexity	3	32.0	13.833527941692955	6.0	32
+High_Complexity_RH003	High_Complexity	3	inf	13.424128510896184	7.0	Berger–Parker (a=inf)
 Skin_18	Skin	18	0.0	13.81658370778757	0.0	Richness (a=0)
 Skin_18	Skin	18	1.0	12.549234634551889	1.0	Shannon (a=1)
 Skin_18	Skin	18	2.0	11.483814792846545	2.0	Simpson (a=2)
@@ -143,6 +151,14 @@ Skin_18	Skin	18	8.0	10.375599666006611	4.0	8
 Skin_18	Skin	18	16.0	10.233444285969941	5.0	16
 Skin_18	Skin	18	32.0	10.117171198940381	6.0	32
 Skin_18	Skin	18	inf	9.816224911476537	7.0	Berger–Parker (a=inf)
+High_Complexity_RH004	High_Complexity	4	0.0	18.337177611172603	0.0	Richness (a=0)
+High_Complexity_RH004	High_Complexity	4	1.0	18.032624721029645	1.0	Shannon (a=1)
+High_Complexity_RH004	High_Complexity	4	2.0	17.673647739377063	2.0	Simpson (a=2)
+High_Complexity_RH004	High_Complexity	4	4.0	16.62174945087022	3.0	4
+High_Complexity_RH004	High_Complexity	4	8.0	14.52002666190871	4.0	8
+High_Complexity_RH004	High_Complexity	4	16.0	13.552734372539653	5.0	16
+High_Complexity_RH004	High_Complexity	4	32.0	13.115549824389369	6.0	32
+High_Complexity_RH004	High_Complexity	4	inf	12.705688892377827	7.0	Berger–Parker (a=inf)
 Skin_1	Skin	1	0.0	15.155845979401207	0.0	Richness (a=0)
 Skin_1	Skin	1	1.0	13.9784480607542	1.0	Shannon (a=1)
 Skin_1	Skin	1	2.0	13.23235209240734	2.0	Simpson (a=2)
@@ -215,14 +231,6 @@ Airways_27	Airways	27	8.0	13.410843075236002	4.0	8
 Airways_27	Airways	27	16.0	13.116407541985481	5.0	16
 Airways_27	Airways	27	32.0	12.931393970359965	6.0	32
 Airways_27	Airways	27	inf	12.562590117911597	7.0	Berger–Parker (a=inf)
-Medium_Complexity	Medium_Complexity	0	0.0	16.03857610276879	0.0	Richness (a=0)
-Medium_Complexity	Medium_Complexity	0	1.0	15.0198056694585	1.0	Shannon (a=1)
-Medium_Complexity	Medium_Complexity	0	2.0	14.220337780146739	2.0	Simpson (a=2)
-Medium_Complexity	Medium_Complexity	0	4.0	12.586890976230963	3.0	4
-Medium_Complexity	Medium_Complexity	0	8.0	10.856702977129089	4.0	8
-Medium_Complexity	Medium_Complexity	0	16.0	10.132944606642628	5.0	16
-Medium_Complexity	Medium_Complexity	0	32.0	9.806075425992002	6.0	32
-Medium_Complexity	Medium_Complexity	0	inf	9.499635568929753	7.0	Berger–Parker (a=inf)
 Oral_8	Oral	8	0.0	14.844999921827757	0.0	Richness (a=0)
 Oral_8	Oral	8	1.0	13.372363277489049	1.0	Shannon (a=1)
 Oral_8	Oral	8	2.0	12.278861452334171	2.0	Simpson (a=2)
@@ -327,6 +335,14 @@ Airways_11	Airways	11	8.0	12.49586104772041	4.0	8
 Airways_11	Airways	11	16.0	11.954898720199854	5.0	16
 Airways_11	Airways	11	32.0	11.64831520354991	6.0	32
 Airways_11	Airways	11	inf	11.324883316324035	7.0	Berger–Parker (a=inf)
+High_Complexity_RH001	High_Complexity	1	0.0	18.337138402471698	0.0	Richness (a=0)
+High_Complexity_RH001	High_Complexity	1	1.0	17.707030465077906	1.0	Shannon (a=1)
+High_Complexity_RH001	High_Complexity	1	2.0	17.094657109939448	2.0	Simpson (a=2)
+High_Complexity_RH001	High_Complexity	1	4.0	16.02455980133773	3.0	4
+High_Complexity_RH001	High_Complexity	1	8.0	14.517574814316722	4.0	8
+High_Complexity_RH001	High_Complexity	1	16.0	13.681521306602292	5.0	16
+High_Complexity_RH001	High_Complexity	1	32.0	13.276862776398664	6.0	32
+High_Complexity_RH001	High_Complexity	1	inf	12.873005801666737	7.0	Berger–Parker (a=inf)
 Urogenital_2	Urogenital	2	0.0	13.638549044360332	0.0	Richness (a=0)
 Urogenital_2	Urogenital	2	1.0	12.531724410959876	1.0	Shannon (a=1)
 Urogenital_2	Urogenital	2	2.0	11.510978671753664	2.0	Simpson (a=2)
@@ -375,14 +391,14 @@ Airways_26	Airways	26	8.0	11.434700078621225	4.0	8
 Airways_26	Airways	26	16.0	11.24330562836305	5.0	16
 Airways_26	Airways	26	32.0	11.141156513730445	6.0	32
 Airways_26	Airways	26	inf	10.86923810357554	7.0	Berger–Parker (a=inf)
-Low_Complexity	Low_Complexity	0	0.0	14.197677446307418	0.0	Richness (a=0)
-Low_Complexity	Low_Complexity	0	1.0	13.13541473146493	1.0	Shannon (a=1)
-Low_Complexity	Low_Complexity	0	2.0	12.256596571782763	2.0	Simpson (a=2)
-Low_Complexity	Low_Complexity	0	4.0	10.030176023704843	3.0	4
-Low_Complexity	Low_Complexity	0	8.0	8.60955168982916	4.0	8
-Low_Complexity	Low_Complexity	0	16.0	8.0355820500464	5.0	16
-Low_Complexity	Low_Complexity	0	32.0	7.7763697258513576	6.0	32
-Low_Complexity	Low_Complexity	0	inf	7.533358171918503	7.0	Berger–Parker (a=inf)
+High_Complexity_RH005	High_Complexity	5	0.0	18.337177611172603	0.0	Richness (a=0)
+High_Complexity_RH005	High_Complexity	5	1.0	18.083505175981347	1.0	Shannon (a=1)
+High_Complexity_RH005	High_Complexity	5	2.0	17.782824070143157	2.0	Simpson (a=2)
+High_Complexity_RH005	High_Complexity	5	4.0	16.959439761509113	3.0	4
+High_Complexity_RH005	High_Complexity	5	8.0	15.437382716017073	4.0	8
+High_Complexity_RH005	High_Complexity	5	16.0	14.471793159736514	5.0	16
+High_Complexity_RH005	High_Complexity	5	32.0	14.012909101368155	6.0	32
+High_Complexity_RH005	High_Complexity	5	inf	13.575383309262934	7.0	Berger–Parker (a=inf)
 Gastrointestinal_2	Gastrointestinal	2	0.0	14.529613563728953	0.0	Richness (a=0)
 Gastrointestinal_2	Gastrointestinal	2	1.0	13.881093390328774	1.0	Shannon (a=1)
 Gastrointestinal_2	Gastrointestinal	2	2.0	13.359878003865685	2.0	Simpson (a=2)

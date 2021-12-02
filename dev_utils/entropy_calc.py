@@ -21,13 +21,16 @@ def calc_ref_entropy(sample_list, ref_dir, rerun_ref):
         entropy_list = []
         for samp_file in sample_list:
             samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-            if 'entropy' not in samp_id and 'table' not in samp_id:
+            print(samp_id)
+            if (('entropy' not in samp_id) and ('table' not in samp_id)
+                    and ('cluster' not in samp_id)
+            ):
                 if samp_id.rsplit('_', 1)[1][0].isdigit():
                     samp_label = samp_id.rsplit('_', 1)[0]
                     samp_rep = samp_id.rsplit('_', 1)[1]
                 else:
-                    samp_label = samp_id
-                    samp_rep = 0
+                    samp_label = samp_id.rsplit('_', 1)[0]
+                    samp_rep = samp_id.rsplit('_', 1)[1][-1]
                 cov_df = pd.read_csv(samp_file, sep='\t', header=0)
                 cov_df['hash_id'] = [hashlib.sha256(x.encode(encoding='utf-8')).hexdigest()
                                      for x in cov_df['contigName']
@@ -213,12 +216,12 @@ def remove_outliers(ent_best_df, real_merge_df):
                  ]
     best_merge_df = pd.concat([ent_best_df[keep_cols], real_merge_df[keep_cols]])
     samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
-    best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
-                                zip(best_merge_df['best_match'], best_merge_df['cluster'])
-                                ]
-    best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
-                                zip(best_merge_df['best_match'], best_merge_df['cluster'])
-                                ]
+    if -1 in best_merge_df['cluster'].values:
+        while -1 in best_merge_df['cluster'].values:
+            best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
+                                        zip(best_merge_df['best_match'], best_merge_df['cluster'])
+                                        ]
+            samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
 
     return best_merge_df
 
@@ -281,8 +284,8 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
     sns.set(rc={'figure.figsize': (12, 8)})
     sns.set_style("white")
     mark_list = ['.', 'v', '^', '<', '>', '8', 's', 'p', 'P', '*', 'H', 'X', 'D', 'd', 'o']
-    ent_umap_df['0_jit'] = jitter(ent_umap_df['u0'], 2)
-    ent_umap_df['1_jit'] = jitter(ent_umap_df['u1'], 2)
+    ent_umap_df['0_jit'] = jitter(ent_umap_df['u0'], 3)
+    ent_umap_df['1_jit'] = jitter(ent_umap_df['u1'], 3)
     ent_dup_df = ent_umap_df.drop_duplicates(subset=['sample_id'])
     b = sns.scatterplot(x='0_jit', y='1_jit', hue="sample_type", style='cluster',
                         data=ent_dup_df, palette=cpal, markers=mark_list, s=200
@@ -317,8 +320,8 @@ def jitter(values, j):
 
 
 def calc_entropy(working_dir, mba_cov_list):
-    rerun_ref = False  # to re-calc reference profiles, set to True
-    make_plots = False  # if you want plots, set to True
+    rerun_ref = True  # to re-calc reference profiles, set to True
+    make_plots = True  # if you want plots, set to True
 
     # Calculate entropy for all references
     ref_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -366,4 +369,4 @@ working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                            'renyi_entropy/SI/'
                            )
 mba_cov_list = glob.glob(os.path.join(working_dir, "SI*.tsv"))
-best_params_df = calc_entropy(working_dir, [mba_cov_list[0]])
+best_params_df = calc_entropy(working_dir, mba_cov_list)

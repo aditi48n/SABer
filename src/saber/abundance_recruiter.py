@@ -69,6 +69,10 @@ def runMiniMap2(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
         pe_basename = basename(pe1)
         pe_id = pe_basename.split('.')[0]
         mg_sam_out = o_join(abr_path, pe_id + '.sam')
+        try:  # if file exists but is empty
+            sam_size = getsize(mg_sam_out)
+        except:  # if file doesn't exist
+            sam_size = -1
         if len(raw_file_list) == 2:
             logging.info('Raw reads in FWD and REV file...\n')
             pe2 = raw_file_list[1]
@@ -81,9 +85,8 @@ def runMiniMap2(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
                        o_join(subcontig_path, mg_id + '.subcontigs.fasta'), pe1
                        ]
 
-        if isfile(mg_sam_out) == False:
+        if sam_size <= 0:
             logging.info('Running minimap2-sr on %s\n' % pe_id)
-            logging.info(mem_cmd)
             with open(mg_sam_out, 'w') as sam_file:
                 with open(o_join(abr_path, pe_id + '.stderr.txt'), 'w') as stderr_file:
                     with open(o_join(abr_path, pe_id + '.stdout.txt'), 'w') as stdout_file:

@@ -83,6 +83,7 @@ def runMiniMap2(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
 
         if isfile(mg_sam_out) == False:
             logging.info('Running minimap2-sr on %s\n' % pe_id)
+            logging.info(mem_cmd)
             with open(mg_sam_out, 'w') as sam_file:
                 with open(o_join(abr_path, pe_id + '.stderr.txt'), 'w') as stderr_file:
                     with open(o_join(abr_path, pe_id + '.stdout.txt'), 'w') as stdout_file:

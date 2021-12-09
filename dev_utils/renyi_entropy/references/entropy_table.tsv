@@ -1,4 +1,12 @@
 sample_id	sample_type	sample_rep	alpha	Renyi_Entropy	alpha_int	x_labels
+Medium_Complexity_S001	Medium_Complexity	1	0.0	16.035293128201676	0.0	Richness (a=0)
+Medium_Complexity_S001	Medium_Complexity	1	1.0	14.601205475415998	1.0	Shannon (a=1)
+Medium_Complexity_S001	Medium_Complexity	1	2.0	13.704883364122956	2.0	Simpson (a=2)
+Medium_Complexity_S001	Medium_Complexity	1	4.0	12.875797249440035	3.0	4
+Medium_Complexity_S001	Medium_Complexity	1	8.0	12.051045824822888	4.0	8
+Medium_Complexity_S001	Medium_Complexity	1	16.0	11.40553076200979	5.0	16
+Medium_Complexity_S001	Medium_Complexity	1	32.0	11.051707365659796	6.0	32
+Medium_Complexity_S001	Medium_Complexity	1	inf	10.706538551971313	7.0	Berger–Parker (a=inf)
 Oral_7	Oral	7	0.0	14.47503673690146	0.0	Richness (a=0)
 Oral_7	Oral	7	1.0	12.918580735656237	1.0	Shannon (a=1)
 Oral_7	Oral	7	2.0	12.074133154614398	2.0	Simpson (a=2)
@@ -23,6 +31,14 @@ Oral_19	Oral	19	8.0	11.054514389574152	4.0	8
 Oral_19	Oral	19	16.0	10.620008165849445	5.0	16
 Oral_19	Oral	19	32.0	10.386818066817028	6.0	32
 Oral_19	Oral	19	inf	10.146782277251148	7.0	Berger–Parker (a=inf)
+Low_Complexity_0	Low_Complexity	0	0.0	14.197677446307418	0.0	Richness (a=0)
+Low_Complexity_0	Low_Complexity	0	1.0	13.13541473146493	1.0	Shannon (a=1)
+Low_Complexity_0	Low_Complexity	0	2.0	12.256596571782763	2.0	Simpson (a=2)
+Low_Complexity_0	Low_Complexity	0	4.0	10.030176023704843	3.0	4
+Low_Complexity_0	Low_Complexity	0	8.0	8.60955168982916	4.0	8
+Low_Complexity_0	Low_Complexity	0	16.0	8.0355820500464	5.0	16
+Low_Complexity_0	Low_Complexity	0	32.0	7.7763697258513576	6.0	32
+Low_Complexity_0	Low_Complexity	0	inf	7.533358171918503	7.0	Berger–Parker (a=inf)
 Urogenital_6	Urogenital	6	0.0	12.658211482751796	0.0	Richness (a=0)
 Urogenital_6	Urogenital	6	1.0	11.923443809577577	1.0	Shannon (a=1)
 Urogenital_6	Urogenital	6	2.0	11.637287758232645	2.0	Simpson (a=2)
@@ -383,6 +399,14 @@ Skin_17	Skin	17	8.0	12.51494704823352	4.0	8
 Skin_17	Skin	17	16.0	11.804590043140534	5.0	16
 Skin_17	Skin	17	32.0	11.439274804139778	6.0	32
 Skin_17	Skin	17	inf	11.083214067903993	7.0	Berger–Parker (a=inf)
+Medium_Complexity_S002	Medium_Complexity	2	0.0	16.03761129727522	0.0	Richness (a=0)
+Medium_Complexity_S002	Medium_Complexity	2	1.0	14.35975133190937	1.0	Shannon (a=1)
+Medium_Complexity_S002	Medium_Complexity	2	2.0	13.21305894763294	2.0	Simpson (a=2)
+Medium_Complexity_S002	Medium_Complexity	2	4.0	11.324742704786889	3.0	4
+Medium_Complexity_S002	Medium_Complexity	2	8.0	9.745411387154798	4.0	8
+Medium_Complexity_S002	Medium_Complexity	2	16.0	9.095729152072723	5.0	16
+Medium_Complexity_S002	Medium_Complexity	2	32.0	8.802318534436273	6.0	32
+Medium_Complexity_S002	Medium_Complexity	2	inf	8.52724608023514	7.0	Berger–Parker (a=inf)
 Airways_26	Airways	26	0.0	14.688687423222536	0.0	Richness (a=0)
 Airways_26	Airways	26	1.0	13.801493077975508	1.0	Shannon (a=1)
 Airways_26	Airways	26	2.0	12.810279941088007	2.0	Simpson (a=2)

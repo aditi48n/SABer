@@ -1,6 +1,7 @@
 import glob
 import hashlib
 import os
+from math import dist
 
 import dit
 import hdbscan
@@ -121,11 +122,11 @@ def find_best_match(piv_df, ent_umap_df):
     for r1, row1 in piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
-            diff = ((row1 - row2).abs()).sum()
-            if diff < keep_diff[2] and r1 != r2 and r2 not in outlier_list:
-                keep_diff = [r1, r2, diff]
+            euc_d = dist(row1, row2)
+            if euc_d < keep_diff[2] and r1 != r2 and r2 not in outlier_list:
+                keep_diff = [r1, r2, euc_d]
         cmpr_list.append(keep_diff)
-    cmpr_df = pd.DataFrame(cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+    cmpr_df = pd.DataFrame(cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     ent_best_df = ent_umap_df.merge(cmpr_df, on='sample_id', how='left')
 
     return ent_best_df
@@ -137,11 +138,11 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
-            diff = ((row1 - row2).abs()).sum()
-            if diff < keep_diff[2] and r1 != r2:
-                keep_diff = [r1, r2, diff]
+            euc_d = dist(row1, row2)
+            if euc_d < keep_diff[2] and r1 != r2:
+                keep_diff = [r1, r2, euc_d]
         r_cmpr_list.append(keep_diff)
-    r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+    r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     best_df = real_umap_df.merge(r_cmpr_df, on='sample_id', how='left')
     best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', index=False)
     return best_df
@@ -212,7 +213,7 @@ def calc_real_entrophy(mba_cov_list, working_dir):
 def remove_outliers(ent_best_df, real_merge_df):
     # If labeled as an outlier, take the closest match
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
-                 'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'diff'
+                 'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'euc_d'
                  ]
     best_merge_df = pd.concat([ent_best_df[keep_cols], real_merge_df[keep_cols]])
     samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
@@ -320,7 +321,7 @@ def jitter(values, j):
 
 
 def calc_entropy(working_dir, mba_cov_list):
-    rerun_ref = True  # to re-calc reference profiles, set to True
+    rerun_ref = False  # to re-calc reference profiles, set to True
     make_plots = True  # if you want plots, set to True
 
     # Calculate entropy for all references

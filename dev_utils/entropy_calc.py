@@ -1,7 +1,6 @@
 import glob
 import hashlib
 import os
-from math import dist
 
 import dit
 import hdbscan
@@ -13,6 +12,7 @@ import umap
 from dit.other import renyi_entropy
 from scipy import sparse
 from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.preprocessing import StandardScaler
 
 
 def calc_ref_entropy(sample_list, ref_dir, rerun_ref):
@@ -88,12 +88,17 @@ def entropy_cluster(working_dir, ent_df):
     cluster_table = os.path.join(working_dir, 'cluster_table.tsv')
     samp2type = {x: y for x, y in zip(ent_df['sample_id'], ent_df['sample_type'])}
     piv_df = ent_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
+    scaler = StandardScaler()
+    scale_fit = scaler.fit(piv_df)
+    scale_emb = scale_fit.transform(piv_df)
+    scale_df = pd.DataFrame(scale_emb, index=piv_df.index.values,
+                            columns=piv_df.columns
+                            )
     umap_fit = umap.UMAP(n_neighbors=2, min_dist=0.0, n_components=2,
                          random_state=42
-                         ).fit(piv_df)
-    umap_emb = umap_fit.transform(piv_df)
-    umap_df = pd.DataFrame(umap_emb, index=piv_df.index.values, columns=['u0', 'u1'])
-
+                         ).fit(scale_df)
+    umap_emb = umap_fit.transform(scale_df)
+    umap_df = pd.DataFrame(umap_emb, index=scale_df.index.values, columns=['u0', 'u1'])
     clusterer = hdbscan.HDBSCAN(min_cluster_size=2, allow_single_cluster=False,
                                 prediction_data=True
                                 ).fit(umap_df)
@@ -112,7 +117,7 @@ def entropy_cluster(working_dir, ent_df):
     ent_best_df = find_best_match(piv_df, ent_umap_df)
     ent_best_df.to_csv(cluster_table, sep='\t', index=False)
 
-    return umap_df, ent_best_df, piv_df, umap_fit, clusterer
+    return umap_df, ent_best_df, piv_df, umap_fit, clusterer, scale_fit
 
 
 def find_best_match(piv_df, ent_umap_df):
@@ -122,7 +127,7 @@ def find_best_match(piv_df, ent_umap_df):
     for r1, row1 in piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
-            euc_d = dist(row1, row2)
+            euc_d = np.linalg.norm(row1 - row2)
             if euc_d < keep_diff[2] and r1 != r2 and r2 not in outlier_list:
                 keep_diff = [r1, r2, euc_d]
         cmpr_list.append(keep_diff)
@@ -138,7 +143,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
-            euc_d = dist(row1, row2)
+            euc_d = np.linalg.norm(row1 - row2)
             if euc_d < keep_diff[2] and r1 != r2:
                 keep_diff = [r1, r2, euc_d]
         r_cmpr_list.append(keep_diff)
@@ -148,11 +153,13 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     return best_df
 
 
-def real_cluster(clusterer, real_df, umap_fit):
+def real_cluster(clusterer, real_df, umap_fit, scale_fit):
     # Assign real data to clusters
     real_piv_df = real_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
-    umap_emb = umap_fit.transform(real_piv_df)
-    umap_df = pd.DataFrame(umap_emb, index=real_piv_df.index.values, columns=['u0', 'u1'])
+    scale_emb = scale_fit.transform(real_piv_df)
+    scale_df = pd.DataFrame(scale_emb, index=real_piv_df.index.values, columns=real_piv_df.columns)
+    umap_emb = umap_fit.transform(scale_df)
+    umap_df = pd.DataFrame(umap_emb, index=scale_df.index.values, columns=['u0', 'u1'])
     test_labels, strengths = hdbscan.approximate_predict(clusterer, umap_df)
     cluster_labels = test_labels
     cluster_probs = strengths
@@ -210,21 +217,57 @@ def calc_real_entrophy(mba_cov_list, working_dir):
     return real_df
 
 
-def remove_outliers(ent_best_df, real_merge_df):
+def remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit):
     # If labeled as an outlier, take the closest match
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
                  'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'euc_d'
                  ]
-    best_merge_df = pd.concat([ent_best_df[keep_cols], real_merge_df[keep_cols]])
-    samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
-    if -1 in best_merge_df['cluster'].values:
-        while -1 in best_merge_df['cluster'].values:
-            best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
-                                        zip(best_merge_df['best_match'], best_merge_df['cluster'])
-                                        ]
-            samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
+    best_merge_df = pd.concat([ent_best_df[keep_cols],
+                               real_merge_df[keep_cols]]
+                              )
+    # Calculate centroids for cluster
+    real_id_list = real_merge_df['sample_id']
+    cent_merge_df = calc_centroid(best_merge_df,
+                                  best_merge_df[['sample_id', 'alpha',
+                                                 'Renyi_Entropy',
+                                                 'cluster']],
+                                  real_id_list, umap_fit, scale_fit
+                                  )
 
-    return best_merge_df
+    return cent_merge_df
+
+
+def calc_centroid(best_df, ren_df, real_ids, umap_fit, scale_fit):
+    ren_piv_df = ren_df.pivot(index=['sample_id', 'cluster'], columns='alpha', values='Renyi_Entropy').reset_index()
+    sample_ren_df = ren_piv_df.query('cluster == -1').drop(['cluster'], axis=1)
+    sample_ren_df.set_index('sample_id', inplace=True)
+    samp_scale_emb = scale_fit.transform(sample_ren_df)
+    samp_scale_df = pd.DataFrame(samp_scale_emb, index=sample_ren_df.index.values, columns=sample_ren_df.columns)
+    sample_ren_emb = umap_fit.transform(samp_scale_df)
+    sample_umap_df = pd.DataFrame(sample_ren_emb, index=samp_scale_df.index.values, columns=['u0', 'u1'])
+    cluster_ren_df = ren_piv_df.query('cluster != -1 and sample_id not in @real_ids'
+                                      ).drop(['sample_id'], axis=1)
+    cluster_ren_df.set_index('cluster', inplace=True)
+    clust_scale_emb = scale_fit.transform(cluster_ren_df)
+    clust_scale_df = pd.DataFrame(clust_scale_emb, index=cluster_ren_df.index.values, columns=cluster_ren_df.columns)
+    cluster_ren_emb = umap_fit.transform(clust_scale_df)
+    cluster_umap_df = pd.DataFrame(cluster_ren_emb, index=clust_scale_df.index.values, columns=['u0', 'u1'])
+    median_df = cluster_umap_df.groupby(by=cluster_umap_df.index).median()
+    out_dict = {}
+    for r1, row1 in sample_umap_df.iterrows():
+        keep_diff = [r1, '', np.inf]
+        for r2, row2 in median_df.iterrows():
+            euc_d = np.linalg.norm(row1 - row2)
+            if euc_d < keep_diff[2] and r1 != r2:
+                keep_diff = [r1, r2, euc_d]
+        out_dict[r1] = keep_diff
+    best_df['best_cluster'] = [out_dict[x][1] if x in
+                                                 out_dict.keys() else y for x, y
+                               in zip(best_df['sample_id'],
+                                      best_df['cluster']
+                                      )]
+
+    return best_df
 
 
 def plot_renyi_entropy(working_dir, ent_df, real_type):
@@ -285,11 +328,12 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
     sns.set(rc={'figure.figsize': (12, 8)})
     sns.set_style("white")
     mark_list = ['.', 'v', '^', '<', '>', '8', 's', 'p', 'P', '*', 'H', 'X', 'D', 'd', 'o']
-    ent_umap_df['0_jit'] = jitter(ent_umap_df['u0'], 3)
-    ent_umap_df['1_jit'] = jitter(ent_umap_df['u1'], 3)
+    ent_umap_df['0_jit'] = jitter(ent_umap_df['u0'], 0)
+    ent_umap_df['1_jit'] = jitter(ent_umap_df['u1'], 0)
     ent_dup_df = ent_umap_df.drop_duplicates(subset=['sample_id'])
-    b = sns.scatterplot(x='0_jit', y='1_jit', hue="sample_type", style='cluster',
-                        data=ent_dup_df, palette=cpal, markers=mark_list, s=200
+    b = sns.scatterplot(x='0_jit', y='1_jit', hue="sample_type", style='best_cluster',
+                        data=ent_dup_df, palette=cpal,
+                        markers=mark_list[:len(ent_dup_df['best_cluster'].unique())], s=200
                         )
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     fig = b.get_figure()
@@ -300,7 +344,7 @@ def plot_ent_clust(working_dir, ent_umap_df, cpal):
     sns.set(rc={'figure.figsize': (12, 8)})
     sns.set_style("white")
     p = sns.catplot(x="x_labels", y="Renyi_Entropy", hue="sample_type",
-                    col="cluster", data=ent_umap_df, col_wrap=4, palette=cpal,
+                    col="best_cluster", data=ent_umap_df, col_wrap=4, palette=cpal,
                     legend=False
                     )
     p.map_dataframe(sns.boxplot, x="x_labels", y="Renyi_Entropy",
@@ -336,15 +380,16 @@ def calc_entropy(working_dir, mba_cov_list):
     piv_df = ent_results[2]
     umap_fit = ent_results[3]
     clusterer = ent_results[4]
+    scale_fit = ent_results[5]
 
     # Cluster real samples
     real_df = calc_real_entrophy(mba_cov_list, working_dir)
-    real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit)
+    real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit, scale_fit)
     real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
     real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
 
     # Replace outliers with best match
-    best_merge_df = remove_outliers(ent_best_df, real_merge_df)
+    best_merge_df = remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit)
 
     # Build plots
     real_type = real_df['sample_type'].values[0]

@@ -384,7 +384,7 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
         if v is not None:
             if 'clust' in k or 'samp' in k:
                 autoopt_params[k] = int(v)
-            elif v == 'scale':
+            elif v == 'scale' or 'setting' in k:
                 autoopt_params[k] = v
             else:
                 autoopt_params[k] = float(v)

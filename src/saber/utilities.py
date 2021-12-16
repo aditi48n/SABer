@@ -372,6 +372,8 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
                      ):
     logging.info('Running AutoOpt to find optimal hyperparameters\n')
     clust_match_df = calc_entropy(working_dir, [abund_file])
+    print(vr, r, s, vs)
+    sys.exit()
     autoopt_params = run_param_match(working_dir, a, vr, r, s, vs)  # TODO: draw from dev_utils/param_matching.py
 
     params_tmp_dict = {'d_min_clust': denovo_min_clust, 'd_min_samp': denovo_min_samp,

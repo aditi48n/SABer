@@ -376,7 +376,7 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
 
     params_tmp_dict = {'d_min_clust': denovo_min_clust, 'd_min_samp': denovo_min_samp,
                        'a_min_clust': anchor_min_clust, 'a_min_samp': anchor_min_samp,
-                       'nu': nu, 'gamma': gamma
+                       'nu': nu, 'gamma': gamma, 'setting': 'Default'
                        }
     for k in params_tmp_dict.keys():
         v = params_tmp_dict[k]
@@ -390,6 +390,7 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
                 autoopt_params[k] = float(v)
 
     logging.info('AutoOpt method: ' + str(a) + '\n')
+    logging.info('Parameter set: ' + autoopt_params['setting'] + '\n')
     logging.info('\tDe Novo min_cluster_size: ' + str(autoopt_params['d_min_clust']) + '\n')
     logging.info('\tDe Novo min_samples: ' + str(autoopt_params['d_min_samp']) + '\n')
     logging.info('\tAnchored min_cluster_size: ' + str(autoopt_params['a_min_clust']) + '\n')
@@ -800,6 +801,7 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
         ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
                               "& mq_nc == 'mq' & level == 'strain'"
                               )
+        setting = 'Very Relaxed'
     elif r:
         d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
                                 "& mq_nc == 'mq' & level == 'exact'"
@@ -810,6 +812,8 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
         ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
                               "& mq_nc == 'mq' & level == 'exact'"
                               )
+        setting = 'Relaxed'
+
     elif s:
         d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
                                 "& mq_nc == 'nc' & level == 'strain'"
@@ -820,6 +824,8 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
         ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
                               "& mq_nc == 'nc' & level == 'strain'"
                               )
+        setting = 'Strict'
+
     elif vs:
         d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
                                 "& mq_nc == 'nc' & level == 'exact'"
@@ -830,6 +836,8 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
         ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
                               "& mq_nc == 'nc' & level == 'exact'"
                               )
+        setting = 'Very Strict'
+
     else:  # else use strict settings
         d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
                                 "& mq_nc == 'nc' & level == 'strain'"
@@ -840,6 +848,7 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
         ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
                               "& mq_nc == 'nc' & level == 'strain'"
                               )
+        setting = 'Strict'
 
     opt_d_min_clust = int(d_hdb_df['cv_val1'].values[0])
     opt_d_min_samp = int(d_hdb_df['cv_val2'].values[0])
@@ -853,6 +862,6 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
 
     params_dict = {'d_min_clust': opt_d_min_clust, 'd_min_samp': opt_d_min_samp,
                    'a_min_clust': opt_a_min_clust, 'a_min_samp': opt_a_min_samp,
-                   'nu': opt_nu, 'gamma': opt_gamma
+                   'nu': opt_nu, 'gamma': opt_gamma, 'setting': setting
                    }
     return params_dict

@@ -376,21 +376,6 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
     sys.exit()
     autoopt_params = run_param_match(working_dir, a, vr, r, s, vs)  # TODO: draw from dev_utils/param_matching.py
 
-    params_tmp_dict = {'d_min_clust': denovo_min_clust, 'd_min_samp': denovo_min_samp,
-                       'a_min_clust': anchor_min_clust, 'a_min_samp': anchor_min_samp,
-                       'nu': nu, 'gamma': gamma, 'setting': 'Default'
-                       }
-    for k in params_tmp_dict.keys():
-        v = params_tmp_dict[k]
-        auto_v = autoopt_params[k]
-        if v is not None:
-            if 'clust' in k or 'samp' in k:
-                autoopt_params[k] = int(v)
-            elif v == 'scale' or 'setting' in k:
-                autoopt_params[k] = v
-            else:
-                autoopt_params[k] = float(v)
-
     logging.info('AutoOpt method: ' + str(a) + '\n')
     logging.info('Parameter set: ' + autoopt_params['setting'] + '\n')
     logging.info('\tDe Novo min_cluster_size: ' + str(autoopt_params['d_min_clust']) + '\n')
@@ -850,7 +835,7 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
         ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
                               "& mq_nc == 'nc' & level == 'strain'"
                               )
-        setting = 'Strict'
+        setting = 'Default (strict)'
 
     opt_d_min_clust = int(d_hdb_df['cv_val1'].values[0])
     opt_d_min_samp = int(d_hdb_df['cv_val2'].values[0])

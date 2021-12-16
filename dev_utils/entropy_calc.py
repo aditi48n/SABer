@@ -365,7 +365,7 @@ def jitter(values, j):
 
 
 def calc_entropy(working_dir, mba_cov_list):
-    rerun_ref = False  # to re-calc reference profiles, set to True
+    rerun_ref = True  # to re-calc reference profiles, set to True
     make_plots = True  # if you want plots, set to True
 
     # Calculate entropy for all references

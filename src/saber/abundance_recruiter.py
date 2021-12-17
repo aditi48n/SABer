@@ -93,9 +93,9 @@ def runMiniMap2(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
                         run_mem = Popen(mem_cmd, stdout=stdout_file, stderr=stderr_file)
                         run_mem.communicate()
         else:
-            print('SAM file already exists, skipping alignment...')
+            logging.info('SAM file already exists, skipping alignment...')
     else:
-        print('Raw FASTQ file(s) are not where you said they were...')
+        logging.info('Raw FASTQ file(s) are not where you said they were...')
         sys.exit()  # TODO: replace this quick-fix with a real exception
 
     return pe_id, mg_sam_out

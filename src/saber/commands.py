@@ -1,6 +1,7 @@
 __author__ = 'Ryan J McLaughlin'
 
 import logging
+import os
 
 from pip._internal.operations import freeze
 
@@ -60,7 +61,6 @@ def recruit(sys_args):
     parser.add_recruit_args()
     args = parser.parse_args(sys_args)
 
-    s_log.prep_logging("SABer_log.txt", args.verbose)
     recruit_s = s_class.SABerBase("recruit")
     recruit_s.trust_path = args.trust_path
     recruit_s.mg_file = args.mg_file
@@ -77,8 +77,9 @@ def recruit(sys_args):
     recruit_s.vr, recruit_s.r = args.vr_params, args.r_params
     recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
     recruit_s.a = args.auto_params
-    # Build save dir structure
+    # Build save dir structure and start logging file
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
+    s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
 
     # TODO: should check for prebuilt files before anything else to avoid rebuilding things
     # TODO: think about setting a default upper and lower bp size for bins to filter bad ones

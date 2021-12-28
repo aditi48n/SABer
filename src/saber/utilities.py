@@ -789,7 +789,7 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
     print(best_match_df.head)
     print(best_match_df.shape)
     print(best_cluster_df.head)
-    print(best_match_df.shape)
+    print(best_cluster_df.shape)
     print(majority_rule_df.head)
     print(majority_rule_df.shape)
     sys.exit()

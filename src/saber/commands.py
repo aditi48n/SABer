@@ -82,7 +82,6 @@ def recruit(sys_args):
     for m in mode_list:  # TODO: this needs to break if more than one mode is selected
         if m:
             recruit_s.mode = m
-    print(recruit_s.mode)
     # Build save dir structure and start logging file
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a, recruit_s.mode)
     s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
@@ -94,7 +93,7 @@ def recruit(sys_args):
     mg_file = tuple([recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0],
                      recruit_s.mg_file])  # TODO: needs to support multiple MetaGs
     mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
-                                           save_dirs_dict['tmp'],
+                                           recruit_s.save_path,
                                            recruit_s.max_contig_len,
                                            recruit_s.overlap_len
                                            )
@@ -106,8 +105,8 @@ def recruit(sys_args):
             recruit_s.trust_path)  # TODO: needs to support a single multi-FASTA and multiple FASTAs
         trust_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in tc_list])
         # Run MinHash recruiting algorithm
-        minhash_df_dict = mhr.run_minhash_recruiter(save_dirs_dict['tmp'],  # TODO: expose some params for users
-                                                    save_dirs_dict['tmp'],
+        minhash_df_dict = mhr.run_minhash_recruiter(recruit_s.save_path,  # TODO: expose some params for users
+                                                    recruit_s.save_path,
                                                     trust_files, mg_file,
                                                     recruit_s.nthreads
                                                     )
@@ -115,13 +114,13 @@ def recruit(sys_args):
         minhash_df_dict = False
 
     # Build abundance tables
-    abund_scale_file, abund_raw_file = abr.runAbundRecruiter(save_dirs_dict['tmp'],
-                                                             save_dirs_dict['tmp'], mg_sub_file,
+    abund_scale_file, abund_raw_file = abr.runAbundRecruiter(recruit_s.save_path,
+                                                             recruit_s.save_path, mg_sub_file,
                                                              recruit_s.mg_raw_file_list,
                                                              recruit_s.nthreads
                                                              )
     # Build tetra hz tables
-    tetra_file = tra.run_tetra_recruiter(save_dirs_dict['tmp'],
+    tetra_file = tra.run_tetra_recruiter(recruit_s.save_path,
                                          mg_sub_file
                                          )
     # Run HDBSCAN Cluster and Trusted Cluster Cleaning
@@ -129,11 +128,11 @@ def recruit(sys_args):
                                                      recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
                                                      recruit_s.nu, recruit_s.gamma, recruit_s.vr, recruit_s.r,
                                                      recruit_s.s, recruit_s.vs, recruit_s.a, abund_raw_file,
-                                                     save_dirs_dict['tmp']
+                                                     recruit_s.save_path
                                                      )
 
     mg_id = mg_sub_file[0]
-    clusters = clst.runClusterer(mg_id, save_dirs_dict[recruit_s.a], save_dirs_dict[recruit_s.a],
+    clusters = clst.runClusterer(mg_id, save_dirs_dict[recruit_s.mode], save_dirs_dict[recruit_s.mode],
                                  abund_scale_file, tetra_file,
                                  minhash_df_dict,
                                  recruit_s.params_dict['d_min_clust'],

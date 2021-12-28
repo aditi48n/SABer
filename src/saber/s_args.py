@@ -59,16 +59,20 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                  help="select which automatic optimization algorithm parameter set to use,\n"
                                       "majority_rule [DEFAULT], cluster, best_match."
                                  )
-        self.optopt.add_argument("--very_relaxed", action="store_true", dest="vr_params",
+        self.optopt.add_argument("--very_relaxed", action='store_const', const="very_relaxed",
+                                 dest="vr_params",
                                  help="parameter-set that maximizes recall at approximately strain-level"
                                  )
-        self.optopt.add_argument("--relaxed", action="store_true", dest="r_params",
+        self.optopt.add_argument("--relaxed", action='store_const', const="relaxed",
+                                 dest="r_params",
                                  help="parameter-set that maximizes recall at substrain-level."
                                  )
-        self.optopt.add_argument("--strict", action="store_true", dest="s_params",
+        self.optopt.add_argument("--strict", action='store_const', const="strict",
+                                 dest="s_params",
                                  help="parameter-set that maximizes precision at approximately strain-level [DEFAULT]."
                                  )
-        self.optopt.add_argument("--very_strict", action="store_true", dest="vs_params",
+        self.optopt.add_argument("--very_strict", action='store_const', const="very_strict",
+                                 dest="vs_params",
                                  help="parameter-set that maximizes precision at substrain-level."
                                  )
         self.optopt.add_argument("--denovo_min_clust", required=False, dest="denovo_min_clust",

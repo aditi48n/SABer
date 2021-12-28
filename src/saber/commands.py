@@ -77,6 +77,10 @@ def recruit(sys_args):
     recruit_s.vr, recruit_s.r = args.vr_params, args.r_params
     recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
     recruit_s.a = args.auto_params
+    # Quick check to see which mode was selected
+    print(recruit_s.vr, recruit_s.r)
+    print(recruit_s.s, recruit_s.vs)
+    sys.exit()
     # Build save dir structure and start logging file
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a)
     s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
@@ -139,6 +143,6 @@ def recruit(sys_args):
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits
-    com.run_combine_recruits(save_dirs_dict, recruit_s.a, recruit_s.mg_file, clusters)
+    com.run_combine_recruits(save_dirs_dict, recruit_s.mg_file, clusters)
 
     return

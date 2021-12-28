@@ -707,7 +707,7 @@ def best_cluster_params(real_dir, real_df):
                              best_mq_hdb_df[keep_cols], best_mq_ocs_df[keep_cols]
                              ])
     best_dup_df = best_cat_df.drop_duplicates()
-    best_dup_df.to_csv(os.path.join(real_dir, 'cluster_params.tsv'), sep='\t', index=False)
+    best_dup_df.to_csv(os.path.join(real_dir, 'best_cluster_params.tsv'), sep='\t', index=False)
 
     return best_dup_df, nc_agg_df, mq_agg_df
 

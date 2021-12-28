@@ -412,7 +412,7 @@ def entropy_cluster(ent_df):
 
     umap_df['sample_type'] = [samp2type[x] for x in umap_df.index.values]
     umap_df['sample_id'] = umap_df.index.values
-    umap_df['cluster'] = cluster_labels
+    umap_df['best_cluster'] = cluster_labels
     umap_df['probabilities'] = cluster_probs
     umap_df['outlier_scores'] = cluster_outlier
 
@@ -424,7 +424,7 @@ def entropy_cluster(ent_df):
 
 def find_best_match(piv_df, ent_umap_df):
     # Closest ref sample methods
-    outlier_list = list(ent_umap_df.query("cluster == -1")['sample_id'])
+    outlier_list = list(ent_umap_df.query("best_cluster == -1")['sample_id'])
     cmpr_list = []
     for r1, row1 in piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
@@ -466,7 +466,7 @@ def real_cluster(clusterer, real_df, umap_fit):
     samp2type = {x: y for x, y in zip(real_df['sample_id'], real_df['sample_type'])}
     umap_df['sample_type'] = [samp2type[x] for x in umap_df.index.values]
     umap_df['sample_id'] = umap_df.index.values
-    umap_df['cluster'] = cluster_labels
+    umap_df['best_cluster'] = cluster_labels
     umap_df['probabilities'] = cluster_probs
     return real_piv_df, umap_df
 
@@ -519,16 +519,16 @@ def calc_real_entrophy(mba_cov_list, working_dir):
 def remove_outliers(ent_best_df, real_merge_df):
     # If labeled as an outlier, take the closest match
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
-                 'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'diff'
+                 'x_labels', 'u0', 'u1', 'best_cluster', 'probabilities', 'best_match', 'diff'
                  ]
     best_merge_df = pd.concat([ent_best_df[keep_cols], real_merge_df[keep_cols]])
-    samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['cluster']))
-    best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
-                                zip(best_merge_df['best_match'], best_merge_df['cluster'])
-                                ]
-    best_merge_df['cluster'] = [c if c != -1 else samp2clust[s] for s, c in
-                                zip(best_merge_df['best_match'], best_merge_df['cluster'])
-                                ]
+    samp2clust = dict(zip(best_merge_df['sample_id'], best_merge_df['best_cluster']))
+    best_merge_df['best_cluster'] = [c if c != -1 else samp2clust[s] for s, c in
+                                     zip(best_merge_df['best_match'], best_merge_df['best_cluster'])
+                                     ]
+    best_merge_df['best_cluster'] = [c if c != -1 else samp2clust[s] for s, c in
+                                     zip(best_merge_df['best_match'], best_merge_df['best_cluster'])
+                                     ]
 
     return best_merge_df
 
@@ -573,7 +573,7 @@ def best_match_params(real_dir):
                                   )
     clust_all_df = pd.read_csv(clust_all_file, sep='\t', header=0)
     real_df = pd.read_csv(os.path.join(real_dir, 'cluster_clean.tsv'), sep='\t', header=0)
-    real_df = real_df[['sample_type', 'sample_id', 'best_match', 'cluster']]
+    real_df = real_df[['sample_type', 'sample_id', 'best_match', 'best_cluster']]
     # best_match
     nc_max_df = clust_all_df.groupby(['sample_id', 'cv_algo', 'algo', 'level',
                                       'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2']
@@ -646,8 +646,8 @@ def best_cluster_params(real_dir, real_df):
                                'configs/MQ_agg_params.tsv'
                                )
     mq_agg_df = pd.read_csv(mq_agg_file, sep='\t', header=0)
-    nc_clust_df = nc_agg_df.query("grouping == 'cluster'")
-    mq_clust_df = mq_agg_df.query("grouping == 'cluster'")
+    nc_clust_df = nc_agg_df.query("grouping == 'best_cluster'")
+    mq_clust_df = mq_agg_df.query("grouping == 'best_cluster'")
     nc_clust_df['group_val'] = nc_clust_df['group_val'].astype(int)
     mq_clust_df['group_val'] = mq_clust_df['group_val'].astype(int)
     nc_max_df = nc_clust_df.groupby(['group_val', 'cv_algo', 'algo', 'level',
@@ -684,23 +684,23 @@ def best_cluster_params(real_dir, real_df):
     mq_ocs_dup_df = mq_ocs_sort_df.drop_duplicates(subset=['group_val', 'cv_algo',
                                                            'algo', 'level']
                                                    )
-    best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, left_on='cluster',
+    best_nc_hdb_df = real_df.merge(nc_hdb_dup_df, left_on='best_cluster',
                                    right_on='group_val', how='left'
                                    )
-    best_nc_ocs_df = real_df.merge(nc_ocs_dup_df, left_on='cluster',
+    best_nc_ocs_df = real_df.merge(nc_ocs_dup_df, left_on='best_cluster',
                                    right_on='group_val', how='left'
                                    )
-    best_mq_hdb_df = real_df.merge(mq_hdb_dup_df, left_on='cluster',
+    best_mq_hdb_df = real_df.merge(mq_hdb_dup_df, left_on='best_cluster',
                                    right_on='group_val', how='left'
                                    )
-    best_mq_ocs_df = real_df.merge(mq_ocs_dup_df, left_on='cluster',
+    best_mq_ocs_df = real_df.merge(mq_ocs_dup_df, left_on='best_cluster',
                                    right_on='group_val', how='left'
                                    )
     best_nc_hdb_df['mq_nc'] = 'nc'
     best_nc_ocs_df['mq_nc'] = 'nc'
     best_mq_hdb_df['mq_nc'] = 'mq'
     best_mq_ocs_df['mq_nc'] = 'mq'
-    keep_cols = ['sample_type', 'sample_id', 'cluster', 'cv_algo', 'algo', 'level',
+    keep_cols = ['sample_type', 'sample_id', 'best_cluster', 'cv_algo', 'algo', 'level',
                  'cv_param1', 'cv_param2', 'cv_val1', 'cv_val2', 'mq_nc'
                  ]
     best_cat_df = pd.concat([best_nc_hdb_df[keep_cols], best_nc_ocs_df[keep_cols],
@@ -775,15 +775,15 @@ def majority_rule_params(real_dir, nc_agg_df, mq_agg_df, real_df):
 
 
 def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
-    # Need to get best params for best_match, cluster, and majority_rule
+    # Need to get best params for best_match, best_cluster, and majority_rule
     # Assign the best match params to the SI data
     best_match_df, real_df = best_match_params(real_dir)
-    # cluster
+    # best_cluster
     best_cluster_df, nc_agg_df, mq_agg_df = best_cluster_params(real_dir, real_df)
     # majority_rule
     majority_rule_df = majority_rule_params(real_dir, nc_agg_df, mq_agg_df, real_df)
     opt_param_dict = {'majority_rule': majority_rule_df,
-                      'cluster': best_cluster_df,
+                      'best_cluster': best_cluster_df,
                       'best_match': best_match_df
                       }
     print(best_match_df.head)

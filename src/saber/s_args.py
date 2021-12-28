@@ -57,7 +57,7 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                )
         self.optopt.add_argument("--autoopt", dest="auto_params", default='majority_rule',
                                  help="select which automatic optimization algorithm parameter set to use,\n"
-                                      "majority_rule [DEFAULT], cluster, best_match."
+                                      "majority_rule [DEFAULT], best_cluster, best_match."
                                  )
         self.optopt.add_argument("--very_relaxed", action='store_const', const="very_relaxed",
                                  dest="vr_params",

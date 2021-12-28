@@ -536,7 +536,7 @@ def remove_outliers(ent_best_df, real_merge_df):
 def calc_entropy(working_dir, mba_cov_list):
     real_clean = os.path.join(working_dir, 'cluster_clean.tsv')
     if os.path.isfile(real_clean):
-        logging.info('Entropy profile exists, moving on...')
+        logging.info('Entropy profile exists, moving on...\n')
         real_only_df = pd.read_csv(real_clean, sep='\t', header=0)
     else:
         logging.info('Loading Reference Renyi Entropy profiles\n')

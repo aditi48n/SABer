@@ -78,7 +78,7 @@ def recruit(sys_args):
     recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
     recruit_s.a = args.auto_params
     # Build save dir structure and start logging file
-    save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
+    save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a)
     s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
 
     # TODO: should check for prebuilt files before anything else to avoid rebuilding things
@@ -127,7 +127,7 @@ def recruit(sys_args):
                                                      )
 
     mg_id = mg_sub_file[0]
-    clusters = clst.runClusterer(mg_id, save_dirs_dict['tmp'], save_dirs_dict['tmp'],
+    clusters = clst.runClusterer(mg_id, save_dirs_dict[recruit_s.a], save_dirs_dict[recruit_s.a],
                                  abund_scale_file, tetra_file,
                                  minhash_df_dict,
                                  recruit_s.params_dict['d_min_clust'],
@@ -139,6 +139,6 @@ def recruit(sys_args):
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits
-    com.run_combine_recruits(save_dirs_dict['xPGs'], recruit_s.mg_file, clusters)
+    com.run_combine_recruits(save_dirs_dict, recruit_s.a, recruit_s.mg_file, clusters)
 
     return

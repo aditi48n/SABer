@@ -120,7 +120,7 @@ def launch_write_command(cmd_list, just_do_it=False, collect_all=True):
     return stdout, proc.returncode
 
 
-def check_out_dirs(save_path):
+def check_out_dirs(save_path, autoopt):
     """Checks if dirs all exist in save_path, makes them if not.
 
     :param save_path: directory where all intermediate and final files are saved.
@@ -129,13 +129,18 @@ def check_out_dirs(save_path):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    sd_list = ['tmp', 'xPGs']
+    sd_list = [autoopt, os.path.join(autoopt, 'denovo'),
+               os.path.join(autoopt, 'hdbscan'),
+               os.path.join(autoopt, 'ocsvm'),
+               os.path.join(autoopt, 'xpgs'),
+               ]
     sd_dict = {}
     for sd in sd_list:
         sd_path = os.path.join(save_path, sd)
         if not os.path.exists(sd_path):
             os.makedirs(sd_path)
-        sd_dict[sd] = sd_path
+        sd_key = os.path.basename(sd)
+        sd_dict[sd_key] = sd_path
 
     return sd_dict
 
@@ -527,30 +532,34 @@ def remove_outliers(ent_best_df, real_merge_df):
 
 
 def calc_entropy(working_dir, mba_cov_list):
-    logging.info('Loading Reference Renyi Entropy profiles\n')
-    ent_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
-                            'configs/entropy_table.tsv'
-                            )
-    ent_df = pd.read_csv(ent_file, sep='\t', header=0)
-    ent_results = entropy_cluster(ent_df)
-    ent_best_df = ent_results[1]
-    piv_df = ent_results[2]
-    umap_fit = ent_results[3]
-    clusterer = ent_results[4]
-
-    # Cluster real samples
-    real_df = calc_real_entrophy(mba_cov_list, working_dir)
-    real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit)
-    real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
-    real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
-
-    # Replace outliers with best match
-    best_merge_df = remove_outliers(ent_best_df, real_merge_df)
-    real_type = real_df['sample_type'].values[0]
-    # Save final files
-    real_only_df = best_merge_df.query('sample_type == @real_type')
     real_clean = os.path.join(working_dir, 'cluster_clean.tsv')
-    real_only_df.to_csv(real_clean, sep='\t', index=False)
+    if os.path.isfile(real_clean):
+        logging.info('Entropy profile exists, moving on...')
+        real_only_df = pd.read_csv(real_clean, sep='\t', header=0)
+    else:
+        logging.info('Loading Reference Renyi Entropy profiles\n')
+        ent_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
+                                'configs/entropy_table.tsv'
+                                )
+        ent_df = pd.read_csv(ent_file, sep='\t', header=0)
+        ent_results = entropy_cluster(ent_df)
+        ent_best_df = ent_results[1]
+        piv_df = ent_results[2]
+        umap_fit = ent_results[3]
+        clusterer = ent_results[4]
+
+        # Cluster real samples
+        real_df = calc_real_entrophy(mba_cov_list, working_dir)
+        real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit)
+        real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
+        real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
+
+        # Replace outliers with best match
+        best_merge_df = remove_outliers(ent_best_df, real_merge_df)
+        real_type = real_df['sample_type'].values[0]
+        # Save final files
+        real_only_df = best_merge_df.query('sample_type == @real_type')
+        real_only_df.to_csv(real_clean, sep='\t', index=False)
 
     return real_only_df
 

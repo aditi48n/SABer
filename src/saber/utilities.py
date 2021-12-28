@@ -786,14 +786,6 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
                       'best_cluster': best_cluster_df,
                       'best_match': best_match_df
                       }
-    print(best_match_df.head)
-    print(best_match_df.shape)
-    print(best_cluster_df.head)
-    print(best_cluster_df.shape)
-    print(majority_rule_df.head)
-    print(majority_rule_df.shape)
-    sys.exit()
-
     opt_df = opt_param_dict[autoopt_setting]
     if vr:  # TODO: this can be refactored, and should be at some point
         d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"

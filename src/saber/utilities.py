@@ -120,7 +120,7 @@ def launch_write_command(cmd_list, just_do_it=False, collect_all=True):
     return stdout, proc.returncode
 
 
-def check_out_dirs(save_path, autoopt):
+def check_out_dirs(save_path, autoopt, mode):
     """Checks if dirs all exist in save_path, makes them if not.
 
     :param save_path: directory where all intermediate and final files are saved.
@@ -128,11 +128,13 @@ def check_out_dirs(save_path, autoopt):
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-
-    sd_list = [autoopt, os.path.join(autoopt, 'denovo'),
-               os.path.join(autoopt, 'hdbscan'),
-               os.path.join(autoopt, 'ocsvm'),
-               os.path.join(autoopt, 'xpgs'),
+    mode_path = os.path.join(autoopt, mode)
+    denovo_path = os.path.join(mode_path, 'denovo')
+    hdbscan_path = os.path.join(mode_path, 'hdbscan')
+    ocsvm_path = os.path.join(mode_path, 'ocsvm')
+    xpgs_path = os.path.join(mode_path, 'xpgs')
+    sd_list = [autoopt, mode_path, denovo_path,
+               hdbscan_path, ocsvm_path, xpgs_path
                ]
     sd_dict = {}
     for sd in sd_list:

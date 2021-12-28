@@ -78,11 +78,13 @@ def recruit(sys_args):
     recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
     recruit_s.a = args.auto_params
     # Quick check to see which mode was selected
-    print(recruit_s.vr, recruit_s.r)
-    print(recruit_s.s, recruit_s.vs)
-    sys.exit()
+    mode_list = [recruit_s.vr, recruit_s.r, recruit_s.s, recruit_s.vs]
+    for m in mode_list:  # TODO: this needs to break if more than one mode is selected
+        if m:
+            recruit_s.mode = m
+    print(recruit_s.mode)
     # Build save dir structure and start logging file
-    save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a)
+    save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a, recruit_s.mode)
     s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
 
     # TODO: should check for prebuilt files before anything else to avoid rebuilding things

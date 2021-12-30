@@ -589,6 +589,9 @@ def calc_entropy(working_dir, mba_cov_list):
         ent_df = pd.read_csv(ent_file, sep='\t', header=0)
         ent_results = entropy_cluster(ent_df)
         ent_best_df = ent_results[1]
+        print(ent_best_df.head())
+        print(ent_best_df.shape)
+        sys.exit()
         piv_df = ent_results[2]
         umap_fit = ent_results[3]
         clusterer = ent_results[4]

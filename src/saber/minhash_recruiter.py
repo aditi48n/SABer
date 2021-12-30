@@ -206,7 +206,7 @@ def build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer):
     results = pool.imap_unordered(build_signature, arg_list)
     mg_sig_list = []
     for i, mg_sig in enumerate(results, 1):
-        logging.info('Building MinHash Signatures for {}: {}/{} done\r'.format(mg_id, i, len(arg_list)))
+        logging.info('Building MinHash Signatures for {}: {}/{} done\r'.format('metagenome contigs', i, len(arg_list)))
         mg_sig_list.append(mg_sig)
     logging.info('\n')
     pool.close()

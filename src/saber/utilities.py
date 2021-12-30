@@ -450,8 +450,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     # Added just for benchmarking, REMOVE after analysis is complete!!! #
     #####################################################################
     skip_id = str(working_dir.rsplit('/', 4)[2] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
-    print('Skipping ', skip_id)
-    sys.exit()
+    print('Skipping', skip_id)
     #####################################################################
 
     r_cmpr_list = []
@@ -460,7 +459,14 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
         for r2, row2 in piv_df.iterrows():
             euc_d = np.linalg.norm(row1 - row2)
             if euc_d < keep_diff[2] and r1 != r2:
-                keep_diff = [r1, r2, euc_d]
+                # keep_diff = [r1, r2, euc_d]
+                #######################################################
+                if r2 != skip_id:
+                    keep_diff = [r1, r2, euc_d]
+                else:
+                    print("Found and skipped", skip_id)
+                #######################################################
+
         r_cmpr_list.append(keep_diff)
     r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     best_df = real_umap_df.merge(r_cmpr_df, on='sample_id', how='left')

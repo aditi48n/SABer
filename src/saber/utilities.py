@@ -449,7 +449,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     #####################################################################
     # Added just for benchmarking, REMOVE after analysis is complete!!! #
     #####################################################################
-    skip_id = str(working_dir.rsplit('/', 4)[1] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
+    skip_id = str(working_dir.rsplit('/', 4)[2] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
     print('Skipping ', skip_id)
     sys.exit()
     #####################################################################

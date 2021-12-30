@@ -597,6 +597,11 @@ def calc_entropy(working_dir, mba_cov_list):
         # Cluster real samples
         real_df = calc_real_entrophy(mba_cov_list, working_dir)
         real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit, scale_fit)
+        print(piv_df.head())
+        print(real_piv_df.head())
+        print(real_umap_df.head())
+        sys.exit()
+
         real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
         real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
 

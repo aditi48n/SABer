@@ -446,6 +446,11 @@ def find_best_match(piv_df, ent_umap_df):
 
 def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     # Closest ref sample methods
+    print(piv_df.head)
+    print(real_piv_df.head)
+    print(real_umap_df.head)
+    print(working_dir)
+    sys.exit()
     r_cmpr_list = []
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
@@ -589,9 +594,6 @@ def calc_entropy(working_dir, mba_cov_list):
         ent_df = pd.read_csv(ent_file, sep='\t', header=0)
         ent_results = entropy_cluster(ent_df)
         ent_best_df = ent_results[1]
-        print(ent_best_df.head())
-        print(ent_best_df.shape)
-        sys.exit()
         piv_df = ent_results[2]
         umap_fit = ent_results[3]
         clusterer = ent_results[4]

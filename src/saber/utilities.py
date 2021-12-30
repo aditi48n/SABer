@@ -446,11 +446,14 @@ def find_best_match(piv_df, ent_umap_df):
 
 def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     # Closest ref sample methods
-    print(piv_df.head)
-    print(real_piv_df.head)
-    print(real_umap_df.head)
-    print(working_dir)
+    #####################################################################
+    # Added just for benchmarking, REMOVE after analysis is complete!!! #
+    #####################################################################
+    skip_id = str(working_dir.rsplit('/', 4)[1] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
+    print('Skipping ', skip_id)
     sys.exit()
+    #####################################################################
+
     r_cmpr_list = []
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]

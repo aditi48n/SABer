@@ -450,11 +450,11 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
-            diff = ((row1 - row2).abs()).sum()
-            if diff < keep_diff[2] and r1 != r2:
-                keep_diff = [r1, r2, diff]
+            euc_d = np.linalg.norm(row1 - row2)
+            if euc_d < keep_diff[2] and r1 != r2:
+                keep_diff = [r1, r2, euc_d]
         r_cmpr_list.append(keep_diff)
-    r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+    r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     best_df = real_umap_df.merge(r_cmpr_df, on='sample_id', how='left')
     best_df.to_csv(os.path.join(working_dir, 'cluster_table.tsv'), sep='\t', index=False)
     return best_df

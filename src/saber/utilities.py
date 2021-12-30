@@ -434,11 +434,11 @@ def find_best_match(piv_df, ent_umap_df):
     for r1, row1 in piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
-            diff = ((row1 - row2).abs()).sum()
-            if diff < keep_diff[2] and r1 != r2 and r2 not in outlier_list:
-                keep_diff = [r1, r2, diff]
+            euc_d = np.linalg.norm(row1 - row2)
+            if euc_d < keep_diff[2] and r1 != r2 and r2 not in outlier_list:
+                keep_diff = [r1, r2, euc_d]
         cmpr_list.append(keep_diff)
-    cmpr_df = pd.DataFrame(cmpr_list, columns=['sample_id', 'best_match', 'diff'])
+    cmpr_df = pd.DataFrame(cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     ent_best_df = ent_umap_df.merge(cmpr_df, on='sample_id', how='left')
 
     return ent_best_df
@@ -597,11 +597,6 @@ def calc_entropy(working_dir, mba_cov_list):
         # Cluster real samples
         real_df = calc_real_entrophy(mba_cov_list, working_dir)
         real_piv_df, real_umap_df = real_cluster(clusterer, real_df, umap_fit, scale_fit)
-        print(piv_df.columns)
-        print(real_piv_df.columns)
-        print(real_umap_df.columns)
-        sys.exit()
-
         real_best_df = real_best_match(piv_df, real_piv_df, real_umap_df, working_dir)
         real_merge_df = real_df.merge(real_best_df, on=['sample_id', 'sample_type'], how='left')
 

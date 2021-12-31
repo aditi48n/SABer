@@ -449,8 +449,10 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     #####################################################################
     # Added just for benchmarking, REMOVE after analysis is complete!!! #
     #####################################################################
-    skip_id = str(working_dir.rsplit('/', 4)[2] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
-    print('Skipping', skip_id)
+    # skip_id = str(working_dir.rsplit('/', 4)[2] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
+    skip_id = str(working_dir.rsplit('/', 4)[2]).strip('CAMI_II_').strip('CAMI_')
+    last_int = working_dir.rsplit('/', 4)[-1][-1]
+    print('Skipping', skip_id, last_int)
     #####################################################################
 
     r_cmpr_list = []
@@ -461,10 +463,10 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
             if euc_d < keep_diff[2] and r1 != r2:
                 # keep_diff = [r1, r2, euc_d]
                 #######################################################
-                if r2 != skip_id:
+                if r2 != skip_id and last_int != r2[-1]:
                     keep_diff = [r1, r2, euc_d]
                 else:
-                    print("Found and skipped", skip_id)
+                    print("Found and skipped", r2)
                 #######################################################
 
         r_cmpr_list.append(keep_diff)

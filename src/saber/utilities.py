@@ -463,7 +463,9 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
             if euc_d < keep_diff[2] and r1 != r2:
                 # keep_diff = [r1, r2, euc_d]
                 #######################################################
-                if skip_id in r2 and last_int == r2[-1]:
+                if last_int != r2[-1]:
+                    keep_diff = [r1, r2, euc_d]
+                elif skip_id not in r2:
                     keep_diff = [r1, r2, euc_d]
                 else:
                     print("Found and skipped", r2)

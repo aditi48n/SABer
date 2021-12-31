@@ -468,7 +468,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
                 else:
                     print("Found and skipped", r2)
                 #######################################################
-
+                sys.exit()
         r_cmpr_list.append(keep_diff)
     r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     best_df = real_umap_df.merge(r_cmpr_df, on='sample_id', how='left')

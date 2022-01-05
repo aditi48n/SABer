@@ -761,6 +761,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     cat_list = []
     for o_file in completed_files:
         print(o_file)
+        '''
         cv_str = o_file.split('/')[-3]
         cv_algo = cv_str.split('_')[0]
         cv_val1 = cv_str.split('_')[1]
@@ -771,8 +772,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
         else:
             cv_param1 = 'nu'
             cv_param2 = 'gamma'
+        '''
         err_df = pd.read_csv(o_file, sep='\t', header=0)
-
+        print(err_df)
+        sys.exit()
         for algo in err_df['algorithm'].unique():
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')

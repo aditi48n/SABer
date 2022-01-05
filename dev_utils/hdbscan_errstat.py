@@ -760,8 +760,38 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))
     cat_list = []
     for o_file in completed_files:
-        print(o_file)
-        '''
+        err_df = pd.read_csv(o_file, sep='\t', header=0)
+        for algo in err_df['algorithm'].unique():
+            for level in err_df['level'].unique():
+                sub_err_df = err_df.query('algorithm == @algo & level == @level')
+                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes'")
+                nc_df = sub_err_df.query("NC_bins == 'Yes'")
+                mq_avg_mcc = mq_df['MCC'].mean()
+                nc_avg_mcc = nc_df['MCC'].mean()
+                mq_avg_p = mq_df['precision'].mean()
+                nc_avg_p = nc_df['precision'].mean()
+                mq_avg_r = mq_df['sensitivity'].mean()
+                nc_avg_r = nc_df['sensitivity'].mean()
+                mq_cnt = mq_df['MQ_bins'].count()
+                nc_cnt = nc_df['NC_bins'].count()
+                err_list = [algo, level, mq_avg_p, mq_avg_r, mq_avg_mcc,
+                            mq_cnt, nc_avg_p, nc_avg_r, nc_avg_mcc, nc_cnt
+                            ]
+                cat_list.append(err_list)
+
+    cat_cols = ['algo', 'level', 'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
+                'mq_cnt', 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'nc_cnt'
+                ]
+    cat_df = pd.DataFrame(cat_list, columns=cat_cols)
+
+    return cat_df
+
+    '''
+    # BELOW WAS USED FOR CV in the run_cross_validation.py script
+    # Compile all results tables from analysis
+    completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))
+    cat_list = []
+    for o_file in completed_files:
         cv_str = o_file.split('/')[-3]
         cv_algo = cv_str.split('_')[0]
         cv_val1 = cv_str.split('_')[1]
@@ -772,10 +802,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
         else:
             cv_param1 = 'nu'
             cv_param2 = 'gamma'
-        '''
         err_df = pd.read_csv(o_file, sep='\t', header=0)
-        print(err_df)
-        sys.exit()
+
         for algo in err_df['algorithm'].unique():
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')
@@ -802,3 +830,4 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
 
     return cat_df
+    '''

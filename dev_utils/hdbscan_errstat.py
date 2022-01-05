@@ -760,6 +760,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))
     cat_list = []
     for o_file in completed_files:
+        print(o_file)
         cv_str = o_file.split('/')[-3]
         cv_algo = cv_str.split('_')[0]
         cv_val1 = cv_str.split('_')[1]

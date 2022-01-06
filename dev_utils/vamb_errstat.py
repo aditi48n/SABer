@@ -231,8 +231,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes
-    print(denovo_out_file_list)
-    sys.exit()
     for denovo_out_file in denovo_out_file_list:
         fa_recs = get_seqs(denovo_out_file)
         print(fa_recs[10])

@@ -192,9 +192,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         src_cnt_df[['src_id', 'num_seqs', 'sum_len', 'min_len',
                     'avg_len', 'max_len', 'N50']], on='src_id'
     )
-    print(src_stats_df.head())
-    sys.exit()
-
     # Map genome id and contig id to taxid for error analysis
     sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
     sag_taxmap_df['sp_taxid'] = [int(x) for x in sag_taxmap_df['@@TAXID']]
@@ -228,6 +225,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     tax_mg_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(src_contig_list)]
     # Add to tax DF
     tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
+    print(tax_mg_df.head())
+    sys.exit()
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
 
     # builds the sag to cami ID mapping file

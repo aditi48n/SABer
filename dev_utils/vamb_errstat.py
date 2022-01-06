@@ -173,7 +173,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
     err_path = joinpath(bin_path, 'error_analysis')
     src2contig_file = joinpath(err_path, 'src2contig_map.tsv')
-    denovo_out_file_list = glob.glob(joinpath(bin_path, '*.fa*'))
+    denovo_out_file_list = glob.glob(joinpath(bin_path, '*.f*a*'))
     denovo_errstat_file = joinpath(err_path, 'denovo.errstat.tsv')
     denovo_mean_file = joinpath(err_path, 'denovo.errstat.mean.tsv')
 

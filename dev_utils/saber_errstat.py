@@ -68,6 +68,8 @@ def recruit_stats(p):
     # Complete SRC genome is not always present in contigs, need to correct for that.
     eworking_bp = tot_bp - eTP - eFN
     eFN = eFN + eworking_bp
+    print(eTP, eFP, eTN, eFN)
+    print(eworking_bp, tot_bp)
     str_list = calc_stats(sag_id, 'strain', algo, eTP, eFP, eTN, eFN,
                           pred_df['truth_strain'], pred_df['pred']
                           )

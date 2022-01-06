@@ -12,7 +12,7 @@ import src.saber.abundance_recruiter as abr
 import src.saber.clusterer as clst
 import src.saber.minhash_recruiter as mhr
 import src.saber.tetranuc_recruiter as tra
-import hdbscan_errstat as err
+import saber_errstat as err
 
 # This script is for running CV for HDBSCAN and OCSVM
 # Expects that you have already pre-run the samples to create the

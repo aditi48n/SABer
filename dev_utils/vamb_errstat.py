@@ -341,8 +341,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         for algo in err_df['algorithm'].unique():
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')
-                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes'")
-                nc_df = sub_err_df.query("NC_bins == 'Yes'")
+                l_20 = '>20Kb'
+                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
                 mq_avg_mcc = mq_df['MCC'].mean()
                 nc_avg_mcc = nc_df['MCC'].mean()
                 mq_avg_p = mq_df['precision'].mean()

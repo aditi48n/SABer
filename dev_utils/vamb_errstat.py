@@ -237,7 +237,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         fa_recs = get_seqs(denovo_out_file)
         base = os.path.basename(denovo_out_file).rsplit('.', 1)[0]
         for f_rec in fa_recs:
-            cluster_list.append(base, f_rec.name)
+            cluster_list.append([base, f_rec.name])
 
     cluster_df = pd.DataFrame(cluster_list, columns=['best_label', 'contig_id'])
     print(cluster_df.head())

@@ -233,7 +233,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # setup mapping to CAMI ref genomes
     for denovo_out_file in denovo_out_file_list:
         fa_recs = get_seqs(denovo_out_file)
-        print(fa_recs[10])
+        print(len(fa_recs))
+        print(fa_recs[0])
         sys.exit()
 
         cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)

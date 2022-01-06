@@ -199,8 +199,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # Map MetaG contigs to their genomes
     mg_contig_map_df = pd.read_csv(mg_contig_map, sep='\t', header=0)
     # mg_contig_map_df['TAXID'] = [str(x) for x in mg_contig_map_df['TAXID']]
-    print(mg_contig_map_df.head())
-    print(mg_contig_map_df.shape)
+
     # Merge contig map and taxpath DFs
     tax_mg_df = mg_contig_map_df.merge(taxpath_df, right_on='CAMI_genomeID', left_on='BINID',
                                        how='right'
@@ -213,9 +212,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src_metag_cnt_dict = cnt_contig_bp(src_metag_file)
     src_contig_list = list(src_metag_cnt_dict.keys())
     tax_mg_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(src_contig_list)]
-    print(tax_mg_df.head())
-    print(tax_mg_df.shape)
-    sys.exit()
     # Add to tax DF
     tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)

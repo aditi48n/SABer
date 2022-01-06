@@ -188,8 +188,13 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src2id_df = pd.read_csv(src2id_map, sep='\t', header=None, names=['CAMI_genomeID', 'file'])
     src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
     src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
-    print(src_cnt_df.head())
-    print(src2id_df.head())
+    src_stats_df = src2id_df[['src_id', 'CAMI_genomeID']
+    ].merge(src_cnt_df[['num_seqs', 'sum_len',
+                        'min_len', 'avg_len',
+                        'max_len', 'N50']],
+            on='src_id'
+            )
+    print(src_stats_df.head())
     sys.exit()
 
     # Map genome id and contig id to taxid for error analysis

@@ -185,7 +185,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # Map src contig stats to OTU id
     src_cnt_df = pd.read_csv(src_contig_cnt, sep='\t', header=0)
-    src2id_df = pd.read_csv(src2id_map, sep='\t', header=0)
+    src2id_df = pd.read_csv(src2id_map, sep='\t', header=None, names=['CAMI_genomeID', 'file'])
+    src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
+    src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
     print(src_cnt_df.head())
     print(src2id_df.head())
     sys.exit()

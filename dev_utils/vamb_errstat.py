@@ -3,7 +3,6 @@
 import glob
 import logging
 import multiprocessing
-import os.path
 from functools import reduce
 from os import makedirs, path
 from os.path import join as joinpath
@@ -173,7 +172,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
     err_path = joinpath(bin_path, 'error_analysis')
     src2contig_file = joinpath(err_path, 'src2contig_map.tsv')
-    denovo_out_file_list = glob.glob(joinpath(bin_path, '*.f*a*'))
+    denovo_out_file = glob.glob(joinpath(bin_path, 'clusters.tsv'))
     denovo_errstat_file = joinpath(err_path, 'denovo.errstat.tsv')
     denovo_mean_file = joinpath(err_path, 'denovo.errstat.mean.tsv')
 
@@ -231,16 +230,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes
-    cluster_list = []
-    for denovo_out_file in denovo_out_file_list:
-        if '.fxi' not in denovo_out_file:
-            fa_recs = get_seqs(denovo_out_file)
-            base = os.path.basename(denovo_out_file).rsplit('.', 1)[0]
-            print(base)
-            fa_keys = list(fa_recs.keys())
-            for f_rec in fa_keys:
-                cluster_list.append([base, f_rec])
-    cluster_df = pd.DataFrame(cluster_list, columns=['best_label', 'contig_id'])
+    cluster_df = pd.DataFrame(denovo_out_file, columns=['best_label', 'contig_id'])
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})

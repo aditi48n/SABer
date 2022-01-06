@@ -9,7 +9,6 @@ from pip._internal.operations import freeze
 import abundance_recruiter as abr
 import classy as s_class
 import clusterer as clst
-import compile_recruits as com
 import logger as s_log
 import minhash_recruiter as mhr
 import s_args
@@ -144,6 +143,6 @@ def recruit(sys_args):
                                  recruit_s.nthreads
                                  )
     # Collect and join all recruits
-    com.run_combine_recruits(save_dirs_dict, recruit_s.mg_file, clusters)
+    # com.run_combine_recruits(save_dirs_dict, recruit_s.mg_file, clusters)
 
     return

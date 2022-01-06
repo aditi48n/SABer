@@ -37,18 +37,19 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
     contig_bp_list = list(merge_recruits_df['bp_cnt'])
     exact_truth = list(merge_recruits_df['exact_truth'])
     strain_truth = list(merge_recruits_df['strain_truth'])
+    src_total_bp = merge_recruits_df['sum_len'].values[0]
     algo_list = [algorithm]
     stats_lists = []
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])
         stats_lists.extend(recruit_stats([temp_id, algo, contig_id_list, contig_bp_list,
-                                          exact_truth, strain_truth, pred
+                                          exact_truth, strain_truth, pred, src_total_bp
                                           ]))
     return stats_lists
 
 
 def recruit_stats(p):
-    sag_id, algo, contig_id_list, contig_bp_list, exact_truth, strain_truth, pred = p
+    sag_id, algo, contig_id_list, contig_bp_list, exact_truth, strain_truth, pred, tot_bp = p
     pred_df = pd.DataFrame(zip(contig_id_list, contig_bp_list, pred),
                            columns=['contig_id', 'contig_bp', 'pred']
                            )
@@ -63,6 +64,10 @@ def recruit_stats(p):
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+
+    # Complete SRC genome is not always present in contigs, need to correct for that.
+    working_bp = tot_bp - TP - FN
+    FN = FN + working_bp
     str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
@@ -72,6 +77,14 @@ def recruit_stats(p):
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+
+    # Complete SRC genome is not always present in contigs, need to correct for that.
+    working_bp = tot_bp - TP - FN
+    FN = FN + working_bp
+    str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
+                          pred_df['truth_strain'], pred_df['pred']
+                          )
+
     x_list = calc_stats(sag_id, 'exact', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )
@@ -177,7 +190,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     src_genome_path = joinpath(synsrc_path, 'fasta/')
     sag_tax_map = joinpath(synsrc_path, 'genome_taxa_info.tsv')
     mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
-    # src_metag_file = sys.argv[4] # source metag assembly fasta
+    src_contig_cnt = joinpath(synsrc_path, 'src_fasta.stats.tsv')
+    src2id_map = joinpath(synsrc_path, 'genome_to_id.tsv')
     err_path = joinpath(saberout_path, 'error_analysis')
     sag2cami_file = joinpath(err_path, 'sag2cami_map.tsv')
     src2contig_file = joinpath(err_path, 'src2contig_map.tsv')
@@ -201,6 +215,13 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     # Make working dir
     if not path.exists(err_path):
         makedirs(err_path)
+
+    # Map src contig stats to OTU id
+    src_cnt_df = pd.read_csv(src_contig_cnt, sep='\t', header=0)
+    src2id_df = pd.read_csv(src2id_map, sep='\t', header=None, names=['CAMI_genomeID', 'file'])
+    src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
+    src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src2id_df['file']]
+    src_stats_df = src2id_df.merge(src_cnt_df, on='src_id')
 
     # Map genome id and contig id to taxid for error analysis
     sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
@@ -235,6 +256,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     tax_mg_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(src_contig_list)]
     # Add to tax DF
     tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
+    # add src total bp count
+    tax_mg_df = tax_mg_df.merge(src_stats_df[['CAMI_genomeID', 'sum_len']], on='CAMI_genomeID')
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
 
     # builds the sag to cami ID mapping file
@@ -377,7 +400,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
+    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sum_len']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
@@ -764,8 +787,9 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
         for algo in err_df['algorithm'].unique():
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')
-                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes'")
-                nc_df = sub_err_df.query("NC_bins == 'Yes'")
+                l_20 = '>20Kb'
+                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
                 mq_avg_mcc = mq_df['MCC'].mean()
                 nc_avg_mcc = nc_df['MCC'].mean()
                 mq_avg_p = mq_df['precision'].mean()

@@ -3,6 +3,7 @@
 import glob
 import logging
 import multiprocessing
+import sys
 from functools import reduce
 from os import makedirs, path
 from os.path import join as joinpath
@@ -235,15 +236,15 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         print(fa_recs[10])
         sys.exit()
 
-    cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
-    cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
-    src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
-    src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
-    clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
-                                                        'strain', 'bp_cnt']],
-                                         on='contig_id', how='left'
-                                         )
+        cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
+        cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
+        src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
+        src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
+        contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
+        clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
+                                                            'strain', 'bp_cnt']],
+                                             on='contig_id', how='left'
+                                             )
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in clust2src_df['best_label'].unique():

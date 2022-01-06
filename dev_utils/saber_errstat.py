@@ -60,32 +60,28 @@ def recruit_stats(p):
     pred_df['truth_strain'] = strain_truth
 
     # calculate for hybrid exact/strain-level matches
-    TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
-    TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    eTP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    eFP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
+    eTN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    eFN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
 
     # Complete SRC genome is not always present in contigs, need to correct for that.
-    working_bp = tot_bp - TP - FN
-    FN = FN + working_bp
-    str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
+    eworking_bp = tot_bp - eTP - eFN
+    eFN = eFN + eworking_bp
+    str_list = calc_stats(sag_id, 'strain', algo, eTP, eFP, eTN, eFN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
     # ALL Recruits
     # calculate for exact-level match
-    TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    sTP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    sFP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    sTN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    sFN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
 
     # Complete SRC genome is not always present in contigs, need to correct for that.
-    working_bp = tot_bp - TP - FN
-    FN = FN + working_bp
-    str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
-                          pred_df['truth_strain'], pred_df['pred']
-                          )
-
-    x_list = calc_stats(sag_id, 'exact', algo, TP, FP, TN, FN,
+    sworking_bp = tot_bp - sTP - sFN
+    sFN = sFN + sworking_bp
+    x_list = calc_stats(sag_id, 'exact', algo, sTP, sFP, sTN, sFN,
                         pred_df['truth'], pred_df['pred']
                         )
     cat_list = [str_list, x_list]

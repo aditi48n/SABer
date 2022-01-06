@@ -225,6 +225,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     tax_mg_df = tax_mg_df.loc[tax_mg_df['@@SEQUENCEID'].isin(src_contig_list)]
     # Add to tax DF
     tax_mg_df['bp_cnt'] = [src_metag_cnt_dict[x] for x in tax_mg_df['@@SEQUENCEID']]
+    # add src total bp count
+    tax_mg_df = tax_mg_df.merge(src_stats_df[['CAMI_genomeID', 'sum_len']], on='CAMI_genomeID')
     print(tax_mg_df.head())
     sys.exit()
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)

@@ -237,10 +237,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
             fa_recs = get_seqs(denovo_out_file)
             base = os.path.basename(denovo_out_file).rsplit('.', 1)[0]
             print(base)
-            print(list(fa_recs.keys()))
-            sys.exit()
-            for f_rec in fa_recs:
-                cluster_list.append([base, f_rec.name])
+            fa_keys = list(fa_recs.keys())
+            for f_rec in fa_keys:
+                cluster_list.append([base, f_rec])
     cluster_df = pd.DataFrame(cluster_list, columns=['best_label', 'contig_id'])
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')

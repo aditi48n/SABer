@@ -188,10 +188,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src2id_df = pd.read_csv(src2id_map, sep='\t', header=None, names=['CAMI_genomeID', 'file'])
     src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
     src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
-    src_stats_df = src2id_df[['src_id', 'CAMI_genomeID']].merge(
-        src_cnt_df[['src_id', 'num_seqs', 'sum_len', 'min_len',
-                    'avg_len', 'max_len', 'N50']], on='src_id'
-    )
+    src_stats_df = src2id_df.merge(src_cnt_df, on='src_id')
     # Map genome id and contig id to taxid for error analysis
     sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
     sag_taxmap_df['sp_taxid'] = [int(x) for x in sag_taxmap_df['@@TAXID']]
@@ -228,9 +225,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # add src total bp count
     tax_mg_df = tax_mg_df.merge(src_stats_df[['CAMI_genomeID', 'sum_len']], on='CAMI_genomeID')
     print(tax_mg_df.head())
-    sys.exit()
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
-
+    sys.exit()
     # builds the sag to cami ID mapping file
     if 'CAMI_II' in synsrc_path:
         cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')

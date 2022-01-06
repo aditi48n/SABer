@@ -170,6 +170,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # INPUT files
     sag_tax_map = joinpath(synsrc_path, 'genome_taxa_info.tsv')
     mg_contig_map = joinpath(synsrc_path, 'gsa_mapping_pool.binning')
+    src_contig_cnt = joinpath(synsrc_path, 'src_fasta.stats.tsv')
+    src2id_map = joinpath(synsrc_path, 'genome_to_id.tsv')
     err_path = joinpath(bin_path, 'error_analysis')
     src2contig_file = joinpath(err_path, 'src2contig_map.tsv')
     denovo_out_file = glob.glob(joinpath(bin_path, 'clusters.tsv'))[0]
@@ -180,6 +182,13 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # Make working dir
     if not path.exists(err_path):
         makedirs(err_path)
+
+    # Map src contig stats to OTU id
+    src_cnt_df = pd.read_csv(src_contig_cnt, sep='\t', header=0)
+    src2id_df = pd.read_csv(src2id_map, sep='\t', header=0)
+    print(src_cnt_df.head())
+    print(src2id_df.head())
+    sys.exit()
 
     # Map genome id and contig id to taxid for error analysis
     sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)

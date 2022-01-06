@@ -3,6 +3,7 @@
 import glob
 import logging
 import multiprocessing
+import os.path
 import sys
 from functools import reduce
 from os import makedirs, path
@@ -231,10 +232,11 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes
+    cluster_list = []
     for denovo_out_file in denovo_out_file_list:
         fa_recs = get_seqs(denovo_out_file)
-        print(len(fa_recs))
-        print(fa_recs[0])
+        base = os.path.basename(denovo_out_file)
+        print(base)
         sys.exit()
 
         cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)

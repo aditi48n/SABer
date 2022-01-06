@@ -246,6 +246,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         exact_df = sub_clust_df.groupby(['CAMI_genomeID'])['bp_cnt'].sum().reset_index()
         strain_df = sub_clust_df.groupby(['strain'])['bp_cnt'].sum().reset_index()
         ex_label_df = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()]['CAMI_genomeID']
+        print(sub_clust_df.head())
+        print(exact_df.head())
+        print(strain_df.head())
+        print(ex_label_df.head())
         if not ex_label_df.empty:
             exact_label = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()
                                    ]['CAMI_genomeID'].values[0]

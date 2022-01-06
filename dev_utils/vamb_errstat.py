@@ -237,7 +237,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
             fa_recs = get_seqs(denovo_out_file)
             base = os.path.basename(denovo_out_file).rsplit('.', 1)[0]
             print(base)
-            print(fa_recs.keys())
+            print(list(fa_recs.keys()))
             sys.exit()
             for f_rec in fa_recs:
                 cluster_list.append([base, f_rec.name])

@@ -335,4 +335,4 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                                                    ]), dfs
                      )
     score_tax_df.to_csv(denovo_errstat_file, index=False, sep='\t')
-    stat_df.to_csv(denovo_mean_file, index=False, sep='\t'
+    stat_df.to_csv(denovo_mean_file, index=False, sep='\t')

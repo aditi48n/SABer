@@ -230,7 +230,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes
-    cluster_df = pd.DataFrame(denovo_out_file, columns=['best_label', 'contig_id'])
+    cluster_df = pd.DataFrame(denovo_out_file, columns=['best_label', 'contig_id'], sep='\t')
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})

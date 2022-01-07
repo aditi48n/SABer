@@ -265,13 +265,15 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster
-    pool = multiprocessing.Pool(processes=nthreads)
-    arg_list = []
+    # pool = multiprocessing.Pool(processes=nthreads)
+    # arg_list = []
+    clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
-        arg_list.append([clust, sub_clust2src_df])
-
+        # arg_list.append([clust, sub_clust2src_df])
+        clust_tax.extend(cluster2taxonomy([clust, sub_clust2src_df]))
+    '''
     results = pool.imap_unordered(cluster2taxonomy, arg_list)
     clust_tax = []
     for i, output in tqdm(enumerate(results, 1)):
@@ -279,6 +281,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     logging.info('\n')
     pool.close()
     pool.join()
+    '''
 
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')

@@ -268,7 +268,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # pool = multiprocessing.Pool(processes=nthreads)
     # arg_list = []
     clust_tax = []
-    for clust in tqdm(clust2src_df['best_label'].unique()):
+    for clust in tqdm(clust2src_df['best_label'].unique()[:10]):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
@@ -282,7 +282,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     pool.close()
     pool.join()
     '''
-
+    print(clust_tax)
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'

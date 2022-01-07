@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 def EArecruit(p):  # Error Analysis for all recruits per sag
     col_id, temp_id, temp_clust_df, temp_contig_df, temp_src2contig_list, \
-    temp_src2strain_list, algorithm = p
+    temp_src2strain_list, algorithm, src_id, strain_id = p
     temp_clust_df[algorithm] = 1
     temp_contig_df[col_id] = temp_id
     df_list = [temp_contig_df, temp_clust_df]
@@ -43,14 +43,16 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])
         stats_lists.extend(recruit_stats([temp_id, algo, contig_id_list, contig_bp_list,
-                                          exact_truth, strain_truth, pred, src_total_bp
+                                          exact_truth, strain_truth, pred, src_total_bp,
+                                          src_id, strain_id
                                           ]))
     return stats_lists
 
 
 def recruit_stats(p):
-    sag_id, algo, contig_id_list, contig_bp_list, exact_truth, strain_truth, pred, tot_bp = p
-    pred_df = pd.DataFrame(zip(contig_id_list, contig_bp_list, pred),
+    sag_id, algo, contig_id_list, contig_bp_list, exact_truth, strain_truth, pred, tot_bp, \
+    src_id, strain_id = p
+    pred_df = pd.DataFrame(zip(contig_id_list, contig_bp_list, pred, ),
                            columns=['contig_id', 'contig_bp', 'pred']
                            )
     pred_df['sag_id'] = sag_id
@@ -71,7 +73,7 @@ def recruit_stats(p):
         print(pred_df.query("pred == 1.0 & truth == 1 & truth_strain == 1").shape)
         print(pred_df.query("pred == 1.0").head())
         print(pred_df.query("pred == 1.0 & truth == 1 & truth_strain == 1").head())
-        print(sag_id, TP, FP, TN, FN, tot_bp)
+        print(src_id, strain_id, sag_id, TP, FP, TN, FN, tot_bp)
         sys.exit()
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
@@ -443,7 +445,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))
         arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                         src2strain_list, 'denovo'
+                         src2strain_list, 'denovo', src_id, strain_id
                          ])
 
     results = pool.imap_unordered(EArecruit, arg_list)

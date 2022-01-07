@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 def EArecruit(p):  # Error Analysis for all recruits per sag
     col_id, temp_id, temp_clust_df, temp_contig_df, temp_src2contig_list, \
-    temp_src2strain_list, algorithm, src_id, strain_id = p
+    temp_src2strain_list, algorithm, src_id, strain_id, tot_bp_dict = p
     temp_clust_df[algorithm] = 1
     temp_contig_df[col_id] = temp_id
     df_list = [temp_contig_df, temp_clust_df]
@@ -37,9 +37,7 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
     contig_bp_list = list(merge_recruits_df['bp_cnt'])
     exact_truth = list(merge_recruits_df['exact_truth'])
     strain_truth = list(merge_recruits_df['strain_truth'])
-    src_total_bp = merge_recruits_df['sum_len'].values[0]
-    print(merge_recruits_df.head())
-    sys.exit()
+    src_total_bp = tot_bp_dict[src_id]
     algo_list = [algorithm]
     stats_lists = []
     for algo in algo_list:
@@ -408,11 +406,13 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sum_len']]
+    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
+    src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
+
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in clust2src_df['best_label'].unique():
@@ -447,7 +447,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))
         arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                         src2strain_list, 'denovo', src_id, strain_id
+                         src2strain_list, 'denovo', src_id, strain_id, src_bp_dict
                          ])
 
     results = pool.imap_unordered(EArecruit, arg_list)
@@ -539,7 +539,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
             src2contig_list = list(set(src_sub_df['contig_id'].values))
             src2strain_list = list(set(strain_sub_df['contig_id'].values))
             arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'hdbscan'
+                             src2strain_list, 'hdbscan', src_id, strain_id, src_bp_dict
                              ])
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
@@ -630,7 +630,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
             src2contig_list = list(set(src_sub_df['contig_id'].values))
             src2strain_list = list(set(strain_sub_df['contig_id'].values))
             arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'ocsvm'
+                             src2strain_list, 'ocsvm', src_id, strain_id, src_bp_dict
                              ])
 
     results = pool.imap_unordered(EArecruit, arg_list)
@@ -722,7 +722,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
             src2contig_list = list(set(src_sub_df['contig_id'].values))
             src2strain_list = list(set(strain_sub_df['contig_id'].values))
             arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'intersect'
+                             src2strain_list, 'intersect', src_id, strain_id, src_bp_dict
                              ])
 
     results = pool.imap_unordered(EArecruit, arg_list)

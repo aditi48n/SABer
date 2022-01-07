@@ -10,6 +10,9 @@ import pandas as pd
 import pyfastx
 from tqdm import tqdm
 
+# specify that all columns should be shown
+pd.set_option('max_columns', None)
+
 
 def EArecruit(p):  # Error Analysis for all recruits per sag
     col_id, temp_id, temp_clust_df, temp_contig_df, temp_src2contig_list, \
@@ -325,11 +328,11 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
                                                  'possible_bp', 'total_bp'
                                                  ])
-    score_df['yes_NC'] = [1 if x / y >= 0.95 else 0 for x, y in
+    score_df['yes_NC'] = [x / y for x, y in
                           zip(score_df['possible_bp'],
                               score_df['total_bp'])
                           ]
-    score_df['yes_MQ'] = [1 if x / y >= 0.90 else 0 for x, y in
+    score_df['yes_MQ'] = [x / y for x, y in
                           zip(score_df['possible_bp'],
                               score_df['total_bp'])
                           ]

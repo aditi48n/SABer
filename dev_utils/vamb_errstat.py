@@ -351,13 +351,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     score_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in score_df['asm_per_bp']]
     score_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in score_df['asm_per_bp']]
-    poss_bp_df = score_df.groupby(['level', 'algorithm']
-                                  )[['yes_NC', 'yes_MQ']].sum().reset_index()
-
-    print(score_df.head())
-    print(poss_bp_df.head())
-    sys.exit()
-
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]
                                          )
@@ -371,7 +364,11 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
-
+    # possible bp's based on asm vs ref genome
+    poss_bp_df = score_tax_df.groupby(['level', 'algorithm']
+                                      )[['yes_NC', 'yes_MQ']].sum().reset_index()
+    print(poss_bp_df)
+    sys.exit()
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
                                                       'F1']].mean().reset_index()

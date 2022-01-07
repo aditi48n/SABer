@@ -250,7 +250,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes
-    cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
+    cluster_df = pd.read_csv(denovo_out_file, names=['best_label', 'contig_id'], sep='\t', header=None)
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
@@ -260,6 +260,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                          on='contig_id', how='left'
                                          )
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
+
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in clust2src_df['best_label'].unique():

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import glob
+import logging
+import multiprocessing
 import sys
 from functools import reduce
 from os import makedirs, path
@@ -290,9 +292,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # setup multithreading pool
     print("De Novo error analysis started...")
-    # pool = multiprocessing.Pool(processes=nthreads)
-    # arg_list = []
-    score_list = []
+    pool = multiprocessing.Pool(processes=nthreads)
+    arg_list = []
     for clust in tqdm(clust2contig_df['best_label'].unique()[:1000]):
         # subset recruit dataframes
         samp_id = clust.rsplit('C', 1)[0]
@@ -307,14 +308,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         strain_sub_df = sub_src2cont_df.query('strain == @strain_id')
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))
-        # arg_list.append(['best_label', clust, dedup_clust_df, sub_contig_bp_df, src2contig_list,
-        #                 src2strain_list, 'denovo', src_id, strain_id, src_bp_dict
-        #                 ])
-        score_list.extend(EArecruit(['best_label', clust, dedup_clust_df, sub_contig_bp_df, src2contig_list,
-                                     src2strain_list, 'denovo', src_id, strain_id, src_bp_dict
-                                     ]))
+        arg_list.append(['best_label', clust, dedup_clust_df, sub_contig_bp_df, src2contig_list,
+                         src2strain_list, 'denovo', src_id, strain_id, src_bp_dict
+                         ])
 
-    '''
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
@@ -322,7 +319,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     logging.info('\n')
     pool.close()
     pool.join()
-    '''
+
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',

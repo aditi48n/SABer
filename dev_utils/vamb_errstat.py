@@ -334,6 +334,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                               score_df['total_bp'])
                           ]
     print(score_df.head())
+    print(score_df['yes_NC'].unique())
+    print(score_df['yes_MQ'].unique())
+
     sys.exit()
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]

@@ -272,7 +272,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
-        clust_tax.extend(cluster2taxonomy([clust, sub_clust2src_df]))
+        clust_tax.append(cluster2taxonomy([clust, sub_clust2src_df]))
     '''
     results = pool.imap_unordered(cluster2taxonomy, arg_list)
     clust_tax = []
@@ -287,7 +287,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'
                                       ]].drop_duplicates()
-
+    sys.exit()
     # setup multithreading pool
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)

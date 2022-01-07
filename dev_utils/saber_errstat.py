@@ -38,6 +38,8 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
     exact_truth = list(merge_recruits_df['exact_truth'])
     strain_truth = list(merge_recruits_df['strain_truth'])
     src_total_bp = merge_recruits_df['sum_len'].values[0]
+    print(merge_recruits_df.head())
+    sys.exit()
     algo_list = [algorithm]
     stats_lists = []
     for algo in algo_list:

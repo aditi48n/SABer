@@ -352,7 +352,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     score_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in score_df['asm_per_bp']]
     score_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in score_df['asm_per_bp']]
     poss_bp_df = score_df.groupby(['level', 'algorithm']
-                                  )[['yes_NC', 'yes_MQ']].size().reset_index()
+                                  )[['yes_NC', 'yes_MQ']].sum().reset_index()
 
     print(score_df.head())
     print(poss_bp_df.head())

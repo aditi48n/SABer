@@ -312,7 +312,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     logging.info('\n')
     pool.close()
     pool.join()
-
+    print(score_list)
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',

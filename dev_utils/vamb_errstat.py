@@ -69,6 +69,8 @@ def recruit_stats(p):
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    # compute total possible bp for each genome
+    str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
     FN = FN + working_bp
@@ -81,7 +83,8 @@ def recruit_stats(p):
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-
+    # compute total possible bp for each genome
+    exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
     FN = FN + working_bp
@@ -90,8 +93,8 @@ def recruit_stats(p):
                         )
 
     # Add total possible bp's for complete genome
-    str_list.append(tot_bp)
-    x_list.append(tot_bp)
+    str_list.extend([str_tot_bp_poss, tot_bp])
+    x_list.extend([exa_tot_bp_poss, tot_bp])
 
     cat_list = [str_list, x_list]
 
@@ -152,10 +155,8 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
         F1 = 2 * (precision * sensitivity) / (precision + sensitivity)
     # oc_precision, oc_recall, _ = precision_recall_curve(y_truth, y_pred)
     # AUC = auc(oc_recall, oc_precision)
-    # add total possible bp for each genome
-    tot_bp_poss = TP + FN
     stat_list = [sag_id, level, algo, precision, sensitivity, MCC, F1,
-                 N, S, P, TP, FP, TN, FN, tot_bp_poss
+                 N, S, P, TP, FP, TN, FN
                  ]
 
     return stat_list

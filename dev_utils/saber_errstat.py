@@ -68,7 +68,9 @@ def recruit_stats(p):
         print(pred_df.query("pred == 1.0").shape)
         print(pred_df.query("truth == 1").shape)
         print(pred_df.query("truth_strain == 1").shape)
+        print(pred_df.query("pred == 1.0 & truth == 1 & truth_strain == 1").shape)
         print(pred_df.query("pred == 1.0").head())
+        print(pred_df.query("pred == 1.0 & truth == 1 & truth_strain == 1").head())
         print(sag_id, TP, FP, TN, FN, tot_bp)
         sys.exit()
     # Complete SRC genome is not always present in contigs, need to correct for that.

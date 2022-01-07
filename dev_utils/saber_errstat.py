@@ -65,16 +65,6 @@ def recruit_stats(p):
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    if sag_id == 14:
-        print(pred_df.head())
-        print(pred_df.query("pred == 1.0").shape)
-        print(pred_df.query("truth == 1").shape)
-        print(pred_df.query("truth_strain == 1").shape)
-        print(pred_df.query("pred == 1.0 & truth == 1 & truth_strain == 1").shape)
-        print(pred_df.query("pred == 1.0").head())
-        print(pred_df.query("pred == 1.0 & truth == 1 & truth_strain == 1").head())
-        print(src_id, strain_id, sag_id, TP, FP, TN, FN, tot_bp)
-        sys.exit()
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
     FN = FN + working_bp

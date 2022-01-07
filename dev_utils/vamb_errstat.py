@@ -329,6 +329,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                           zip(score_df['possible_bp'],
                               score_df['total_bp'])
                           ]
+    print(score_df.head())
+    sys.exit()
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]
                                          )
@@ -345,8 +347,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                      'F1', 'yes_NC', 'yes_MQ'
-                                                      ]].mean().reset_index()
+                                                      'F1']].mean().reset_index()
     cnt_bins_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                         'MQ_bins']).size().reset_index()
     cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',

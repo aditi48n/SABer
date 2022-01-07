@@ -58,18 +58,19 @@ def recruit_stats(p):
     pred_df = pred_df[['sag_id', 'algorithm', 'contig_id', 'contig_bp', 'pred']]
     pred_df['truth'] = exact_truth
     pred_df['truth_strain'] = strain_truth
-    print(pred_df.head())
-    print(pred_df.query("pred == 1.0").shape)
-    print(pred_df.query("truth == 1").shape)
-    print(pred_df.query("truth_strain == 1").shape)
-    print(pred_df.query("pred == 1.0").head())
     # calculate for hybrid exact/strain-level matches
     TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    print(sag_id, TP, FP, TN, FN, tot_bp)
-    sys.exit()
+    if sag_id == 14:
+        print(pred_df.head())
+        print(pred_df.query("pred == 1.0").shape)
+        print(pred_df.query("truth == 1").shape)
+        print(pred_df.query("truth_strain == 1").shape)
+        print(pred_df.query("pred == 1.0").head())
+        print(sag_id, TP, FP, TN, FN, tot_bp)
+        sys.exit()
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
     FN = FN + working_bp

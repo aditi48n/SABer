@@ -45,8 +45,7 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
                                         strain_truth, pred, src_total_bp,
                                         src_id, strain_id
                                         ])
-        rec_stats_list.append(src_total_bp)
-        stats_lists.append(rec_stats_list)
+        stats_lists.extend(rec_stats_list)
 
     return stats_lists
 
@@ -86,6 +85,11 @@ def recruit_stats(p):
     x_list = calc_stats(sag_id, 'exact', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )
+
+    # Add total possible bp's for complete genome
+    str_list.append(tot_bp)
+    x_list.append(tot_bp)
+
     cat_list = [str_list, x_list]
 
     return cat_list
@@ -308,7 +312,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
-        score_list.append(output)
+        score_list.extend(output)
     logging.info('\n')
     pool.close()
     pool.join()

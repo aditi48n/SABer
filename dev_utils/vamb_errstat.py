@@ -308,7 +308,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
-        score_list.extend(output)
+        score_list.append(output)
     logging.info('\n')
     pool.close()
     pool.join()

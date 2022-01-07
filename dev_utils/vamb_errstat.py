@@ -344,15 +344,20 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
                                                  'possible_bp', 'total_bp'
                                                  ])
-    score_df['yes_NC'] = [x / y for x, y in
-                          zip(score_df['possible_bp'],
-                              score_df['total_bp'])
-                          ]
-    score_df['yes_MQ'] = [x / y for x, y in
-                          zip(score_df['possible_bp'],
-                              score_df['total_bp'])
-                          ]
+    score_df['asm_per_bp'] = [x / y for x, y in
+                              zip(score_df['possible_bp'],
+                                  score_df['total_bp'])
+                              ]
+
+    score_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in score_df['asm_per_bp']]
+    score_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in score_df['asm_per_bp']]
+    poss_bp_df = score_df.groupby(['level', 'algorithm']
+                                  )[['yes_NC', 'yes_MQ']].size().reset_index()
+
     print(score_df.head())
+    print(poss_bp_df.head())
+    sys.exit()
+
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]
                                          )

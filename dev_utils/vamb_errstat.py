@@ -264,12 +264,11 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in clust2src_df['best_label'].unique():
+    for clust in tqdm(clust2src_df['best_label'].unique()):
         sub_clust_df = clust2src_df.query('best_label == @clust')
         exact_df = sub_clust_df.groupby(['CAMI_genomeID'])['bp_cnt'].sum().reset_index()
         strain_df = sub_clust_df.groupby(['strain'])['bp_cnt'].sum().reset_index()
         ex_label_df = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()]['CAMI_genomeID']
-        print(sub_clust_df.head())
         if not ex_label_df.empty:
             exact_label = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()
                                    ]['CAMI_genomeID'].values[0]

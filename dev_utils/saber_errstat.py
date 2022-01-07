@@ -58,7 +58,7 @@ def recruit_stats(p):
     pred_df = pred_df[['sag_id', 'algorithm', 'contig_id', 'contig_bp', 'pred']]
     pred_df['truth'] = exact_truth
     pred_df['truth_strain'] = strain_truth
-
+    print(pred_df)
     # calculate for hybrid exact/strain-level matches
     TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])

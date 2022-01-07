@@ -254,6 +254,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
@@ -280,19 +281,22 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'
                                       ]].drop_duplicates()
+
     # setup multithreading pool
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     for clust in tqdm(clust2contig_df['best_label'].unique()):
         # subset recruit dataframes
+        samp_id = clust.rsplit('C', 1)[0]
+        sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
         sub_clust_df = clust2contig_df.query('best_label == @clust')
         dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
         # Map Sources/SAGs to Strain IDs
         src_id = sub_clust_df['exact_label'].values[0]
         strain_id = sub_clust_df['strain_label'].values[0]
-        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-        strain_sub_df = src2contig_df.query('strain == @strain_id')
+        src_sub_df = sub_src2cont_df.query('CAMI_genomeID == @src_id')
+        strain_sub_df = sub_src2cont_df.query('strain == @strain_id')
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))
         arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,

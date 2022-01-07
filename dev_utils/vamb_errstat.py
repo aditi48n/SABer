@@ -263,19 +263,18 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster
+    pool = multiprocessing.Pool(processes=nthreads)
+    arg_list = []
+    for clust in tqdm(clust2src_df['best_label'].unique()):
+        arg_list.append([clust, clust2src_df])
+
+    results = pool.imap_unordered(cluster2taxonomy, arg_list)
     clust_tax = []
-    for clust in clust2src_df['best_label'].unique():
-        sub_clust_df = clust2src_df.query('best_label == @clust')
-        exact_df = sub_clust_df.groupby(['CAMI_genomeID'])['bp_cnt'].sum().reset_index()
-        strain_df = sub_clust_df.groupby(['strain'])['bp_cnt'].sum().reset_index()
-        ex_label_df = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()]['CAMI_genomeID']
-        print(sub_clust_df.head())
-        if not ex_label_df.empty:
-            exact_label = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()
-                                   ]['CAMI_genomeID'].values[0]
-            strain_label = strain_df[strain_df.bp_cnt == strain_df.bp_cnt.max()
-                                     ]['strain'].values[0]
-            clust_tax.append([clust, exact_label, strain_label])
+    for i, output in tqdm(enumerate(results, 1)):
+        clust_tax.extend(output)
+    logging.info('\n')
+    pool.close()
+    pool.join()
 
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
@@ -389,3 +388,21 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
 
     return cat_df
+
+
+def cluster2taxonomy(p):
+    clust, clust2src_df = p
+    sub_clust_df = clust2src_df.query('best_label == @clust')
+    exact_df = sub_clust_df.groupby(['CAMI_genomeID'])['bp_cnt'].sum().reset_index()
+    strain_df = sub_clust_df.groupby(['strain'])['bp_cnt'].sum().reset_index()
+    ex_label_df = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()]['CAMI_genomeID']
+    try:
+        if not ex_label_df.empty:
+            exact_label = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()
+                                   ]['CAMI_genomeID'].values[0]
+            strain_label = strain_df[strain_df.bp_cnt == strain_df.bp_cnt.max()
+                                     ]['strain'].values[0]
+            return [clust, exact_label, strain_label]
+    except:
+        print(sub_clust_df.head())
+        sys.exit()

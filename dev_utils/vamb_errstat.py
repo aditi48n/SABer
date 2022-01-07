@@ -46,7 +46,7 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
                                         src_id, strain_id
                                         ])
         rec_stats_list.append(src_total_bp)
-        stats_lists.extend(rec_stats_list)
+        stats_lists.append(rec_stats_list)
 
     return stats_lists
 
@@ -312,7 +312,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     logging.info('\n')
     pool.close()
     pool.join()
-    print(score_list)
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',

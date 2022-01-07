@@ -409,4 +409,3 @@ def cluster2taxonomy(p):
             return [clust, exact_label, strain_label]
     except:
         print(sub_clust_df.head())
-        sys.exit()

@@ -260,13 +260,17 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
+    clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
+
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
-        arg_list.append([clust, clust2src_df])
+        samp_id = clust.rsplit('C', 1)[0]
+        sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
+        arg_list.append([clust, sub_clust2src_df])
 
     results = pool.imap_unordered(cluster2taxonomy, arg_list)
     clust_tax = []

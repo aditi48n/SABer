@@ -40,10 +40,14 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
     stats_lists = []
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])
-        stats_lists.extend(recruit_stats([temp_id, algo, contig_id_list, contig_bp_list,
-                                          exact_truth, strain_truth, pred, src_total_bp,
-                                          src_id, strain_id
-                                          ]))
+        rec_stats_list = recruit_stats([temp_id, algo, contig_id_list,
+                                        contig_bp_list, exact_truth,
+                                        strain_truth, pred, src_total_bp,
+                                        src_id, strain_id
+                                        ])
+        rec_stats_list.append(src_total_bp)
+        stats_lists.extend(rec_stats_list)
+
     return stats_lists
 
 
@@ -141,8 +145,10 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
         F1 = 2 * (precision * sensitivity) / (precision + sensitivity)
     # oc_precision, oc_recall, _ = precision_recall_curve(y_truth, y_pred)
     # AUC = auc(oc_recall, oc_precision)
+    # add total possible bp for each genome
+    tot_bp_poss = TP + FN
     stat_list = [sag_id, level, algo, precision, sensitivity, MCC, F1,
-                 N, S, P, TP, FP, TN, FN
+                 N, S, P, TP, FP, TN, FN, tot_bp_poss
                  ]
 
     return stat_list
@@ -256,7 +262,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
+    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
@@ -266,23 +272,12 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster
-    # pool = multiprocessing.Pool(processes=nthreads)
-    # arg_list = []
     clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
         clust_tax.append(cluster2taxonomy([clust, sub_clust2src_df]))
-    '''
-    results = pool.imap_unordered(cluster2taxonomy, arg_list)
-    clust_tax = []
-    for i, output in tqdm(enumerate(results, 1)):
-        clust_tax.extend(output)
-    logging.info('\n')
-    pool.close()
-    pool.join()
-    '''
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'
@@ -292,10 +287,11 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
-    for clust in tqdm(clust2contig_df['best_label'].unique()):
+    for clust in tqdm(clust2contig_df['best_label'].unique()[:100]):
         # subset recruit dataframes
         samp_id = clust.rsplit('C', 1)[0]
         sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
+        sub_contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
         sub_clust_df = clust2contig_df.query('best_label == @clust')
         dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
         # Map Sources/SAGs to Strain IDs
@@ -305,7 +301,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         strain_sub_df = sub_src2cont_df.query('strain == @strain_id')
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))
-        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
+        arg_list.append(['best_label', clust, dedup_clust_df, sub_contig_bp_df, src2contig_list,
                          src2strain_list, 'denovo', src_id, strain_id, src_bp_dict
                          ])
 
@@ -319,8 +315,17 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
-                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
+                                                 'possible_bp', 'total_bp'
                                                  ])
+    score_df['yes_NC'] = [1 if x / y >= 0.95 else 0 for x, y in
+                          zip(score_df['possible_bp'],
+                              score_df['total_bp'])
+                          ]
+    score_df['yes_MQ'] = [1 if x / y >= 0.90 else 0 for x, y in
+                          zip(score_df['possible_bp'],
+                              score_df['total_bp'])
+                          ]
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]
                                          )
@@ -337,7 +342,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
-                                                      'F1']].mean().reset_index()
+                                                      'F1', 'yes_NC', 'yes_MQ'
+                                                      ]].mean().reset_index()
     cnt_bins_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                         'MQ_bins']).size().reset_index()
     cnt_bins_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',

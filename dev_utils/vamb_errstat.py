@@ -299,7 +299,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in tqdm(clust2src_df['best_label'].unique()[:1000]):
+    for clust in tqdm(clust2src_df['best_label'].unique()[:100]):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
@@ -313,7 +313,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
-    for clust in tqdm(clust2contig_df['best_label'].unique()[:1000]):
+    for clust in tqdm(clust2contig_df['best_label'].unique()[:100]):
         # subset recruit dataframes
         samp_id = clust.rsplit('C', 1)[0]
         sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
@@ -367,8 +367,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # possible bp's based on asm vs ref genome
     poss_bp_df = score_tax_df.groupby(['level', 'algorithm']
                                       )[['yes_NC', 'yes_MQ']].sum().reset_index()
-    print(poss_bp_df)
-    sys.exit()
+
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
                                                       'F1']].mean().reset_index()
@@ -426,7 +425,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     cat_cols = ['algo', 'level', 'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
                 'mq_cnt', 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'nc_cnt'
                 ]
+    # add the total possible NC and MQ bins
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
-
-    return cat_df
-
+    poss_bp_df.columns = ['level', 'algo', 'NC_possible', 'MQ_possible']
+    cat_bp_df = cat_df.merge(poss_bp_df, on=['level', 'algo'],
+                             how='left'
+                             )
+    return cat_bp_df

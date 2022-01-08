@@ -369,7 +369,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print(poss_bp_df.head())
     nc_poss = poss_bp_df['yes_NC'].sum()
     mq_poss = poss_bp_df['yes_MQ'].sum()
-
+    print(nc_poss)
+    print(mq_poss)
     sys.exit()
     # add possible bp to score df
     score_tax_df = score_tax_df.merge(poss_bp_df[['exact_label', 'yes_NC', 'yes_MQ']],

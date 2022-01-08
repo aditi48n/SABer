@@ -299,7 +299,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in tqdm(clust2src_df['best_label'].unique()):
+    for clust in tqdm(clust2src_df['best_label'].unique()[:100]):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
@@ -313,7 +313,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
-    for clust in tqdm(clust2contig_df['best_label'].unique()):
+    for clust in tqdm(clust2contig_df['best_label'].unique()[:100]):
         # subset recruit dataframes
         samp_id = clust.rsplit('C', 1)[0]
         sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
@@ -344,11 +344,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
                                                  'possible_bp', 'total_bp'
                                                  ])
-    score_df['asm_per_bp'] = [x / y for x, y in
-                              zip(score_df['possible_bp'],
-                                  score_df['total_bp'])
-                              ]
-
     score_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in score_df['asm_per_bp']]
     score_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in score_df['asm_per_bp']]
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
@@ -365,9 +360,12 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
     # possible bp's based on asm vs ref genome
-    poss_bp_df = score_tax_df.groupby(['level', 'algorithm']
-                                      )[['yes_NC', 'yes_MQ']].sum().reset_index()
-
+    poss_bp_df = score_tax_df[['exact_label', 'possible_bp', 'total_bp']].copy().drop_duplicates()
+    poss_bp_df['asm_per_bp'] = [x / y for x, y in
+                                zip(score_tax_df['possible_bp'],
+                                    score_tax_df['total_bp'])
+                                ]
+    sys.exit()
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
                                                       'F1']].mean().reset_index()

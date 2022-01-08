@@ -366,12 +366,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                 ]
     poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
     poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
-    print(poss_bp_df.head())
     nc_poss = poss_bp_df['yes_NC'].sum()
     mq_poss = poss_bp_df['yes_MQ'].sum()
-    print(nc_poss)
-    print(mq_poss)
-    sys.exit()
     # add possible bp to score df
     score_tax_df = score_tax_df.merge(poss_bp_df[['exact_label', 'yes_NC', 'yes_MQ']],
                                       on='exact_lebel', how='left'
@@ -435,8 +431,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                 ]
     # add the total possible NC and MQ bins
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
-    poss_bp_df.columns = ['level', 'algo', 'NC_possible', 'MQ_possible']
-    cat_bp_df = cat_df.merge(poss_bp_df, on=['level', 'algo'],
-                             how='left'
-                             )
-    return cat_bp_df
+    cat_df['NC_possible'] = nc_poss
+    cat_df['MQ_possible'] = mq_poss
+
+    return cat_df

@@ -376,11 +376,15 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print(poss_str_bp_df.head())
     print(poss_bp_df.shape)
     print(poss_str_bp_df.shape)
-    sys.exit()
     nc_x_poss = poss_bp_df['yes_NC'].sum()
     mq_x_poss = poss_bp_df['yes_MQ'].sum()
-    nc_s_poss = poss_bp_df['yes_NC'].sum()
-    mq_s_poss = poss_bp_df['yes_MQ'].sum()
+    nc_s_poss = poss_str_bp_df['yes_NC'].sum()
+    mq_s_poss = poss_str_bp_df['yes_MQ'].sum()
+    print(nc_x_poss)
+    print(mq_x_poss)
+    print(nc_s_poss)
+    print(mq_s_poss)
+    sys.exit()
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',

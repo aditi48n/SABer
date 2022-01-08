@@ -344,8 +344,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                                  'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
                                                  'possible_bp', 'total_bp'
                                                  ])
-    score_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in score_df['asm_per_bp']]
-    score_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in score_df['asm_per_bp']]
+
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]
                                          )
@@ -365,7 +364,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                 zip(score_tax_df['possible_bp'],
                                     score_tax_df['total_bp'])
                                 ]
+    print(poss_bp_df.head())
     sys.exit()
+    score_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in score_df['asm_per_bp']]
+    score_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in score_df['asm_per_bp']]
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
                                                       'F1']].mean().reset_index()

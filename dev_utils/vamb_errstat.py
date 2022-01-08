@@ -359,17 +359,28 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
     # possible bp's based on asm vs ref genome
-    print(score_tax_df.head())
-    sys.exit()
-    poss_bp_df = score_tax_df[['exact_label', 'possible_bp', 'total_bp']].copy().drop_duplicates()
+    poss_bp_df = score_tax_df[['exact_label', 'strain_label',
+                               'possible_bp', 'total_bp']].copy().drop_duplicates()
     poss_bp_df['asm_per_bp'] = [x / y for x, y in
                                 zip(poss_bp_df['possible_bp'],
                                     poss_bp_df['total_bp'])
                                 ]
     poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
     poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
-    nc_poss = poss_bp_df['yes_NC'].sum()
-    mq_poss = poss_bp_df['yes_MQ'].sum()
+    poss_bp_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
+    poss_str_bp_df = poss_bp_df[['strain_label', 'possible_bp',
+                                 'total_bp', 'asm_per_bp',
+                                 'yes_NC', 'yes_MQ'
+                                 ]].copy().drop_duplicates(subset='strain_label')
+    print(poss_bp_df.head())
+    print(poss_str_bp_df.head())
+    print(poss_bp_df.shape)
+    print(poss_str_bp_df.shape)
+    sys.exit()
+    nc_x_poss = poss_bp_df['yes_NC'].sum()
+    mq_x_poss = poss_bp_df['yes_MQ'].sum()
+    nc_s_poss = poss_bp_df['yes_NC'].sum()
+    mq_s_poss = poss_bp_df['yes_MQ'].sum()
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',

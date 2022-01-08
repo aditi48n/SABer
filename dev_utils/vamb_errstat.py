@@ -372,19 +372,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                  'total_bp', 'asm_per_bp',
                                  'yes_NC', 'yes_MQ'
                                  ]].copy().drop_duplicates(subset='strain_label')
-    print(poss_bp_df.head())
-    print(poss_str_bp_df.head())
-    print(poss_bp_df.shape)
-    print(poss_str_bp_df.shape)
     nc_x_poss = poss_bp_df['yes_NC'].sum()
     mq_x_poss = poss_bp_df['yes_MQ'].sum()
     nc_s_poss = poss_str_bp_df['yes_NC'].sum()
     mq_s_poss = poss_str_bp_df['yes_MQ'].sum()
-    print(nc_x_poss)
-    print(mq_x_poss)
-    print(nc_s_poss)
-    print(mq_s_poss)
-    sys.exit()
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
@@ -445,7 +436,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                 ]
     # add the total possible NC and MQ bins
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
-    cat_df['NC_possible'] = nc_poss
-    cat_df['MQ_possible'] = mq_poss
+    cat_df['ext_NC_poss'] = nc_x_poss
+    cat_df['ext_MQ_poss'] = mq_x_poss
+    cat_df['str_NC_poss'] = nc_s_poss
+    cat_df['str_MQ_poss'] = mq_s_poss
 
     return cat_df

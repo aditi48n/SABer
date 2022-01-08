@@ -361,8 +361,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # possible bp's based on asm vs ref genome
     poss_bp_df = score_tax_df[['exact_label', 'possible_bp', 'total_bp']].copy().drop_duplicates()
     poss_bp_df['asm_per_bp'] = [x / y for x, y in
-                                zip(score_tax_df['possible_bp'],
-                                    score_tax_df['total_bp'])
+                                zip(poss_bp_df['possible_bp'],
+                                    poss_bp_df['total_bp'])
                                 ]
     print(poss_bp_df.head())
     sys.exit()

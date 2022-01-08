@@ -366,9 +366,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                 ]
     poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
     poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
-    poss_sum_df = poss_bp_df.groupby().sum().reset_index()
     print(poss_bp_df.head())
-    print(poss_sum_df)
+    nc_poss = poss_bp_df['yes_NC'].sum()
+    mq_poss = poss_bp_df['yes_MQ'].sum()
+
     sys.exit()
     # add possible bp to score df
     score_tax_df = score_tax_df.merge(poss_bp_df[['exact_label', 'yes_NC', 'yes_MQ']],

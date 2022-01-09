@@ -416,7 +416,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')
                 sub_err_df.sort_values(['precision', 'sensitivity'],
-                                       ascending=[True, True], inplace=True
+                                       ascending=[False, False], inplace=True
                                        )
                 sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
                 print(sub_err_df.head())

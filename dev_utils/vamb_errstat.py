@@ -415,7 +415,15 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         for algo in err_df['algorithm'].unique():
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')
+                sub_err_df.sort_values(['precision', 'sensitivity'],
+                                       ascending=[True, True], inplace=True
+                                       )
+                sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
                 print(sub_err_df.head())
+                print(sub_str_df.head())
+                print(sub_err_df.shape)
+                print(sub_str_df.shape)
+
                 sys.exit()
                 l_20 = '>20Kb'
                 mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")

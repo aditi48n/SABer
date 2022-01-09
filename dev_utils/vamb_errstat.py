@@ -419,36 +419,38 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                        ascending=[False, False], inplace=True
                                        )
                 sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
-                print(sub_err_df.head())
-                print(sub_str_df.head())
-                print(sub_err_df.shape)
-                print(sub_str_df.shape)
-
-                sys.exit()
                 l_20 = '>20Kb'
-                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
-                nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
-                mq_avg_mcc = mq_df['MCC'].mean()
-                nc_avg_mcc = nc_df['MCC'].mean()
-                mq_avg_p = mq_df['precision'].mean()
-                nc_avg_p = nc_df['precision'].mean()
-                mq_avg_r = mq_df['sensitivity'].mean()
-                nc_avg_r = nc_df['sensitivity'].mean()
-                ext_mq_cnt = mq_df['MQ_bins'].count()
-                ext_nc_cnt = nc_df['NC_bins'].count()
+                ext_mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                ext_nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+                str_mq_df = sub_str_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                str_nc_df = sub_str_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+
+                mq_avg_mcc = ext_mq_df['MCC'].mean()
+                nc_avg_mcc = ext_nc_df['MCC'].mean()
+                mq_avg_p = ext_mq_df['precision'].mean()
+                nc_avg_p = ext_nc_df['precision'].mean()
+                mq_avg_r = ext_mq_df['sensitivity'].mean()
+                nc_avg_r = ext_nc_df['sensitivity'].mean()
+                ext_mq_cnt = ext_mq_df['MQ_bins'].count()
+                ext_nc_cnt = ext_nc_df['NC_bins'].count()
+                str_mq_cnt = str_mq_df['MQ_bins'].count()
+                str_nc_cnt = str_nc_df['NC_bins'].count()
+
                 err_list = [algo, level, mq_avg_p, mq_avg_r, mq_avg_mcc,
-                            ext_mq_cnt, nc_avg_p, nc_avg_r, nc_avg_mcc, ext_nc_cnt
+                            nc_avg_p, nc_avg_r, nc_avg_mcc, ext_mq_cnt,
+                            ext_nc_cnt, str_mq_cnt, str_nc_cnt
                             ]
                 cat_list.append(err_list)
 
     cat_cols = ['algo', 'level', 'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
-                'ext_mq_cnt', 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'ext_nc_cnt'
+                'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt',
+                'ext_nc_cnt', 'str_mq_cnt', 'str_nc_cnt'
                 ]
     # add the total possible NC and MQ bins
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
-    cat_df['ext_nc_poss'] = nc_x_poss
     cat_df['ext_mq_poss'] = mq_x_poss
-    cat_df['str_nc_poss'] = nc_s_poss
+    cat_df['ext_nc_poss'] = nc_x_poss
     cat_df['str_mq_poss'] = mq_s_poss
+    cat_df['str_nc_poss'] = nc_s_poss
 
     return cat_df

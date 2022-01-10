@@ -299,7 +299,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in tqdm(clust2src_df['best_label'].unique()):
+    for clust in tqdm(clust2src_df['best_label'].unique()[:100]):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
@@ -313,7 +313,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
-    for clust in tqdm(clust2contig_df['best_label'].unique()):
+    for clust in tqdm(clust2contig_df['best_label'].unique()[:100]):
         # subset recruit dataframes
         samp_id = clust.rsplit('C', 1)[0]
         sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
@@ -433,18 +433,24 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                 nc_avg_r = ext_nc_df['sensitivity'].mean()
                 ext_mq_cnt = ext_mq_df['MQ_bins'].count()
                 ext_nc_cnt = ext_nc_df['NC_bins'].count()
+                ext_mq_uniq = ext_mq_cnt['exact_label'].unique()
+                ext_nc_uniq = ext_nc_cnt['exact_label'].unique()
                 str_mq_cnt = str_mq_df['MQ_bins'].count()
                 str_nc_cnt = str_nc_df['NC_bins'].count()
+                str_mq_uniq = str_mq_cnt['strain_label'].unique()
+                str_nc_uniq = str_nc_cnt['strain_label'].unique()
 
                 err_list = [algo, level, mq_avg_p, mq_avg_r, mq_avg_mcc,
                             nc_avg_p, nc_avg_r, nc_avg_mcc, ext_mq_cnt,
-                            ext_nc_cnt, str_mq_cnt, str_nc_cnt
+                            ext_mq_uniq, ext_nc_cnt, ext_nc_uniq,
+                            str_mq_cnt, str_mq_uniq, str_nc_cnt, str_nc_uniq
                             ]
                 cat_list.append(err_list)
 
     cat_cols = ['algo', 'level', 'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
                 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt',
-                'ext_nc_cnt', 'str_mq_cnt', 'str_nc_cnt'
+                'ext_mq_uniq', 'ext_nc_cnt', 'ext_nc_uniq', 'str_mq_cnt',
+                'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq'
                 ]
     # add the total possible NC and MQ bins
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)

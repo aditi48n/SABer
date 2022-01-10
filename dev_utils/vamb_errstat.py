@@ -311,6 +311,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
+        print(clust, samp_id)
+        print(sub_clust2src_df.head())
+        print(cluster2taxonomy([clust, sub_clust2src_df]))
         clust_tax.append(cluster2taxonomy([clust, sub_clust2src_df]))
     print(clust_tax)
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])

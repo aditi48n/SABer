@@ -302,7 +302,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                          on='contig_id', how='left'
                                          )
     clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
-
+    print(clust2src_df.head())
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster

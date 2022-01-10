@@ -73,10 +73,13 @@ def recruit_stats(p):
     str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    # FN = FN + working_bp
-    str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
+    corrected_FN = FN + working_bp
+    str_list = calc_stats(sag_id, 'strain_poss', algo, TP, FP, TN, FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
+    corr_str_list = calc_stats(sag_id, 'strain_abs', algo, TP, FP, TN, corrected_FN,
+                               pred_df['truth_strain'], pred_df['pred']
+                               )
     # ALL Recruits
     # calculate for exact-level match
     TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
@@ -87,16 +90,21 @@ def recruit_stats(p):
     exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    #FN = FN + working_bp
-    x_list = calc_stats(sag_id, 'exact', algo, TP, FP, TN, FN,
+    corrected_FN = FN + working_bp
+    x_list = calc_stats(sag_id, 'exact_poss', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )
+    corr_x_list = calc_stats(sag_id, 'exact_abs', algo, TP, FP, TN, corrected_FN,
+                             pred_df['truth'], pred_df['pred']
+                             )
 
     # Add total possible bp's for complete genome
     str_list.extend([str_tot_bp_poss, tot_bp])
     x_list.extend([exa_tot_bp_poss, tot_bp])
+    corr_str_list.extend([str_tot_bp_poss, tot_bp])
+    corr_x_list.extend([exa_tot_bp_poss, tot_bp])
 
-    cat_list = [str_list, x_list]
+    cat_list = [str_list, corr_str_list, x_list, corr_x_list]
 
     return cat_list
 
@@ -299,7 +307,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in tqdm(clust2src_df['best_label'].unique()):
+    for clust in tqdm(clust2src_df['best_label'].unique()[:100]):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
@@ -313,7 +321,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
-    for clust in tqdm(clust2contig_df['best_label'].unique()):
+    for clust in tqdm(clust2contig_df['best_label'].unique()[:100]):
         # subset recruit dataframes
         samp_id = clust.rsplit('C', 1)[0]
         sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')

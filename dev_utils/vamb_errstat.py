@@ -302,7 +302,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                          on='contig_id', how='left'
                                          )
     clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
-    print(clust2src_df.head())
+
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster
@@ -311,11 +311,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
-        print(clust, samp_id)
-        print(sub_clust2src_df.head())
-        print(cluster2taxonomy([clust, sub_clust2src_df]))
         clust_tax.append(cluster2taxonomy([clust, sub_clust2src_df]))
-    print(clust_tax)
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'

@@ -433,12 +433,12 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                 nc_avg_r = ext_nc_df['sensitivity'].mean()
                 ext_mq_cnt = ext_mq_df['MQ_bins'].count()
                 ext_nc_cnt = ext_nc_df['NC_bins'].count()
-                ext_mq_uniq = ext_mq_cnt['exact_label'].unique().count()
-                ext_nc_uniq = ext_nc_cnt['exact_label'].unique().count()
+                ext_mq_uniq = len(ext_mq_cnt['exact_label'].unique())
+                ext_nc_uniq = len(ext_nc_cnt['exact_label'].unique())
                 str_mq_cnt = str_mq_df['MQ_bins'].count()
                 str_nc_cnt = str_nc_df['NC_bins'].count()
-                str_mq_uniq = str_mq_cnt['strain_label'].unique().count()
-                str_nc_uniq = str_nc_cnt['strain_label'].unique().count()
+                str_mq_uniq = len(str_mq_cnt['strain_label'].unique())
+                str_nc_uniq = len(str_nc_cnt['strain_label'].unique())
 
                 err_list = [algo, level, mq_avg_p, mq_avg_r, mq_avg_mcc,
                             nc_avg_p, nc_avg_r, nc_avg_mcc, ext_mq_cnt,

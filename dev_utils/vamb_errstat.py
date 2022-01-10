@@ -73,7 +73,7 @@ def recruit_stats(p):
     str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    FN = FN + working_bp
+    # FN = FN + working_bp
     str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
@@ -87,7 +87,7 @@ def recruit_stats(p):
     exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    FN = FN + working_bp
+    #FN = FN + working_bp
     x_list = calc_stats(sag_id, 'exact', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )

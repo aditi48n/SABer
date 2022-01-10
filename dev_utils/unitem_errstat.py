@@ -319,20 +319,16 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     for clust in tqdm(clust2contig_df['best_label'].unique()):
-        # subset recruit dataframes
-        samp_id = clust.rsplit('C', 1)[0]
-        sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
-        sub_contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
         sub_clust_df = clust2contig_df.query('best_label == @clust')
         dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
         # Map Sources/SAGs to Strain IDs
         src_id = sub_clust_df['exact_label'].values[0]
         strain_id = sub_clust_df['strain_label'].values[0]
-        src_sub_df = sub_src2cont_df.query('CAMI_genomeID == @src_id')
-        strain_sub_df = sub_src2cont_df.query('strain == @strain_id')
+        src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+        strain_sub_df = src2contig_df.query('strain == @strain_id')
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))
-        arg_list.append(['best_label', clust, dedup_clust_df, sub_contig_bp_df, src2contig_list,
+        arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
                          src2strain_list, 'denovo', src_id, strain_id, src_bp_dict
                          ])
 

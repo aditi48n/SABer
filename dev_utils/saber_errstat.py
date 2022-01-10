@@ -42,10 +42,13 @@ def EArecruit(p):  # Error Analysis for all recruits per sag
     stats_lists = []
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])
-        stats_lists.extend(recruit_stats([temp_id, algo, contig_id_list, contig_bp_list,
-                                          exact_truth, strain_truth, pred, src_total_bp,
-                                          src_id, strain_id
-                                          ]))
+        rec_stats_list = recruit_stats([temp_id, algo, contig_id_list,
+                                        contig_bp_list, exact_truth,
+                                        strain_truth, pred, src_total_bp,
+                                        src_id, strain_id
+                                        ])
+        stats_lists.extend(rec_stats_list)
+
     return stats_lists
 
 
@@ -65,26 +68,42 @@ def recruit_stats(p):
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    # compute total possible bp for each genome
+    str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    FN = FN + working_bp
-    str_list = calc_stats(sag_id, 'strain', algo, TP, FP, TN, FN,
+    corrected_FN = FN + working_bp
+    str_list = calc_stats(sag_id, 'strain_assembly', algo, TP, FP, TN, FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
+    corr_str_list = calc_stats(sag_id, 'strain_absolute', algo, TP, FP, TN, corrected_FN,
+                               pred_df['truth_strain'], pred_df['pred']
+                               )
     # ALL Recruits
     # calculate for exact-level match
     TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-
+    # compute total possible bp for each genome
+    exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    FN = FN + working_bp
-    x_list = calc_stats(sag_id, 'exact', algo, TP, FP, TN, FN,
+    corrected_FN = FN + working_bp
+    x_list = calc_stats(sag_id, 'exact_assembly', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )
-    cat_list = [str_list, x_list]
+    corr_x_list = calc_stats(sag_id, 'exact_absolute', algo, TP, FP, TN, corrected_FN,
+                             pred_df['truth'], pred_df['pred']
+                             )
+
+    # Add total possible bp's for complete genome
+    str_list.extend([str_tot_bp_poss, tot_bp])
+    x_list.extend([exa_tot_bp_poss, tot_bp])
+    corr_str_list.extend([str_tot_bp_poss, tot_bp])
+    corr_x_list.extend([exa_tot_bp_poss, tot_bp])
+
+    cat_list = [str_list, corr_str_list, x_list, corr_x_list]
 
     return cat_list
 
@@ -392,41 +411,34 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes
-    cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
+    cluster_df = pd.read_csv(denovo_out_file, names=['best_label', 'contig_id'], sep='\t', header=None)
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt']]
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
+    contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
+    clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
+
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in clust2src_df['best_label'].unique():
-        sub_clust_df = clust2src_df.query('best_label == @clust')
-        exact_df = sub_clust_df.groupby(['CAMI_genomeID'])['bp_cnt'].sum().reset_index()
-        strain_df = sub_clust_df.groupby(['strain'])['bp_cnt'].sum().reset_index()
-        ex_label_df = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()]['CAMI_genomeID']
-        if not ex_label_df.empty:
-            exact_label = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()
-                                   ]['CAMI_genomeID'].values[0]
-            strain_label = strain_df[strain_df.bp_cnt == strain_df.bp_cnt.max()
-                                     ]['strain'].values[0]
-            clust_tax.append([clust, exact_label, strain_label])
-
+    for clust in tqdm(clust2src_df['best_label'].unique()):
+        clust_tax.append(cluster2taxonomy([clust, clust2src_df]))
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'
                                       ]].drop_duplicates()
+
     # setup multithreading pool
     print("De Novo error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     for clust in tqdm(clust2contig_df['best_label'].unique()):
-        # subset recruit dataframes
         sub_clust_df = clust2contig_df.query('best_label == @clust')
         dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
         # Map Sources/SAGs to Strain IDs
@@ -450,8 +462,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
 
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
-                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
+                                                 'possible_bp', 'total_bp'
                                                  ])
+
     sort_score_df = score_df.sort_values(['best_label', 'level', 'precision', 'sensitivity'],
                                          ascending=[False, False, True, True]
                                          )
@@ -465,6 +479,24 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    # possible bp's based on asm vs ref genome
+    poss_bp_df = score_tax_df[['exact_label', 'strain_label',
+                               'possible_bp', 'total_bp']].copy().drop_duplicates()
+    poss_bp_df['asm_per_bp'] = [x / y for x, y in
+                                zip(poss_bp_df['possible_bp'],
+                                    poss_bp_df['total_bp'])
+                                ]
+    poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
+    poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
+    poss_bp_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
+    poss_str_bp_df = poss_bp_df[['strain_label', 'possible_bp',
+                                 'total_bp', 'asm_per_bp',
+                                 'yes_NC', 'yes_MQ'
+                                 ]].copy().drop_duplicates(subset='strain_label')
+    nc_x_poss = poss_bp_df['yes_NC'].sum()
+    mq_x_poss = poss_bp_df['yes_MQ'].sum()
+    nc_s_poss = poss_str_bp_df['yes_NC'].sum()
+    mq_s_poss = poss_str_bp_df['yes_MQ'].sum()
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',
@@ -493,11 +525,11 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                                                                    ]), dfs
                      )
     score_tax_df.to_csv(denovo_errstat_file, index=False, sep='\t')
-    stat_df.to_csv(denovo_mean_file, index=False, sep='\t'
-                   )
+    stat_df.to_csv(denovo_mean_file, index=False, sep='\t')
 
+    ###########################################################################
     # try:
-    ##################################################################################################
+    ###########################################################################
     # Trusted Contigs errstats
     # setup mapping to CAMI ref genomes
     score_df_list = []
@@ -785,26 +817,49 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
         for algo in err_df['algorithm'].unique():
             for level in err_df['level'].unique():
                 sub_err_df = err_df.query('algorithm == @algo & level == @level')
+                sub_err_df.sort_values(['precision', 'sensitivity'],
+                                       ascending=[False, False], inplace=True
+                                       )
+                sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
                 l_20 = '>20Kb'
-                mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
-                nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
-                mq_avg_mcc = mq_df['MCC'].mean()
-                nc_avg_mcc = nc_df['MCC'].mean()
-                mq_avg_p = mq_df['precision'].mean()
-                nc_avg_p = nc_df['precision'].mean()
-                mq_avg_r = mq_df['sensitivity'].mean()
-                nc_avg_r = nc_df['sensitivity'].mean()
-                mq_cnt = mq_df['MQ_bins'].count()
-                nc_cnt = nc_df['NC_bins'].count()
+                ext_mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                ext_nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+                str_mq_df = sub_str_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                str_nc_df = sub_str_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+
+                mq_avg_mcc = ext_mq_df['MCC'].mean()
+                nc_avg_mcc = ext_nc_df['MCC'].mean()
+                mq_avg_p = ext_mq_df['precision'].mean()
+                nc_avg_p = ext_nc_df['precision'].mean()
+                mq_avg_r = ext_mq_df['sensitivity'].mean()
+                nc_avg_r = ext_nc_df['sensitivity'].mean()
+                ext_mq_cnt = ext_mq_df['MQ_bins'].count()
+                ext_nc_cnt = ext_nc_df['NC_bins'].count()
+                ext_mq_uniq = len(ext_mq_df['exact_label'].unique())
+                ext_nc_uniq = len(ext_nc_df['exact_label'].unique())
+                str_mq_cnt = str_mq_df['MQ_bins'].count()
+                str_nc_cnt = str_nc_df['NC_bins'].count()
+                str_mq_uniq = len(str_mq_df['strain_label'].unique())
+                str_nc_uniq = len(str_nc_df['strain_label'].unique())
+
                 err_list = [algo, level, mq_avg_p, mq_avg_r, mq_avg_mcc,
-                            mq_cnt, nc_avg_p, nc_avg_r, nc_avg_mcc, nc_cnt
+                            nc_avg_p, nc_avg_r, nc_avg_mcc, ext_mq_cnt,
+                            ext_mq_uniq, ext_nc_cnt, ext_nc_uniq,
+                            str_mq_cnt, str_mq_uniq, str_nc_cnt, str_nc_uniq
                             ]
                 cat_list.append(err_list)
 
     cat_cols = ['algo', 'level', 'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc',
-                'mq_cnt', 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'nc_cnt'
+                'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt',
+                'ext_mq_uniq', 'ext_nc_cnt', 'ext_nc_uniq', 'str_mq_cnt',
+                'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq'
                 ]
+    # add the total possible NC and MQ bins
     cat_df = pd.DataFrame(cat_list, columns=cat_cols)
+    cat_df['ext_mq_poss'] = mq_x_poss
+    cat_df['ext_nc_poss'] = nc_x_poss
+    cat_df['str_mq_poss'] = mq_s_poss
+    cat_df['str_nc_poss'] = nc_s_poss
 
     return cat_df
 

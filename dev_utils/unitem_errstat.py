@@ -330,7 +330,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, sample_id, nthreads)
         src_id = sub_clust_df['exact_label'].values[0]
         strain_id = sub_clust_df['strain_label'].values[0]
         src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
-        print(src_sub_df['sample_id'].unique())
         strain_sub_df = src2contig_df.query('strain == @strain_id')
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))

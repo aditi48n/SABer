@@ -429,8 +429,12 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
     print(src2contig_df.head())
     print(contig_bp_df.head())
-    sys.exit()
     # possible bp's based on asm vs ref genome
+    exact2bp_df = src2contig_df[['CAMI_genomeID', 'sum_len']].copy().drop_duplicates()
+    asm2bp_df = src2contig_df.groupby(['CAMI_genomeID'])[['bp_cnt']].sum().reset_index()
+    poss_bp_df = asm2bp_df.merge(exact2bp_df, on='CAMI_genomeID', how='left')
+    print(poss_bp_df.head())
+    sys.exit()
     poss_bp_df = score_tax_df[['exact_label', 'strain_label',
                                'possible_bp', 'total_bp']].copy().drop_duplicates()
     poss_bp_df['asm_per_bp'] = [x / y for x, y in

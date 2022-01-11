@@ -434,10 +434,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     asm2bp_df = src2contig_df.groupby(['CAMI_genomeID', 'strain', 'sample_id']
                                       )[['bp_cnt']].sum().reset_index()
     poss_bp_df = asm2bp_df.merge(exact2bp_df, on=['CAMI_genomeID', 'strain', 'sample_id'], how='left')
-    print(poss_bp_df.head())
-    sys.exit()
-    poss_bp_df = score_tax_df[['exact_label', 'strain_label',
-                               'possible_bp', 'total_bp']].copy().drop_duplicates()
+    poss_bp_df.columns = ['exact_label', 'strain_label', 'sample_id', 'possible_bp', 'total_bp']
     poss_bp_df['asm_per_bp'] = [x / y for x, y in
                                 zip(poss_bp_df['possible_bp'],
                                     poss_bp_df['total_bp'])

@@ -302,8 +302,30 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                          on='contig_id', how='left'
                                          )
     clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
-
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
+
+    # possible bp's based on asm vs ref genome
+    exact2bp_df = src2contig_df[['CAMI_genomeID', 'strain', 'sample_id', 'sum_len'
+                                 ]].copy().drop_duplicates()
+    asm2bp_df = src2contig_df.groupby(['CAMI_genomeID', 'strain', 'sample_id']
+                                      )[['bp_cnt']].sum().reset_index()
+    poss_bp_df = asm2bp_df.merge(exact2bp_df, on=['CAMI_genomeID', 'strain', 'sample_id'], how='left')
+    poss_bp_df.columns = ['exact_label', 'strain_label', 'sample_id', 'possible_bp', 'total_bp']
+    poss_bp_df['asm_per_bp'] = [x / y for x, y in
+                                zip(poss_bp_df['possible_bp'],
+                                    poss_bp_df['total_bp'])
+                                ]
+    poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
+    poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
+    poss_bp_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
+    poss_str_bp_df = poss_bp_df[['strain_label', 'possible_bp',
+                                 'total_bp', 'asm_per_bp',
+                                 'yes_NC', 'yes_MQ'
+                                 ]].copy().drop_duplicates(subset='strain_label')
+    nc_x_poss = poss_bp_df['yes_NC'].sum()
+    mq_x_poss = poss_bp_df['yes_MQ'].sum()
+    nc_s_poss = poss_str_bp_df['yes_NC'].sum()
+    mq_s_poss = poss_str_bp_df['yes_MQ'].sum()
 
     # Add taxonomy to each cluster
     clust_tax = []
@@ -366,24 +388,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
-    # possible bp's based on asm vs ref genome
-    poss_bp_df = score_tax_df[['exact_label', 'strain_label',
-                               'possible_bp', 'total_bp']].copy().drop_duplicates()
-    poss_bp_df['asm_per_bp'] = [x / y for x, y in
-                                zip(poss_bp_df['possible_bp'],
-                                    poss_bp_df['total_bp'])
-                                ]
-    poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
-    poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
-    poss_bp_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
-    poss_str_bp_df = poss_bp_df[['strain_label', 'possible_bp',
-                                 'total_bp', 'asm_per_bp',
-                                 'yes_NC', 'yes_MQ'
-                                 ]].copy().drop_duplicates(subset='strain_label')
-    nc_x_poss = poss_bp_df['yes_NC'].sum()
-    mq_x_poss = poss_bp_df['yes_MQ'].sum()
-    nc_s_poss = poss_str_bp_df['yes_NC'].sum()
-    mq_s_poss = poss_str_bp_df['yes_MQ'].sum()
 
     stat_mean_df = score_tax_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
                                          'MQ_bins'])[['precision', 'sensitivity', 'MCC',

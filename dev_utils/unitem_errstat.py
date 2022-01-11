@@ -309,6 +309,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
         clust_tax.append(cluster2taxonomy([clust, clust2src_df]))
+        print(cluster2taxonomy([clust, clust2src_df]))
+    sys.exit()
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'

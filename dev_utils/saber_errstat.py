@@ -446,8 +446,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
 
     # Add taxonomy to each cluster
     clust_tax = []
-    for clust in tqdm(clust2src_df['best_label'].unique()):
+    for clust in tqdm(clust2src_df['best_label'].unique()[:10]):
         clust_tax.append(cluster2taxonomy([clust, clust2src_df]))
+    print(clust2src_df.head())
+    print(cluster2taxonomy([clust, clust2src_df]))
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'

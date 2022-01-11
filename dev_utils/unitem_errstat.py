@@ -309,9 +309,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
         clust_tax.append(cluster2taxonomy([clust, clust2src_df]))
-        print(clust2src_df['sample_id'].unique())
-        print(cluster2taxonomy([clust, clust2src_df]))
-    sys.exit()
     clust_tax_df = pd.DataFrame(clust_tax, columns=['best_label', 'exact_label', 'strain_label'])
     clust2label_df = clust_tax_df.merge(cluster_trim_df, on='best_label', how='left')
     clust2contig_df = clust2label_df[['best_label', 'contig_id', 'exact_label', 'strain_label'
@@ -328,6 +325,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
         src_id = sub_clust_df['exact_label'].values[0]
         strain_id = sub_clust_df['strain_label'].values[0]
         src_sub_df = src2contig_df.query('CAMI_genomeID == @src_id')
+        print(src_sub_df['sample_id'].unique())
         strain_sub_df = src2contig_df.query('strain == @strain_id')
         src2contig_list = list(set(src_sub_df['contig_id'].values))
         src2strain_list = list(set(strain_sub_df['contig_id'].values))

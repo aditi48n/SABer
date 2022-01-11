@@ -611,13 +611,13 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                            'bin_cnt'
                            ]
     cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                          'MQ_bins'])[['CAMI_genomeID']
+                                          'MQ_bins'])[['exact_label']
     ].nunique().reset_index()
     cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
                             'genome_cnt'
                             ]
     cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                           'MQ_bins'])[['strain']
+                                           'MQ_bins'])[['strain_label']
     ].nunique().reset_index()
     cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
                              'strain_cnt'
@@ -705,13 +705,13 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                            'bin_cnt'
                            ]
     cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                          'MQ_bins'])[['CAMI_genomeID']
+                                          'MQ_bins'])[['exact_label']
     ].nunique().reset_index()
     cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
                             'genome_cnt'
                             ]
     cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                           'MQ_bins'])[['strain']
+                                           'MQ_bins'])[['strain_label']
     ].nunique().reset_index()
     cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
                              'strain_cnt'
@@ -799,13 +799,13 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                            'bin_cnt'
                            ]
     cnt_genos_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                          'MQ_bins'])[['CAMI_genomeID']
+                                          'MQ_bins'])[['exact_label']
     ].nunique().reset_index()
     cnt_genos_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
                             'genome_cnt'
                             ]
     cnt_strain_df = sort_score_df.groupby(['level', 'algorithm', '>20Kb', 'NC_bins',
-                                           'MQ_bins'])[['strain']
+                                           'MQ_bins'])[['strain_label']
     ].nunique().reset_index()
     cnt_strain_df.columns = ['level', 'algorithm', '>20Kb', 'NC_bins', 'MQ_bins',
                              'strain_cnt'

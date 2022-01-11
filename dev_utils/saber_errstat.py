@@ -4,6 +4,7 @@ import difflib
 import glob
 import logging
 import multiprocessing
+import sys
 from functools import reduce
 from os import makedirs, path, listdir
 from os.path import isfile
@@ -194,6 +195,24 @@ def cnt_total_bp(fasta_file):
 def get_seqs(fasta_file):
     fasta = pyfastx.Fasta(fasta_file)
     return fasta
+
+
+def cluster2taxonomy(p):
+    clust, clust2src_df = p
+    sub_clust_df = clust2src_df.query('best_label == @clust')
+    exact_df = sub_clust_df.groupby(['CAMI_genomeID'])['bp_cnt'].sum().reset_index()
+    strain_df = sub_clust_df.groupby(['strain'])['bp_cnt'].sum().reset_index()
+    ex_label_df = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()]['CAMI_genomeID']
+    try:
+        if not ex_label_df.empty:
+            exact_label = exact_df[exact_df.bp_cnt == exact_df.bp_cnt.max()
+                                   ]['CAMI_genomeID'].values[0]
+            strain_label = strain_df[strain_df.bp_cnt == strain_df.bp_cnt.max()
+                                     ]['strain'].values[0]
+            return [clust, exact_label, strain_label]
+    except:
+        print(sub_clust_df.head())
+        sys.exit()
 
 
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, nthreads):

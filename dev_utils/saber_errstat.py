@@ -586,6 +586,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
                                   on='CAMI_genomeID', how='left'
                                   )
+    score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"})
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'
     score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
@@ -679,6 +680,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
                                   on='CAMI_genomeID', how='left'
                                   )
+    score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"})
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'
     score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'
@@ -772,6 +774,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
                                   on='CAMI_genomeID', how='left'
                                   )
+    score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"})
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'
     score_tax_df.loc[score_tax_df['size_bp'] >= 20000, '>20Kb'] = 'Yes'

@@ -9,6 +9,7 @@ from os import makedirs, path, listdir
 from os.path import isfile
 from os.path import join as joinpath
 
+import numpy as np
 import pandas as pd
 import pyfastx
 from tqdm import tqdm

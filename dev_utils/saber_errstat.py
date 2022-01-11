@@ -856,7 +856,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                 sub_err_df.sort_values(['precision', 'sensitivity'],
                                        ascending=[False, False], inplace=True
                                        )
-                print(sub_err_df.head())
                 sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
                 l_20 = '>20Kb'
                 ext_mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")

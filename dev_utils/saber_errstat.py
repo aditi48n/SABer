@@ -425,13 +425,13 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
 
     # subset recruit dataframes
     samp_id = 'S' + str(sample_id)
-    print(src2contig_df.shape)
-    print(contig_bp_df.shape)
     src2contig_df = src2contig_df.query('sample_id == @samp_id')
     contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
-    print(src2contig_df.shape)
-    print(contig_bp_df.shape)
-
+    print(src2contig_df.head())
+    print(contig_bp_df.head())
+    print(src_bp_dict.keys()[:10])
+    print(src_bp_dict[src_bp_dict.keys()[:10]])
+    sys.exit()
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in clust2src_df['best_label'].unique():

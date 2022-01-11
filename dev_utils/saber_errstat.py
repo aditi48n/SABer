@@ -195,7 +195,7 @@ def get_seqs(fasta_file):
     return fasta
 
 
-def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, nthreads):
+def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):
     ##################################################################################################
     # INPUT files
     # saberout_path = sys.argv[1]
@@ -421,6 +421,11 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
                                          )
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
+    # subset recruit dataframes
+    samp_id = 'S' + str(sample_id)
+    src2contig_df = src2contig_df.query('sample_id == @samp_id')
+    contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
+
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in clust2src_df['best_label'].unique():
@@ -536,7 +541,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
 
     # try:
     ##################################################################################################
-    '''
     # Trusted Contigs errstats
     # setup mapping to CAMI ref genomes
     score_df_list = []
@@ -548,6 +552,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
+
+    # subset recruit dataframes
+    samp_id = 'S' + str(sample_id)
+    src2contig_df = src2contig_df.query('sample_id == @samp_id')
 
     # setup multithreading pool
     print("HDBSCAN-Anchored error analysis started...")
@@ -644,6 +652,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
 
+    # subset recruit dataframes
+    samp_id = 'S' + str(sample_id)
+    src2contig_df = src2contig_df.query('sample_id == @samp_id')
+
     # setup multithreading pool
     print("OCSVM-Anchored error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
@@ -738,6 +750,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
 
+    # subset recruit dataframes
+    samp_id = 'S' + str(sample_id)
+    src2contig_df = src2contig_df.query('sample_id == @samp_id')
+
     # setup multithreading pool
     print("Combined-Anchors error analysis started...")
     pool = multiprocessing.Pool(processes=nthreads)
@@ -820,7 +836,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     stat_df.to_csv(inter_mean_file, index=False, sep='\t')
     # except:
     #    print('Skipped Anchored Bin Error Analysis...')
-    '''
     ###########################################################################
     # Compile all results tables from analysis
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))

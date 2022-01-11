@@ -9,7 +9,6 @@ from os import makedirs, path, listdir
 from os.path import isfile
 from os.path import join as joinpath
 
-import numpy as np
 import pandas as pd
 import pyfastx
 from tqdm import tqdm
@@ -537,6 +536,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
 
     # try:
     ##################################################################################################
+    '''
     # Trusted Contigs errstats
     # setup mapping to CAMI ref genomes
     score_df_list = []
@@ -820,7 +820,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     stat_df.to_csv(inter_mean_file, index=False, sep='\t')
     # except:
     #    print('Skipped Anchored Bin Error Analysis...')
-
+    '''
     ###########################################################################
     # Compile all results tables from analysis
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))

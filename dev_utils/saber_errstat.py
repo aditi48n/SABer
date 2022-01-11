@@ -579,7 +579,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     pool.join()
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
-                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
+                                                 'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
     score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
@@ -671,7 +672,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     pool.join()
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
-                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
+                                                 'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
     score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
@@ -763,7 +765,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, n
     pool.join()
     score_df = pd.DataFrame(score_list, columns=['best_label', 'level', 'algorithm',
                                                  'precision', 'sensitivity', 'MCC', 'F1',
-                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN'
+                                                 'N', 'S', 'P', 'TP', 'FP', 'TN', 'FN',
+                                                 'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
     score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),

@@ -25,7 +25,7 @@ type2label = {'CAMI_II_Airways': 'Air',
               'CAMI_II_Urogenital': 'Urog'
               }
 algo2rank = {'denovo': 0, 'hdbscan': 1,
-             'ocsvm': 2, 'intersection': 3
+             'ocsvm': 2, 'intersect': 3
              }
 
 # Munge SABer single/mulit

@@ -52,10 +52,10 @@ ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
 ss_df['type_rank'] = [type2rank[x] for x in ss_df['sample_type']]
 ss_df['mode_rank'] = [mode2rank[x] for x in ss_df['mode']]
 ss_df['param_rank'] = [param2rank[x] for x in ss_df['param_set']]
-ss_df['mode_paramset'] = [x + '_' + y for x, y in
+ss_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
                           zip(ss_df['mode'], ss_df['param_set'])
                           ]
-ss_df['label_sample'] = [x + '_' + y for x, y in
+ss_df['label_sample'] = [str(x) + '_' + str(y) for x, y in
                          zip(ss_df['label'], ss_df['sample_id'])
                          ]
 ss_abs_str_df = ss_df.query("level == 'strain_absolute'")

@@ -80,23 +80,14 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
-test_df = ss_abs_str_df.pivot(index='label_sample_algo', columns='mode_paramset', values='ext_nc_uniq')
+test_df = ss_abs_str_df.pivot(index='label_sample_algo', columns='mode', values='ext_nc_uniq')
 print(test_df.head())
 
 import scipy.stats as stats
 # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-fvalue, pvalue = stats.f_oneway(test_df['majority_rule_relaxed'],
-                                test_df['majority_rule_strict'],
-                                test_df['majority_rule_very_relaxed'],
-                                test_df['majority_rule_very_strict'],
-                                test_df['best_cluster_relaxed'],
-                                test_df['best_cluster_strict'],
-                                test_df['best_cluster_very_relaxed'],
-                                test_df['best_cluster_very_strict'],
-                                test_df['best_match_relaxed'],
-                                test_df['best_match_strict'],
-                                test_df['best_match_very_relaxed'],
-                                test_df['best_match_very_strict']
+fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
+                                test_df['best_cluster'],
+                                test_df['best_match']
                                 )
 print(fvalue, pvalue)
 

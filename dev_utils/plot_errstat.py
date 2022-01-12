@@ -33,6 +33,15 @@ type2rank = {'CAMI_II_Airways': 0,
              'CAMI_II_Skin': 3,
              'CAMI_II_Urogenital': 4
              }
+mode2rank = {'majority_rule': 0,
+             'best_cluster': 1,
+             'best_match': 2
+             }
+param2rank = {'very_relaxed': 0,
+              'relaxed': 1,
+              'strict': 2,
+              'very_strict': 3
+              }
 
 # Munge SABer single/mulit
 # Near Complete
@@ -40,22 +49,35 @@ ss_df = pd.read_csv(saber_single_file, header=0, sep='\t')
 ss_df['label'] = [type2label[x] for x in ss_df['sample_type']]
 ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
 ss_df['type_rank'] = [type2rank[x] for x in ss_df['sample_type']]
-ss_df['mode_paramset'] = [x + '_' + y for x, y in zip(ss_df['mode'], ss_df['param_set'])]
+ss_df['mode_rank'] = [type2rank[x] for x in ss_df['mode']]
+ss_df['param_rank'] = [type2rank[x] for x in ss_df['param_set']]
+ss_df['mode_paramset'] = [x + '_' + y for x, y in
+                          zip(ss_df['mode'], ss_df['param_set'])
+                          ]
 ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
-ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
+ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
+                              'mode_rank', 'param_set'
+                              ], inplace=True)
 
 # Medium Quality
 sm_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
 sm_df['label'] = [type2label[x] for x in sm_df['sample_type']]
 sm_df['algo_rank'] = [algo2rank[x] for x in sm_df['algo']]
 sm_df['type_rank'] = [type2rank[x] for x in sm_df['sample_type']]
-sm_df['mode_paramset'] = [x + '_' + y for x, y in zip(sm_df['mode'], sm_df['param_set'])]
+sm_df['mode_rank'] = [type2rank[x] for x in sm_df['mode']]
+sm_df['param_rank'] = [type2rank[x] for x in sm_df['param_set']]
+sm_df['mode_paramset'] = [x + '_' + y for x, y in
+                          zip(sm_df['mode'], sm_df['param_set'])
+                          ]
 sm_abs_str_df = sm_df.query("level == 'strain_absolute'")
 sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
+sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
+                              'mode_rank', 'param_set'
+                              ], inplace=True)
 
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
-                     col="mode_paramset", col_wrap=3,
+                     col="mode_paramset", col_wrap=4,
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -66,7 +88,7 @@ ss_box.savefig(os.path.join(workdir, 'SABer.single.mode_param.boxplot.png'),
 plt.clf()
 plt.close()
 sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
-                     col="mode_paramset", col_wrap=3,
+                     col="mode_paramset", col_wrap=4,
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")

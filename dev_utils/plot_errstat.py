@@ -58,7 +58,7 @@ ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
-ss_stats_df = ss_abs_str_df[["algo", "mode"]].describe().reset_index()
+ss_stats_df = ss_abs_str_df[["algo", "mode", "ext_nc_uniq"]].describe().reset_index()
 print(ss_stats_df)
 print(ss_stats_df.shape)
 sys.exit()

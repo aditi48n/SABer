@@ -27,21 +27,29 @@ type2label = {'CAMI_II_Airways': 'Air',
 algo2rank = {'denovo': 0, 'hdbscan': 1,
              'ocsvm': 2, 'intersect': 3
              }
+type2rank = {'CAMI_II_Airways': 0,
+             'CAMI_II_Gastrointestinal': 1,
+             'CAMI_II_Oral': 2,
+             'CAMI_II_Skin': 3,
+             'CAMI_II_Urogenital': 4
+             }
 
 # Munge SABer single/mulit
 # Near Complete
 ss_df = pd.read_csv(saber_single_file, header=0, sep='\t')
 ss_df['label'] = [type2label[x] for x in ss_df['sample_type']]
 ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
+ss_df['type_rank'] = [type2rank[x] for x in ss_df['sample_type']]
 ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
-ss_abs_str_df.sort_values(by='algo_rank', inplace=True)
+ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 
 # Medium Quality
 sm_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
 sm_df['label'] = [type2label[x] for x in sm_df['sample_type']]
 sm_df['algo_rank'] = [algo2rank[x] for x in sm_df['algo']]
+sm_df['type_rank'] = [type2rank[x] for x in sm_df['sample_type']]
 sm_abs_str_df = sm_df.query("level == 'strain_absolute'")
-sm_abs_str_df.sort_values(by='algo_rank', inplace=True)
+sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 
 # Build boxplots
 ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo", kind="box", data=ss_abs_str_df)

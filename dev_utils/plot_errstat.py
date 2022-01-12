@@ -3,7 +3,6 @@ import sys
 
 import pandas as pd
 import seaborn as sns
-from matplotlib import pyplot as plt
 
 # plot aestetics
 sns.set_context("paper")
@@ -59,6 +58,11 @@ ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
+ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algo', 'param_set']
+                                           )[['ext_nc_uniq'
+                                              ]].mean().reset_index()
+print(ss_abs_str_mean_df)
+sys.exit()
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      col="param_set", col_wrap=2,
@@ -66,6 +70,8 @@ ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
+sns.scatterplot(data=points_df.T, legend=False, zorder=10)
+
 ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.boxplot.png'),
                dpi=300
                )

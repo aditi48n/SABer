@@ -23,7 +23,7 @@ sm_abs_str_df = sm_df.query("level == strain_absolute")
 # Build boxplots
 ss_box = sns.catplot(x="sample_type", y="ext_nc_uniq", hue="algo", kind="box", data=ss_abs_str_df)
 sm_box = sns.catplot(x="sample_type", y="ext_nc_uniq", hue="algo", kind="box", data=sm_abs_str_df)
-plt.savefig(os.path.join(workdir, 'SABer.single.boxplot.png'), dpi=300)
+ss_box.savefig(os.path.join(workdir, 'SABer.single.boxplot.png'), dpi=300)
 plt.clf()
 plt.close()
 

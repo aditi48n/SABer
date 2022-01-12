@@ -2,7 +2,6 @@ import os
 import sys
 from functools import reduce
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
@@ -79,13 +78,14 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 print(ss_abs_str_stats_df)
 
 test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].reset_index()
-ax = sns.boxplot(x='mode_paramset', y='ext_nc_uniq', data=test_df)
-ax = sns.stripplot(x="mode_paramset", y="ext_nc_uniq", data=test_df)
-ax.figure.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.count.png'),
-                  dpi=300
-                  )
-plt.clf()
-plt.close()
+import scipy.stats as stats
+
+# stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+test_list = [test_df.query("mode_paramset == @x")['ext_nc_uniq']
+             for x in test_df['mode_paramset'].unique()
+             ]
+fvalue, pvalue = stats.f_oneway(test_list)
+print(fvalue, pvalue)
 
 sys.exit()
 

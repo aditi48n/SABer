@@ -55,7 +55,7 @@ sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
-                     palette=sns.color_palette("rocket")
+                     palette=sns.color_palette("flare")
                      )
 sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      kind="box", data=sm_abs_str_df, notch=True

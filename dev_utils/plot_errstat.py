@@ -54,8 +54,8 @@ sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="param_set",
                      col="algo", col_wrap=2,
-                     kind="bar", data=ss_abs_str_df,
-                     linewidth=0.75, saturation=0.75,
+                     kind="box", data=ss_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
 ss_box.savefig(os.path.join(workdir, 'SABer.single.mode_param.boxplot.png'),
@@ -65,8 +65,8 @@ plt.clf()
 plt.close()
 sm_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="param_set",
                      col="algo", col_wrap=2,
-                     kind="bar", data=sm_abs_str_df,
-                     linewidth=0.75, saturation=0.75,
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
 sm_box.savefig(os.path.join(workdir, 'SABer.multi.mode_param.boxplot.png'),

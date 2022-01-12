@@ -1,5 +1,6 @@
 import os
 import sys
+from functools import reduce
 
 import pandas as pd
 import seaborn as sns
@@ -61,6 +62,21 @@ ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
 ss_abs_str_median_df = ss_abs_str_df.groupby(['mode', 'algo']
                                              )[['ext_nc_uniq'
                                                 ]].median().reset_index()
+ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
+ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algo']
+                                           )[['ext_nc_uniq'
+                                              ]].mean().reset_index()
+ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
+ss_abs_str_std_df = ss_abs_str_df.groupby(['mode', 'algo']
+                                          )[['ext_nc_uniq'
+                                             ]].std().reset_index()
+ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+print(ss_abs_str_stats_df)
+
+sys.exit()
+
 ss_mode_max_df = ss_abs_str_median_df.groupby(['mode', 'algo']
                                               )[['ext_nc_uniq'
                                                  ]].max().reset_index()

@@ -80,7 +80,7 @@ print(ss_abs_str_stats_df)
 
 test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].reset_index()
 ax = sns.boxplot(x='mode_paramset', y='ext_nc_uniq', data=test_df)
-ax = sns.swarmplot(x="mode_paramset", y="ext_nc_uniq", data=test_df)
+ax = sns.stripplot(x="mode_paramset", y="ext_nc_uniq", data=test_df)
 ax.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.count.png'),
            dpi=300
            )

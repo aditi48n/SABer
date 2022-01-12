@@ -58,7 +58,7 @@ ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
-ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algo', 'param_set']
+ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']
                                            )[['ext_nc_uniq'
                                               ]].mean().reset_index()
 ss_mode_max_df = ss_abs_str_mean_df.groupby(['mode', 'algo']

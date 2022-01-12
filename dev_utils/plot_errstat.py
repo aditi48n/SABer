@@ -60,7 +60,7 @@ ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               ], inplace=True)
 ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']
                                            )[['ext_nc_uniq'
-                                              ]].mean().reset_index()
+                                              ]].median().reset_index()
 ss_mode_max_df = ss_abs_str_mean_df.groupby(['mode', 'algo']
                                             )[['ext_nc_uniq'
                                                ]].max().reset_index()

@@ -44,7 +44,7 @@ param2rank = {'very_relaxed': 0,
               }
 
 # Munge SABer single/mulit
-# Near Complete
+# Near Complete Single
 # Absolute as reference
 ss_df = pd.read_csv(saber_single_file, header=0, sep='\t')
 ss_df['label'] = [type2label[x] for x in ss_df['sample_type']]
@@ -89,9 +89,8 @@ ss_box.savefig(os.path.join(workdir, 'SABer.single.assembly.mode_param.boxplot.p
 plt.clf()
 plt.close()
 
-sys.exit()
-
-# Medium Quality
+# Near Complete Multi
+# Absolute as reference
 sm_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
 sm_df['label'] = [type2label[x] for x in sm_df['sample_type']]
 sm_df['algo_rank'] = [algo2rank[x] for x in sm_df['algo']]
@@ -112,11 +111,31 @@ sm_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
-sm_box.savefig(os.path.join(workdir, 'SABer.multi.mode_param.boxplot.png'),
+sm_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.mode_param.boxplot.png'),
                dpi=300
                )
 plt.clf()
 plt.close()
+
+# Assembly as reference
+sm_ass_str_df = sm_df.query("level == 'strain_assembly'")
+sm_ass_str_df.sort_values(by=['type_rank', 'algo_rank',
+                              'mode_rank', 'param_set'
+                              ], inplace=True)
+# Boxplots for mode and param set
+sm_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+                     col="param_set", col_wrap=2,
+                     kind="box", data=sm_ass_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+sm_box.savefig(os.path.join(workdir, 'SABer.multi.assembly.mode_param.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+sys.exit()
 
 # Build boxplots
 ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",

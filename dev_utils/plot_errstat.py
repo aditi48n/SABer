@@ -77,7 +77,7 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
-test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].stack().reset_index()
+test_df = ss_abs_str_df.pivot(columns='mode_paramset', values='ext_nc_uniq')
 print(test_df.head())
 
 import scipy.stats as stats

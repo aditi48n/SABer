@@ -81,7 +81,7 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
-test_df = ss_abs_str_df.pivot(index='label_sample_algo', columns='mode', values='ext_nc_uniq')
+test_df = ss_abs_str_df.pivot(index='label_sample_algo_param', columns='mode', values='ext_nc_uniq')
 print(test_df.head())
 
 import scipy.stats as stats

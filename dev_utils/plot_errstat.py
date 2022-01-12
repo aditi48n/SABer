@@ -52,9 +52,16 @@ sm_abs_str_df = sm_df.query("level == 'strain_absolute'")
 sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 
 # Build boxplots
-ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo", kind="box", data=ss_abs_str_df)
-sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo", kind="box", data=sm_abs_str_df)
-ss_box.savefig(os.path.join(workdir, 'SABer.single.boxplot.png'), dpi=300)
+ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
+                     kind="box", data=ss_abs_str_df, notch=True,
+                     linewidth=0.1
+                     )
+sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
+                     kind="box", data=sm_abs_str_df, notch=True
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.single.boxplot.png'),
+               dpi=300
+               )
 plt.clf()
 plt.close()
 

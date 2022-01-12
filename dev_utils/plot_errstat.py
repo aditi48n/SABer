@@ -77,9 +77,11 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
-test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].reset_index()
+test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].stack().reset_index()
+
 print(test_df['mode_paramset'].unique())
 import scipy.stats as stats
+
 # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
 fvalue, pvalue = stats.f_oneway(test_df['majority_rule_relaxed'],
                                 test_df['majority_rule_strict'],

@@ -58,9 +58,16 @@ ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      palette=sns.color_palette("muted")
                      )
 sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
-                     kind="box", data=sm_abs_str_df, notch=True
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
                      )
 ss_box.savefig(os.path.join(workdir, 'SABer.single.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+sm_box.savefig(os.path.join(workdir, 'SABer.multi.boxplot.png'),
                dpi=300
                )
 plt.clf()

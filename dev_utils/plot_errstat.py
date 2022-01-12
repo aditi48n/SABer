@@ -77,12 +77,12 @@ ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), s
 ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
-ss_bar_df = ss_abs_str_df.groupby(['label', 'sample_id', 'mode', 'param_set', 'algo']
-                                  )[['ext_nc_uniq'
-                                     ]].sum().reset_index()
+ss_abs_str_bar_df = ss_abs_str_df.groupby(['label', 'sample_id', 'mode', 'param_set', 'algo']
+                                          )[['ext_nc_uniq'
+                                             ]].sum().reset_index()
 ss_bar = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      col="param_set", col_wrap=2,
-                     kind="bar", data=ss_abs_str_df,
+                     kind="bar", data=ss_abs_str_bar_df,
                      linewidth=0.75, saturation=0.75,
                      palette=sns.color_palette("muted")
                      )

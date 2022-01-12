@@ -71,9 +71,13 @@ ss_mode_param_max_df = ss_abs_str_mean_df.groupby(['mode', 'param_set', 'algo']
                                                   )[['ext_nc_uniq'
                                                      ]].max().reset_index()
 print(ss_abs_str_mean_df.head())
+print(ss_abs_str_mean_df.shape)
 print(ss_mode_max_df.head())
+print(ss_mode_max_df.shape)
 print(ss_param_max_df.head())
+print(ss_param_max_df.shape)
 print(ss_mode_param_max_df.head())
+print(ss_mode_param_max_df.shape)
 sys.exit()
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",

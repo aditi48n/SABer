@@ -143,7 +143,7 @@ def calc_fn(y_truth, y_pred, bp_cnt):
     return FN
 
 
-def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
+def calc_stats(sag_id, samp_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
     if TP + FP == 0:
         precision = 0
     else:
@@ -165,7 +165,7 @@ def calc_stats(sag_id, level, algo, TP, FP, TN, FN, y_truth, y_pred):
         F1 = 2 * (precision * sensitivity) / (precision + sensitivity)
     # oc_precision, oc_recall, _ = precision_recall_curve(y_truth, y_pred)
     # AUC = auc(oc_recall, oc_precision)
-    stat_list = [sag_id, level, algo, precision, sensitivity, MCC, F1,
+    stat_list = [sag_id, samp_id, level, algo, precision, sensitivity, MCC, F1,
                  N, S, P, TP, FP, TN, FN
                  ]
 

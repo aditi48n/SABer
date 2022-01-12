@@ -77,6 +77,18 @@ ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), s
 ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
+
+test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].reset_index()
+ax = sns.boxplot(x='mode_paramset', y='ext_nc_uniq', data=test_df)
+ax = sns.swarmplot(x="mode_paramset", y="ext_nc_uniq", data=test_df)
+ax.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.count.png'),
+           dpi=300
+           )
+plt.clf()
+plt.close()
+
+sys.exit()
+
 ss_abs_str_bar_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']
                                           )[['ext_nc_uniq'
                                              ]].sum().reset_index()

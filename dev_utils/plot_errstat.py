@@ -16,9 +16,9 @@ workdir = os.path.dirname(saber_single_file)
 
 # Munge SABer single/mulit
 ss_df = pd.read_csv(saber_single_file, header=0, sep='\t')
-ss_abs_str_df = ss_df.query("level == strain_absolute")
+ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 sm_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
-sm_abs_str_df = sm_df.query("level == strain_absolute")
+sm_abs_str_df = sm_df.query("level == 'strain_absolute'")
 
 # Build boxplots
 ss_box = sns.catplot(x="sample_type", y="ext_nc_uniq", hue="algo", kind="box", data=ss_abs_str_df)

@@ -1,9 +1,9 @@
+import shutil
 import sys
-import pandas as pd
 from os import makedirs, path, listdir
 from os.path import join as joinpath
-import shutil
 
+import pandas as pd
 
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]

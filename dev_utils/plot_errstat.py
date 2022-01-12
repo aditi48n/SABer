@@ -58,9 +58,16 @@ ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
-ss_stats_df = ss_abs_str_df[["algo", "mode", "ext_nc_uniq"]].describe().reset_index()
-print(ss_stats_df)
-print(ss_stats_df.shape)
+ss_abs_str_median_df = ss_abs_str_df.groupby(['mode', 'algo']
+                                             )[['ext_nc_uniq'
+                                                ]].median().reset_index()
+ss_mode_max_df = ss_abs_str_median_df.groupby(['mode', 'algo']
+                                              )[['ext_nc_uniq'
+                                                 ]].max().reset_index()
+ss_mode_max_df.sort_values(by='ext_nc_uniq', ascending=False, inplace=True)
+ss_best_mode_df = ss_mode_max_df.drop_duplicates(subset='algo')
+print(ss_best_mode_df)
+print(ss_best_mode_df.shape)
 sys.exit()
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",

@@ -1,6 +1,7 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
@@ -58,18 +59,7 @@ ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
-ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']
-                                           )[['ext_nc_uniq'
-                                              ]].median().reset_index()
-ss_mode_max_df = ss_abs_str_mean_df.groupby(['mode', 'algo']
-                                            )[['ext_nc_uniq'
-                                               ]].max().reset_index()
-ss_mode_max_df.sort_values(by='ext_nc_uniq', ascending=False, inplace=True)
-ss_best_mode_df = ss_mode_max_df.drop_duplicates(subset='algo')
-print(ss_best_mode_df)
-print(ss_best_mode_df.shape)
 
-sys.exit()
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      col="param_set", col_wrap=2,
@@ -89,6 +79,11 @@ ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
+medians = ss_abs_str_df.groupby(['mode', 'algo'])['ext_nc_uniq'].median()
+vertical_offset = ss_abs_str_df['ext_nc_uniq'].median() * 0.05  # offset from median for display
+for xtick in ss_box.get_xticks():
+    ss_box.text(xtick, medians[xtick] + vertical_offset, medians[xtick],
+                horizontalalignment='center', size='x-small', color='w', weight='semibold')
 ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.mode.boxplot.png'),
                dpi=300
                )

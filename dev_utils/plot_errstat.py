@@ -78,13 +78,10 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 print(ss_abs_str_stats_df)
 
 test_df = ss_abs_str_df[['mode_paramset', 'ext_nc_uniq']].reset_index()
+print(test_df['mode_paramset'].unique())
 import scipy.stats as stats
-
 # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-test_list = [test_df.query("mode_paramset == @x")['ext_nc_uniq']
-             for x in test_df['mode_paramset'].unique()
-             ]
-fvalue, pvalue = stats.f_oneway(test_list)
+fvalue, pvalue = stats.f_oneway()
 print(fvalue, pvalue)
 
 sys.exit()

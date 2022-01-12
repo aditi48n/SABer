@@ -1,6 +1,7 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
@@ -61,8 +62,7 @@ ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
 ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algo', 'param_set']
                                            )[['ext_nc_uniq'
                                               ]].mean().reset_index()
-print(ss_abs_str_mean_df)
-sys.exit()
+print(ss_abs_str_mean_df.head())
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      col="param_set", col_wrap=2,
@@ -70,13 +70,38 @@ ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
-sns.scatterplot(data=points_df.T, legend=False, zorder=10)
-
 ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.boxplot.png'),
                dpi=300
                )
 plt.clf()
 plt.close()
+
+# Boxplots for mode
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+                     kind="box", data=ss_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.mode.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+# Boxplots for param set
+ss_box = sns.catplot(x="param_set", y="ext_nc_uniq", hue="algo",
+                     kind="box", data=ss_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.param.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+sys.exit()
+
 # Assembly as reference
 ss_ass_str_df = ss_df.query("level == 'strain_assembly'")
 ss_ass_str_df.sort_values(by=['type_rank', 'algo_rank',

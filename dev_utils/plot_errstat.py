@@ -3,6 +3,7 @@ import sys
 from functools import reduce
 
 import pandas as pd
+import scipy.stats as stats
 import seaborn as sns
 
 # plot aestetics
@@ -55,9 +56,9 @@ ss_df['param_rank'] = [param2rank[x] for x in ss_df['param_set']]
 ss_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
                           zip(ss_df['mode'], ss_df['param_set'])
                           ]
-ss_df['label_sample_algo_param'] = ['_'.join([str(x), str(y), str(z), str(a)]) for x, y, z, a in
+ss_df['label_sample_algo_param'] = ['_'.join([str(x), str(y), str(z)]) for x, y, z in
                                     zip(ss_df['label'], ss_df['sample_id'],
-                                        ss_df['algo'], ss_df['param_set'])
+                                        ss_df['param_set'])
                                     ]
 ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
@@ -81,16 +82,16 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
-test_df = ss_abs_str_df.pivot(index='label_sample_algo_param', columns='mode', values='ext_nc_uniq')
-print(test_df.head())
+for algo in ss_abs_str_df['algo'].unique():
+    sub_ss_df = ss_abs_str_df.query("algo == @algo")
+    test_df = sub_ss_df.pivot(index='label_sample_param', columns='mode', values='ext_nc_uniq')
 
-import scipy.stats as stats
-# stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
-                                test_df['best_cluster'],
-                                test_df['best_match']
-                                )
-print(fvalue, pvalue)
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
+                                    test_df['best_cluster'],
+                                    test_df['best_match']
+                                    )
+    print(algo, fvalue, pvalue)
 
 sys.exit()
 

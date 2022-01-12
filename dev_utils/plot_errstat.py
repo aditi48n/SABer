@@ -74,8 +74,8 @@ plt.clf()
 plt.close()
 
 # Boxplots for mode
-ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
-                     kind="box", data=ss_abs_str_df, notch=True,
+ss_box = sns.boxplot(x="mode", y="ext_nc_uniq", hue="algo",
+                     data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )

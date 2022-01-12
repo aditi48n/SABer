@@ -16,7 +16,6 @@ unitem_multi_file = sys.argv[4]
 
 # working directory
 workdir = os.path.dirname(saber_single_file)
-cp = sns.diverging_palette(250, 30, l=65, center="light", as_cmap=True)
 
 # column renaming/mapping dictionaries
 type2label = {'CAMI_II_Airways': 'Air',
@@ -56,7 +55,7 @@ sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
-                     palette=cp
+                     palette=sns.color_palette("rocket")
                      )
 sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      kind="box", data=sm_abs_str_df, notch=True

@@ -84,9 +84,9 @@ vertical_offset = ss_abs_str_df['ext_nc_uniq'].median() * 0.05  # offset from me
 for xtick in ss_box.get_xticks():
     ss_box.text(xtick, medians[xtick] + vertical_offset, medians[xtick],
                 horizontalalignment='center', size='x-small', color='w', weight='semibold')
-ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.mode.boxplot.png'),
-               dpi=300
-               )
+ss_box.figure.savefig(os.path.join(workdir, 'SABer.single.absolute.mode.boxplot.png'),
+                      dpi=300
+                      )
 plt.clf()
 plt.close()
 

@@ -54,7 +54,7 @@ sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank'], inplace=True)
 # Build boxplots
 ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      kind="box", data=ss_abs_str_df, notch=True,
-                     linewidth=0.75
+                     linewidth=0.75, saturation=0.75, width=0.5
                      )
 sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
                      kind="box", data=sm_abs_str_df, notch=True

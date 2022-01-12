@@ -73,15 +73,11 @@ ss_abs_str_std_df = ss_abs_str_df.groupby(['mode', 'algo']
 ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
 stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
 ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
-ss_mode_max_df = ss_abs_str_stats_df.groupby(['mode', 'algo']
-                                             )[['mean'
-                                                ]].max().reset_index()
 print(ss_abs_str_stats_df)
-print(ss_mode_max_df)
 sys.exit()
 
-ss_mode_max_df.sort_values(by='ext_nc_uniq', ascending=False, inplace=True)
 ss_best_mode_df = ss_mode_max_df.drop_duplicates(subset='algo')
 print(ss_best_mode_df)
 print(ss_best_mode_df.shape)

@@ -64,7 +64,7 @@ ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']
 ss_mode_max_df = ss_abs_str_mean_df.groupby(['mode', 'algo']
                                             )[['ext_nc_uniq'
                                                ]].max().reset_index()
-ss_mode_max_df.sort_values(by='ext_nc_uniq', ascending=False, inplace=True)
+ss_mode_max_df.sort_values(subset='ext_nc_uniq', ascending=False, inplace=True)
 ss_best_mode_df = ss_mode_max_df.drop_duplicates(by='algo')
 print(ss_best_mode_df)
 print(ss_best_mode_df.shape)

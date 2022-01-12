@@ -2,6 +2,7 @@ import os
 import sys
 from functools import reduce
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
@@ -85,7 +86,7 @@ ss_bar = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
                      linewidth=0.75, saturation=0.75,
                      palette=sns.color_palette("muted")
                      )
-ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.count.png'),
+ss_bar.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.count.png'),
                dpi=300
                )
 plt.clf()

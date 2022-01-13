@@ -53,7 +53,8 @@ binner2rank = {'maxbin_ms40': 0,
                'metabat_veryspecific': 3,
                'metabat_superspecific': 4,
                'metabat_sensitive': 5,
-               'metabat_verysensitive': 6
+               'metabat_verysensitive': 6,
+               'metabat2': 7
                }
 '''
 ########################################################################################################################

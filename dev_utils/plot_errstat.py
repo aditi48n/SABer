@@ -99,11 +99,11 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
     m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_nc_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
     stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
 
-    print(f"The Algorithm tested is {algo_param}")
-    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nThe Algorithm tested is {algo_param}")
+    print(f"Results of ANOVA test:\n The F-statistic is:\n {fvalue}\n The p-value is: {pvalue}")
     print(f"\nResults of Tukey HSD test:\n")
     print(m_comp)
-    print(f"\nResults of Wilcoxon Signed-Rank Test:\n")
+    print(f"\nResults of Wilcoxon Signed-Rank Test:")
     print('Statistics=%.3f, p=%.3f' % (stat, p))
     # interpret
     alpha = 0.05
@@ -115,7 +115,7 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
                       test_df['best_cluster'],
                       test_df['best_match']
                       )
-    print(f"\nResults of Kruskal-Wallis H Test:\n")
+    print(f"\nResults of Kruskal-Wallis H Test:")
     print('Statistics=%.3f, p=%.3f' % (stat, p))
     # interpret
     alpha = 0.05

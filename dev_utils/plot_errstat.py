@@ -160,7 +160,12 @@ for level_mode in bin_cat_df['level_mode'].unique():
         print('Same distributions (fail to reject H0)')
     else:
         print('Different distributions (reject H0)')
-    print(sub_df.groupby(['binner_config'])['ext_nc_uniq'].sum())
+    count_nc_df = sub_df.groupby(['binner_config']
+                                 )['ext_nc_uniq'].sum().reset_index()
+    count_nc_df.sort_values(by=['ext_nc_uniq'], ascending=False,
+                            inplace=True
+                            )
+    print(count_nc_df)
 
 sys.exit()
 ########################################################################################################################

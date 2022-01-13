@@ -321,8 +321,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                  'total_bp', 'asm_per_bp',
                                  'yes_NC', 'yes_MQ'
                                  ]].copy().drop_duplicates(subset='strain_label')
-
-    '''
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
@@ -414,7 +412,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                      )
     score_tax_df.to_csv(denovo_errstat_file, index=False, sep='\t')
     stat_df.to_csv(denovo_mean_file, index=False, sep='\t')
-    '''
+
     ###########################################################################
     # Compile all results tables from analysis
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))

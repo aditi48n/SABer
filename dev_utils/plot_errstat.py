@@ -57,12 +57,12 @@ ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
 ss_df['type_rank'] = [type2rank[x] for x in ss_df['sample_type']]
 ss_df['mode_rank'] = [mode2rank[x] for x in ss_df['mode']]
 ss_df['param_rank'] = [param2rank[x] for x in ss_df['param_set']]
-ss_df['mode_paramset_label'] = [str(x) + '_' + str(y) for x, y in
-                                zip(ss_df['mode'], ss_df['param_set'])
-                                ]
-ss_df['algo_param_label'] = ['_'.join([str(x), str(y), str(z)]) for x, y, z in
-                             zip(ss_df['algo'], ss_df['param_set'], ss_df['label'])
-                             ]
+ss_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
+                          zip(ss_df['mode'], ss_df['param_set'])
+                          ]
+ss_df['algo_param'] = ['_'.join([str(x), str(y)]) for x, y in
+                       zip(ss_df['algo'], ss_df['param_set'])
+                       ]
 ss_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
                          zip(ss_df['label'], ss_df['sample_id'])
                          ]
@@ -91,13 +91,13 @@ print(ss_abs_str_stats_df)
 MR_count = 0
 BC_count = 0
 BM_count = 0
-for algo_param_label in ss_abs_str_df['algo_param_label'].unique():
-    sub_ss_df = ss_abs_str_df.query("algo_param_label == @algo_param_label")
+for algo_param in ss_abs_str_df['algo_param'].unique():
+    sub_ss_df = ss_abs_str_df.query("algo_param == @algo_param")
     mr_count = sub_ss_df.query("mode == 'majority_rule'")['ext_nc_uniq'].sum()
     bc_count = sub_ss_df.query("mode == 'best_cluster'")['ext_nc_uniq'].sum()
     bm_count = sub_ss_df.query("mode == 'best_match'")['ext_nc_uniq'].sum()
     test_df = sub_ss_df.pivot(index='label_sample', columns='mode', values='ext_nc_uniq')
-    print(test_df)
+
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
                                     test_df['best_cluster'],
@@ -106,7 +106,7 @@ for algo_param_label in ss_abs_str_df['algo_param_label'].unique():
     m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_nc_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
     stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
 
-    print(f"\nThe Algorithm tested is {algo_param_label}")
+    print(f"\nThe Algorithm tested is {algo_param}")
     print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
     print(f"\nResults of Tukey HSD test:")
     print(m_comp)

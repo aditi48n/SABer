@@ -1,6 +1,7 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns
@@ -179,6 +180,19 @@ sub_binstat_df = bin_cat_df.query("binner in @keep_binners_list & "
                                   "level_mode in @keep_levmod_list"
                                   )
 print(sub_binstat_df)
+
+# Boxplots for mode and param set
+boxie = sns.catplot(x="sample_type", y="ext_mq_uniq", hue="binner",
+                    col="level_mode", col_wrap=4,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
 
 sys.exit()
 ########################################################################################################################

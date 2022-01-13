@@ -176,9 +176,11 @@ dedup_cnt_df = cat_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 print(dedup_cnt_df)
 keep_binners_list = list(dedup_cnt_df['binner'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
-sub_binstat_df = dedup_cnt_df.query("binner in @keep_binners_list & "
-                                    "level_mode in @keep_levmod_list"
-                                    )
+temp_cat_df = bin_cat_df.copy()
+temp_cat_df['binner'] = [x.split('_', 1)[0] for x in temp_cat_df['binner']]
+sub_binstat_df = temp_cat_df.query("binner in @keep_binners_list & "
+                                   "level_mode in @keep_levmod_list"
+                                   )
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 

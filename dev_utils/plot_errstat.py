@@ -48,9 +48,13 @@ param2rank = {'very_relaxed': 0,
               'very_strict': 3
               }
 
-# Munge SABer single/mulit
-# Near Complete Single
-# Absolute as reference
+########################################################################################################################
+# Single SABer - Near Complete, Absolute
+########################################################################################################################
+print('############################################################')
+print('# Single SABer')
+print('############################################################')
+
 ss_df = pd.read_csv(saber_single_file, header=0, sep='\t')
 ss_df['label'] = [type2label[x] for x in ss_df['sample_type']]
 ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
@@ -297,29 +301,255 @@ ss_box.savefig(os.path.join(workdir, 'SABer.single.absolute.MQ.param.boxplot.png
 plt.clf()
 plt.close()
 
-sys.exit()
+########################################################################################################################
+# Multi SABer
+########################################################################################################################
+print('############################################################')
+print('# Multi SABer')
+print('############################################################')
 
-# Build boxplots
-ss_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
-                     kind="box", data=ss_abs_str_df, notch=True,
-                     linewidth=0.75, saturation=0.75, width=0.75,
-                     palette=sns.color_palette("muted")
-                     )
-ss_box.savefig(os.path.join(workdir, 'SABer.single.boxplot.png'),
-               dpi=300
-               )
-plt.clf()
-plt.close()
-sm_box = sns.catplot(x="label", y="ext_nc_uniq", hue="algo",
+sm_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
+sm_df['label'] = [type2label[x] for x in sm_df['sample_type']]
+sm_df['algo_rank'] = [algo2rank[x] for x in sm_df['algo']]
+sm_df['type_rank'] = [type2rank[x] for x in sm_df['sample_type']]
+sm_df['mode_rank'] = [mode2rank[x] for x in sm_df['mode']]
+sm_df['param_rank'] = [param2rank[x] for x in sm_df['param_set']]
+sm_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
+                          zip(sm_df['mode'], sm_df['param_set'])
+                          ]
+sm_df['algo_param'] = ['_'.join([str(x), str(y)]) for x, y in
+                       zip(sm_df['algo'], sm_df['param_set'])
+                       ]
+sm_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
+                         zip(sm_df['label'], sm_df['sample_id'])
+                         ]
+sm_abs_str_df = sm_df.query("level == 'strain_absolute'")
+sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
+                              'mode_rank', 'param_set'
+                              ], inplace=True)
+ss_abs_str_median_df = sm_abs_str_df.groupby(['mode', 'algo']
+                                             )[['ext_nc_uniq'
+                                                ]].median().reset_index()
+ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
+ss_abs_str_mean_df = sm_abs_str_df.groupby(['mode', 'algo']
+                                           )[['ext_nc_uniq'
+                                              ]].mean().reset_index()
+ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
+ss_abs_str_std_df = sm_abs_str_df.groupby(['mode', 'algo']
+                                          )[['ext_nc_uniq'
+                                             ]].std().reset_index()
+ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
+
+print(ss_abs_str_stats_df)
+
+MR_count = 0
+BC_count = 0
+BM_count = 0
+for algo_param in sm_abs_str_df['algo_param'].unique():
+    sub_ss_df = sm_abs_str_df.query("algo_param == @algo_param")
+    mr_count = sub_ss_df.query("mode == 'majority_rule'")['ext_nc_uniq'].sum()
+    bc_count = sub_ss_df.query("mode == 'best_cluster'")['ext_nc_uniq'].sum()
+    bm_count = sub_ss_df.query("mode == 'best_match'")['ext_nc_uniq'].sum()
+    test_df = sub_ss_df.pivot(index='label_sample', columns='mode', values='ext_nc_uniq')
+
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
+                                    test_df['best_cluster'],
+                                    test_df['best_match']
+                                    )
+    m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_nc_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
+    stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
+
+    print(f"\nThe Algorithm tested is {algo_param}")
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nResults of Tukey HSD test:")
+    print(m_comp)
+    print(f"\nResults of Wilcoxon Signed-Rank Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distribution (fail to reject H0)')
+    else:
+        print('Different distribution (reject H0)')
+    stat, p = kruskal(test_df['majority_rule'],
+                      test_df['best_cluster'],
+                      test_df['best_match']
+                      )
+    print(f"\nResults of Kruskal-Wallis H Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distributions (fail to reject H0)')
+    else:
+        print('Different distributions (reject H0)')
+    print(f"\nThe total number of NC bins for each mode is:\n")
+    print(f"\t Majority Rule: {mr_count}")
+    print(f"\t Best Cluster: {bc_count}")
+    print(f"\t Best Match: {bm_count}")
+    MR_count += mr_count
+    BC_count += bc_count
+    BM_count += bm_count
+
+print(f"Total Majority Rule: {MR_count}")
+print(f"Total Best Cluster: {BC_count}")
+print(f"Total Best Match: {BM_count}")
+lengs = len(sm_abs_str_df['algo_param'].unique())
+print(f"Average Majority Rule: {MR_count / lengs}")
+print(f"Average Best Cluster: {BC_count / lengs}")
+print(f"Average Best Match: {BM_count / lengs}")
+
+# Boxplots for mode and param set
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+                     col="param_set", col_wrap=2,
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
                      )
-sm_box.savefig(os.path.join(workdir, 'SABer.multi.boxplot.png'),
+ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.NC.mode_param.boxplot.png'),
                dpi=300
                )
 plt.clf()
 plt.close()
 
-print(ss_df.head())
-print(sm_df.head())
+# Boxplots for mode
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.NC.mode.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+# Boxplots for param set
+ss_box = sns.catplot(x="param_set", y="ext_nc_uniq", hue="algo",
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.NC.param.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+# Medium Quality
+ss_abs_str_median_df = sm_abs_str_df.groupby(['mode', 'algo']
+                                             )[['ext_mq_uniq'
+                                                ]].median().reset_index()
+ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
+ss_abs_str_mean_df = sm_abs_str_df.groupby(['mode', 'algo']
+                                           )[['ext_mq_uniq'
+                                              ]].mean().reset_index()
+ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
+ss_abs_str_std_df = sm_abs_str_df.groupby(['mode', 'algo']
+                                          )[['ext_mq_uniq'
+                                             ]].std().reset_index()
+ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
+
+print(ss_abs_str_stats_df)
+
+MR_count = 0
+BC_count = 0
+BM_count = 0
+for algo_param in sm_abs_str_df['algo_param'].unique():
+    sub_ss_df = sm_abs_str_df.query("algo_param == @algo_param")
+    mr_count = sub_ss_df.query("mode == 'majority_rule'")['ext_mq_uniq'].sum()
+    bc_count = sub_ss_df.query("mode == 'best_cluster'")['ext_mq_uniq'].sum()
+    bm_count = sub_ss_df.query("mode == 'best_match'")['ext_mq_uniq'].sum()
+    test_df = sub_ss_df.pivot(index='label_sample', columns='mode', values='ext_mq_uniq')
+
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
+                                    test_df['best_cluster'],
+                                    test_df['best_match']
+                                    )
+    m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_mq_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
+    stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
+
+    print(f"\nThe Algorithm tested is {algo_param}")
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nResults of Tukey HSD test:")
+    print(m_comp)
+    print(f"\nResults of Wilcoxon Signed-Rank Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distribution (fail to reject H0)')
+    else:
+        print('Different distribution (reject H0)')
+    stat, p = kruskal(test_df['majority_rule'],
+                      test_df['best_cluster'],
+                      test_df['best_match']
+                      )
+    print(f"\nResults of Kruskal-Wallis H Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distributions (fail to reject H0)')
+    else:
+        print('Different distributions (reject H0)')
+    print(f"\nThe total number of NC bins for each mode is:\n")
+    print(f"\t Majority Rule: {mr_count}")
+    print(f"\t Best Cluster: {bc_count}")
+    print(f"\t Best Match: {bm_count}")
+    MR_count += mr_count
+    BC_count += bc_count
+    BM_count += bm_count
+
+print(f"Total Majority Rule: {MR_count}")
+print(f"Total Best Cluster: {BC_count}")
+print(f"Total Best Match: {BM_count}")
+lengs = len(sm_abs_str_df['algo_param'].unique())
+print(f"Average Majority Rule: {MR_count / lengs}")
+print(f"Average Best Cluster: {BC_count / lengs}")
+print(f"Average Best Match: {BM_count / lengs}")
+
+# Boxplots for mode and param set
+ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algo",
+                     col="param_set", col_wrap=2,
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.MQ.mode_param.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+# Boxplots for mode
+ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algo",
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.MQ.mode.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+# Boxplots for param set
+ss_box = sns.catplot(x="param_set", y="ext_mq_uniq", hue="algo",
+                     kind="box", data=sm_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.MQ.param.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()

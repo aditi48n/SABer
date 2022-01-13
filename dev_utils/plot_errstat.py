@@ -131,7 +131,7 @@ bin_cat_df['binner_config'] = [x + '_' + y for x, y in zip(bin_cat_df['binner'],
 for level in bin_cat_df['level'].unique():
     sub_df = bin_cat_df.query("level == @level")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-    fvalue, pvalue = stats.f_oneway(
+    fvalue, pvalue = sci_stats.f_oneway(
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
           for group in sub_df['binner_config'].unique()
           ))

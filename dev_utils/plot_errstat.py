@@ -62,6 +62,14 @@ unitem_multi_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
 vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
 
 # Unify table formats
+col_order = ['binner', 'level', 'sample_type', 'sample_id',
+             'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc', 'nc_avg_p',
+             'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt', 'ext_mq_uniq',
+             'ext_nc_cnt', 'ext_nc_uniq', 'str_mq_cnt',
+             'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq',
+             'ext_mq_poss', 'ext_nc_poss', 'str_mq_poss',
+             'str_nc_poss'
+             ]
 # SABer first
 print(saber_single_df.head())
 saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
@@ -71,11 +79,10 @@ saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                  saber_single_df['param_set']
                                  )
                              ]
-saber_single_df.drop(columns=['algo', 'mode', 'param_set'],
-                     inplace=True
-                     )
-print(saber_single_df.columns)
-print(saber_single_df.head())
+saber_s_df = saber_single_df.drop(columns=['algo', 'mode', 'param_set'],
+                                  inplace=True
+                                  )[col_order]
+print(saber_s_df.head())
 
 sys.exit()
 

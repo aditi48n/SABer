@@ -2,6 +2,7 @@ import os
 import sys
 from functools import reduce
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
@@ -144,25 +145,6 @@ lengs = len(ss_abs_str_df['algo_param'].unique())
 print(f"Average Majority Rule: {MR_count / lengs}")
 print(f"Average Best Cluster: {BC_count / lengs}")
 print(f"Average Best Match: {BM_count / lengs}")
-
-sys.exit()
-
-ss_abs_str_bar_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']
-                                          )[['ext_nc_uniq'
-                                             ]].sum().reset_index()
-ss_bar = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
-                     col="param_set", col_wrap=2,
-                     kind="bar", data=ss_abs_str_bar_df,
-                     linewidth=0.75, saturation=0.75,
-                     palette=sns.color_palette("muted")
-                     )
-ss_bar.savefig(os.path.join(workdir, 'SABer.single.absolute.mode_param.count.png'),
-               dpi=300
-               )
-plt.clf()
-plt.close()
-
-sys.exit()
 
 # Boxplots for mode and param set
 ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",

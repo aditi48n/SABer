@@ -60,7 +60,8 @@ binner2rank = {'maxbin': 0,
                'metabat': 1,
                'metabat2': 2,
                'VAMB': 3,
-               'SABer': 4
+               'SABer_denovo': 4,
+               'SABer_intersect': 5
                }
 
 level2rank = {'exact_assembly_single': 0,

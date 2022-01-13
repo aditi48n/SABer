@@ -199,6 +199,22 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.boxplot.png'),
 plt.clf()
 plt.close()
 
+# Barplots for mode and param set
+sum_binstat_df = sub_binstat_df.groupby(['binner', 'level_mode',
+                                         'dataset']
+                                        )['ext_nc_uniq'].sum().reset_index()
+barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="bar", data=sum_binstat_df,
+                    linewidth=0.75, saturation=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+barie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.barplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
 sys.exit()
 ########################################################################################################################
 ##### OLD CODE BELOW ###################################################################################################

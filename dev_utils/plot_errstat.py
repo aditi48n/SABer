@@ -57,6 +57,9 @@ ss_df['param_rank'] = [param2rank[x] for x in ss_df['param_set']]
 ss_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
                           zip(ss_df['mode'], ss_df['param_set'])
                           ]
+ss_df['algo_param'] = ['_'.join([str(x), str(y)]) for x, y in
+                       zip(ss_df['algo'], ss_df['param_set'])
+                       ]
 ss_df['label_sample_param'] = ['_'.join([str(x), str(y), str(z)]) for x, y, z in
                                zip(ss_df['label'], ss_df['sample_id'],
                                    ss_df['param_set'])
@@ -83,9 +86,9 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
-for algo in ss_abs_str_df['algo'].unique():
-    sub_ss_df = ss_abs_str_df.query("algo == @algo")
-    test_df = sub_ss_df.pivot(index='label_sample_param', columns='mode', values='ext_nc_uniq')
+for algo_param in ss_abs_str_df['algo_param'].unique():
+    sub_ss_df = ss_abs_str_df.query("algo_param == @algo_param")
+    test_df = sub_ss_df.pivot(index='label_sample', columns='mode', values='ext_nc_uniq')
 
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
@@ -94,7 +97,7 @@ for algo in ss_abs_str_df['algo'].unique():
                                     )
     m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_nc_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
 
-    print(f"The Algorithm tested is {algo}")
+    print(f"The Algorithm tested is {algo_param}")
     print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
     print(f"Results of Tukey HSD test:\n")
     print(m_comp)

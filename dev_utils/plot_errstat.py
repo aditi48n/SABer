@@ -95,15 +95,22 @@ saber_multi_df['sample_id'] = ['S' + str(x) for x in
                                ]
 saber_m_df = saber_multi_df.drop(columns=['algo', 'mode', 'param_set']
                                  )[col_order]
-print(saber_s_df.head())
-print(saber_m_df.head())
+
 # UniteM Binners
-print(unitem_single_df.head())
 unitem_single_df['sample_id'] = ['S' + str(x) for x in
                                  unitem_single_df['sample_id']
                                  ]
 unitem_s_df = unitem_single_df.drop(columns=['algo'])[col_order]
+unitem_multi_df['sample_id'] = ['S' + str(x) for x in
+                                unitem_multi_df['sample_id']
+                                ]
+unitem_m_df = unitem_multi_df.drop(columns=['algo'])[col_order]
+
+print(saber_s_df.head())
+print(saber_m_df.head())
 print(unitem_s_df.head())
+print(unitem_m_df.head())
+
 sys.exit()
 
 ########################################################################################################################

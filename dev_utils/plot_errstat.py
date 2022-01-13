@@ -87,6 +87,9 @@ ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
 
+MR_count = 0
+BC_count = 0
+BM_count = 0
 for algo_param in ss_abs_str_df['algo_param'].unique():
     sub_ss_df = ss_abs_str_df.query("algo_param == @algo_param")
     mr_count = sub_ss_df.query("mode == 'majority_rule'")['ext_nc_uniq'].sum()
@@ -130,7 +133,13 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
     print(f"\t Majority Rule: {mr_count}")
     print(f"\t Best Cluster: {bc_count}")
     print(f"\t Best Match: {bm_count}")
+    MR_count += mr_count
+    BC_count += bc_count
+    BM_count += bm_count
 
+print(f"\t Total Majority Rule: {MR_count}")
+print(f"\t Total Best Cluster: {BC_count}")
+print(f"\t Total Best Match: {BM_count}")
 sys.exit()
 
 ss_abs_str_bar_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']

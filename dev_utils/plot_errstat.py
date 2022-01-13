@@ -131,6 +131,7 @@ bin_cat_df['binner_config'] = [x + '_' + y for x, y in zip(bin_cat_df['binner'],
 bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
                                                         bin_cat_df['bin_mode']
                                                         )]
+cnt_df_list = []
 for level_mode in bin_cat_df['level_mode'].unique():
     print('############################################################')
     print(f"\nThe Level tested is {level_mode}")
@@ -162,10 +163,14 @@ for level_mode in bin_cat_df['level_mode'].unique():
         print('Different distributions (reject H0)')
     count_nc_df = sub_df.groupby(['binner_config']
                                  )['ext_nc_uniq'].sum().reset_index()
-    count_nc_df.sort_values(by=['ext_nc_uniq'], ascending=False,
-                            inplace=True
-                            )
-    print(count_nc_df)
+    sorted_nc_df = count_nc_df.sort_values(by=['ext_nc_uniq'], ascending=False
+                                           ).reset_index()
+    sorted_nc_df['level_mode'] = level_mode
+    cnt_df_list.append(sorted_nc_df)
+    print(sorted_nc_df)
+
+cat_cnt_df = pd.concat(cnt_df_list)
+print(cat_cnt_df)
 
 sys.exit()
 ########################################################################################################################

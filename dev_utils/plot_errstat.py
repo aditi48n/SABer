@@ -180,7 +180,7 @@ keep_binners_list = list(dedup_cnt_df['binner'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 temp_cat_df = bin_cat_df.copy()
 temp_cat_df['binner'] = [x.split('_', 1)[0] for x in temp_cat_df['binner']]
-sub_binstat_df = temp_cat_df.query("binner in @keep_binners_list & "
+sub_binstat_df = temp_cat_df.query("binner_config in @keep_binners_list & "
                                    "level_mode in @keep_levmod_list"
                                    )
 print(sub_binstat_df)

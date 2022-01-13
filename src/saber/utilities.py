@@ -132,9 +132,11 @@ def check_out_dirs(save_path, autoopt, mode):
     denovo_path = os.path.join(mode_path, 'denovo')
     hdbscan_path = os.path.join(mode_path, 'hdbscan')
     ocsvm_path = os.path.join(mode_path, 'ocsvm')
+    inter_path = os.path.join(mode_path, 'intersect')
     xpgs_path = os.path.join(mode_path, 'xpgs')
     sd_list = [autoopt, mode_path, denovo_path,
-               hdbscan_path, ocsvm_path, xpgs_path
+               hdbscan_path, ocsvm_path, inter_path,
+               xpgs_path
                ]
     sd_dict = {}
     for sd in sd_list:

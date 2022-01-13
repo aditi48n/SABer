@@ -64,6 +64,19 @@ vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
 # Unify table formats
 # SABer first
 print(saber_single_df.head())
+saber_single_df['binner'] = ['_'.join('SABer', str(x), str(y), str(z))
+                             for x, y, z in
+                             zip(saber_single_df['algo'],
+                                 saber_single_df['mode'],
+                                 saber_single_df['param_set']
+                                 )
+                             ]
+saber_single_df.drop(columns=['algo', 'mode', 'param_set'],
+                     inplace=True
+                     )
+print(saber_single_df.columns)
+print(saber_single_df.head())
+
 sys.exit()
 
 ########################################################################################################################

@@ -1,7 +1,6 @@
 import os
 import sys
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns
@@ -178,6 +177,9 @@ dedup_cnt_df = cat_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 print(dedup_cnt_df)
 keep_binners_list = list(dedup_cnt_df['binner'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
+print(keep_levmod_list)
+print(keep_binners_list)
+sys.exit()
 temp_cat_df = bin_cat_df.copy()
 temp_cat_df['binner'] = [x.split('_', 1)[0] for x in temp_cat_df['binner']]
 sub_binstat_df = temp_cat_df.query("binner_config in @keep_binners_list & "

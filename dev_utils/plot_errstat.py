@@ -79,8 +79,7 @@ saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                  saber_single_df['param_set']
                                  )
                              ]
-saber_s_df = saber_single_df.drop(columns=['algo', 'mode', 'param_set'],
-                                  inplace=True
+saber_s_df = saber_single_df.drop(columns=['algo', 'mode', 'param_set']
                                   )[col_order]
 print(saber_s_df.head())
 

@@ -173,6 +173,12 @@ cat_cnt_df = pd.concat(cnt_df_list)
 cat_cnt_df['binner'] = [x.split('_', 1)[0] for x in cat_cnt_df['binner_config']]
 dedup_cnt_df = cat_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 print(dedup_cnt_df)
+keep_binners_list = list(dedup_cnt_df['binner'])
+keep_levmod_list = list(dedup_cnt_df['level_mode'])
+sub_binstat_df = bin_cat_df.query("binner in @keep_binners_list & "
+                                  "level_mode in @keeplevmod_list"
+                                  )
+print(sub_binstat_df)
 
 sys.exit()
 ########################################################################################################################

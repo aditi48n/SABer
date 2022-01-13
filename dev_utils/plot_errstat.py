@@ -194,7 +194,7 @@ sub_binstat_df = temp_cat_df.query("binner_config in @keep_binners_list & "
 sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
-sub_binstat_df.sort_values(by=['binner'], inplace=True).reset_index()
+sub_binstat_df.sort_values(by=['binner'], inplace=True)
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 

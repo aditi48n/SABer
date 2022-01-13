@@ -2,12 +2,8 @@ import os
 import sys
 from functools import reduce
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import scipy.stats as stats
 import seaborn as sns
-from scipy.stats import kruskal
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # plot aestetics
 sns.set_context("paper")
@@ -16,7 +12,7 @@ saber_single_file = sys.argv[1]
 saber_multi_file = sys.argv[2]
 unitem_single_file = sys.argv[3]
 unitem_multi_file = sys.argv[4]
-# vamb_multi_file = sys.argv[5] # when it's ready
+vamb_multi_file = sys.argv[5]
 
 # working directory
 workdir = os.path.dirname(saber_single_file)
@@ -562,7 +558,7 @@ ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.MQ.param.boxplot.png'
 plt.clf()
 plt.close()
 '''
-
+'''
 ########################################################################################################################
 # Single UniteM
 ########################################################################################################################
@@ -924,3 +920,48 @@ us_box.savefig(os.path.join(workdir, 'UniteM.multi.absolute.MQ.binner.boxplot.pn
                )
 plt.clf()
 plt.close()
+'''
+
+########################################################################################################################
+# Multi VAMB
+########################################################################################################################
+print('############################################################')
+print('# Multi VAMB')
+print('############################################################')
+
+us_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
+print(us_df.head())
+print(us_df.columns)
+us_df['label'] = [type2label[x] for x in us_df['sample_type']]
+us_df['algo_rank'] = [algo2rank[x] for x in us_df['algo']]
+us_df['type_rank'] = [type2rank[x] for x in us_df['sample_type']]
+us_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
+                         zip(us_df['label'], us_df['sample_id'])
+                         ]
+us_abs_str_df = us_df.query("level == 'strain_absolute'")
+us_abs_str_df.sort_values(by=['type_rank', 'algo_rank'
+                              ], inplace=True)
+us_abs_str_median_df = us_abs_str_df.groupby(['algo']
+                                             )[['ext_nc_uniq'
+                                                ]].median().reset_index()
+us_abs_str_median_df.columns = ['algo', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['algo']
+                                           )[['ext_nc_uniq'
+                                              ]].mean().reset_index()
+us_abs_str_mean_df.columns = ['algo', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['algo']
+                                          )[['ext_nc_uniq'
+                                             ]].std().reset_index()
+us_abs_str_std_df.columns = ['algo', 'stdev']
+stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df,
+                 us_abs_str_std_df
+                 ]
+us_abs_str_stats_df = reduce(lambda x, y:
+                             pd.merge(x, y, on=['algo']),
+                             stats_df_list
+                             )
+us_abs_str_stats_df.sort_values(by='mean', ascending=False,
+                                inplace=True
+                                )
+
+print(us_abs_str_stats_df)

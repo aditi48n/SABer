@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns
-from statsmodels import stats as sm_stats
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # specify that all columns should be shown
 pd.set_option('max_columns', None)
@@ -135,10 +135,10 @@ for level in bin_cat_df['level'].unique():
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
           for group in sub_df['binner_config'].unique()
           ))
-    m_comp = sm_stats.multicomp.pairwise_tukeyhsd(endog=sub_df['ext_nc_uniq'],
-                                                  groups=sub_df['binner_config'],
-                                                  alpha=0.05
-                                                  )
+    m_comp = pairwise_tukeyhsd(endog=sub_df['ext_nc_uniq'],
+                               groups=sub_df['binner_config'],
+                               alpha=0.05
+                               )
     print(f"\nThe Level tested is {level}")
     print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
     print(f"\nResults of Tukey HSD test:")

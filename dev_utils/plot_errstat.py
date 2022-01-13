@@ -180,6 +180,7 @@ sub_binstat_df = bin_cat_df.query("binner in @keep_binners_list & "
                                   "level_mode in @keep_levmod_list"
                                   )
 print(sub_binstat_df)
+print(sub_binstat_df['binner'].unique())
 
 # Boxplots for mode and param set
 boxie = sns.catplot(x="sample_type", y="ext_mq_uniq", hue="binner",

@@ -198,9 +198,9 @@ cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                         if 'SABer' in x else x.split('_', 1)[0]
                         for x in cat_cnt_df['binner_config']
                         ]
-print(cat_cnt_df)
-sys.exit()
-dedup_cnt_df = cat_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
+filter_list = ['SABer_hdbscan', 'SABer_ocsvm']
+filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
+dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 print(dedup_cnt_df)
 keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])

@@ -1,9 +1,11 @@
 import os
 import sys
-from functools import reduce
 
 import pandas as pd
 import seaborn as sns
+
+# specify that all columns should be shown
+pd.set_option('max_columns', None)
 
 # plot aestetics
 sns.set_context("paper")
@@ -51,7 +53,19 @@ binner2rank = {'maxbin_ms40': 0,
                'metabat_verysensitive': 6,
                'metabat2': 7
                }
-'''
+
+# Load stats tables
+saber_single_df = pd.read_csv(saber_single_file, header=0, sep='\t')
+saber_multi_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
+unitem_single_df = pd.read_csv(unitem_single_file, header=0, sep='\t')
+unitem_multi_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
+vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
+
+# Unify table formats
+# SABer first
+print(saber_single_df.head())
+sys.exit()
+
 ########################################################################################################################
 # Single SABer - Near Complete, Absolute
 ########################################################################################################################
@@ -59,7 +73,6 @@ print('############################################################')
 print('# Single SABer')
 print('############################################################')
 
-ss_df = pd.read_csv(saber_single_file, header=0, sep='\t')
 ss_df['label'] = [type2label[x] for x in ss_df['sample_type']]
 ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
 ss_df['type_rank'] = [type2rank[x] for x in ss_df['sample_type']]
@@ -557,8 +570,7 @@ ss_box.savefig(os.path.join(workdir, 'SABer.multi.absolute.MQ.param.boxplot.png'
                )
 plt.clf()
 plt.close()
-'''
-'''
+
 ########################################################################################################################
 # Single UniteM
 ########################################################################################################################
@@ -920,48 +932,4 @@ us_box.savefig(os.path.join(workdir, 'UniteM.multi.absolute.MQ.binner.boxplot.pn
                )
 plt.clf()
 plt.close()
-'''
 
-########################################################################################################################
-# Multi VAMB
-########################################################################################################################
-print('############################################################')
-print('# Multi VAMB')
-print('############################################################')
-
-us_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
-print(us_df.head())
-print(us_df.columns)
-us_df['label'] = [type2label[x] for x in us_df['sample_type']]
-us_df['algo_rank'] = [algo2rank[x] for x in us_df['algo']]
-us_df['type_rank'] = [type2rank[x] for x in us_df['sample_type']]
-us_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
-                         zip(us_df['label'], us_df['sample_id'])
-                         ]
-us_abs_str_df = us_df.query("level == 'strain_absolute'")
-us_abs_str_df.sort_values(by=['type_rank', 'algo_rank'
-                              ], inplace=True)
-us_abs_str_median_df = us_abs_str_df.groupby(['algo']
-                                             )[['ext_nc_uniq'
-                                                ]].median().reset_index()
-us_abs_str_median_df.columns = ['algo', 'median']
-us_abs_str_mean_df = us_abs_str_df.groupby(['algo']
-                                           )[['ext_nc_uniq'
-                                              ]].mean().reset_index()
-us_abs_str_mean_df.columns = ['algo', 'mean']
-us_abs_str_std_df = us_abs_str_df.groupby(['algo']
-                                          )[['ext_nc_uniq'
-                                             ]].std().reset_index()
-us_abs_str_std_df.columns = ['algo', 'stdev']
-stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df,
-                 us_abs_str_std_df
-                 ]
-us_abs_str_stats_df = reduce(lambda x, y:
-                             pd.merge(x, y, on=['algo']),
-                             stats_df_list
-                             )
-us_abs_str_stats_df.sort_values(by='mean', ascending=False,
-                                inplace=True
-                                )
-
-print(us_abs_str_stats_df)

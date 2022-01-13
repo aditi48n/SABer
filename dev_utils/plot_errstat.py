@@ -137,9 +137,9 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
     BC_count += bc_count
     BM_count += bm_count
 
-print(f"\t Total Majority Rule: {MR_count}")
-print(f"\t Total Best Cluster: {BC_count}")
-print(f"\t Total Best Match: {BM_count}")
+print(f"Total Majority Rule: {MR_count}")
+print(f"Total Best Cluster: {BC_count}")
+print(f"Total Best Match: {BM_count}")
 sys.exit()
 
 ss_abs_str_bar_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']

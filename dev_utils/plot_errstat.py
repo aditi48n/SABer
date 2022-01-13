@@ -2,7 +2,9 @@ import os
 import sys
 
 import pandas as pd
+import scipy.stats as sci_stats
 import seaborn as sns
+import statsmodels.stats as stats
 
 # specify that all columns should be shown
 pd.set_option('max_columns', None)
@@ -119,13 +121,45 @@ vamb_multi_df['sample_id'] = ['S' + str(x) for x in
                               ]
 vamb_m_df = vamb_multi_df.drop(columns=['algo'])[col_order]
 
-print(saber_s_df.head())
-print(saber_m_df.head())
-print(unitem_s_df.head())
-print(unitem_m_df.head())
-print(vamb_m_df.head())
+bin_cat_df = pd.concat([saber_s_df, saber_m_df,
+                        unitem_s_df, unitem_m_df,
+                        vamb_m_df
+                        ])
+bin_cat_df['binner_config'] = [x + '_' + y for x, y in zip(bin_cat_df['binner'],
+                                                           bin_cat_df['bin_mode']
+                                                           )]
+for level in bin_cat_df['level'].unique():
+    sub_df = bin_cat_df.query("level == @level")
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    fvalue, pvalue = stats.f_oneway(
+        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
+          for group in sub_df['binner_config'].unique()
+          ))
+    m_comp = stats.multicomp.pairwise_tukeyhsd(endog=sub_df['ext_nc_uniq'],
+                                               groups=sub_df['binner_config'],
+                                               alpha=0.05
+                                               )
+    print(f"\nThe Level tested is {level}")
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nResults of Tukey HSD test:")
+    print(m_comp)
+    stat, p = sci_stats.kruskal(
+        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
+          for group in sub_df['binner_config'].unique()
+          ))
+    print(f"\nResults of Kruskal-Wallis H Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distributions (fail to reject H0)')
+    else:
+        print('Different distributions (reject H0)')
 
-sys.exit()
+########################################################################################################################
+##### OLD CODE BELOW ###################################################################################################
+########################################################################################################################
+
 
 ########################################################################################################################
 # Single SABer - Near Complete, Absolute

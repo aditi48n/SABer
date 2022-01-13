@@ -128,8 +128,14 @@ bin_cat_df = pd.concat([saber_s_df, saber_m_df,
 bin_cat_df['binner_config'] = [x + '_' + y for x, y in zip(bin_cat_df['binner'],
                                                            bin_cat_df['bin_mode']
                                                            )]
-for level in bin_cat_df['level'].unique():
-    sub_df = bin_cat_df.query("level == @level")
+bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
+                                                        bin_cat_df['bin_mode']
+                                                        )]
+for level_mode in bin_cat_df['level_mode'].unique():
+    print('############################################################')
+    print(f"\nThe Level tested is {level_mode}")
+    print('############################################################')
+    sub_df = bin_cat_df.query("level_mode == @level_mode")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = sci_stats.f_oneway(
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
@@ -139,7 +145,6 @@ for level in bin_cat_df['level'].unique():
                                groups=sub_df['binner_config'],
                                alpha=0.05
                                )
-    print(f"\nThe Level tested is {level}")
     print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
     print(f"\nResults of Tukey HSD test:")
     print(m_comp)

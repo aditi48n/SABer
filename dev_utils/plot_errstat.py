@@ -62,7 +62,7 @@ unitem_multi_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
 vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
 
 # Unify table formats
-col_order = ['binner', 'level', 'sample_type', 'sample_id',
+col_order = ['binner', 'bin_mode', 'level', 'sample_type', 'sample_id',
              'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc', 'nc_avg_p',
              'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt', 'ext_mq_uniq',
              'ext_nc_cnt', 'ext_nc_uniq', 'str_mq_cnt',
@@ -78,6 +78,7 @@ saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                  saber_single_df['param_set']
                                  )
                              ]
+saber_single_df['bin_mode'] = 'single'
 saber_single_df['sample_id'] = ['S' + str(x) for x in
                                 saber_single_df['sample_id']
                                 ]
@@ -90,6 +91,7 @@ saber_multi_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                 saber_multi_df['param_set']
                                 )
                             ]
+saber_multi_df['bin_mode'] = 'co-bin'
 saber_multi_df['sample_id'] = ['S' + str(x) for x in
                                saber_multi_df['sample_id']
                                ]
@@ -97,10 +99,12 @@ saber_m_df = saber_multi_df.drop(columns=['algo', 'mode', 'param_set']
                                  )[col_order]
 
 # UniteM Binners
+unitem_single_df['bin_mode'] = 'single'
 unitem_single_df['sample_id'] = ['S' + str(x) for x in
                                  unitem_single_df['sample_id']
                                  ]
 unitem_s_df = unitem_single_df.drop(columns=['algo'])[col_order]
+unitem_multi_df['bin_mode'] = 'co-bin'
 unitem_multi_df['sample_id'] = ['S' + str(x) for x in
                                 unitem_multi_df['sample_id']
                                 ]

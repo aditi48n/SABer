@@ -7,7 +7,6 @@ import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 from scipy.stats import kruskal
-from scipy.stats import wilcoxon
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # plot aestetics
@@ -612,19 +611,24 @@ print(us_abs_str_stats_df)
 
 test_df = us_abs_str_df.pivot(index='label_sample', columns='binner', values='ext_nc_uniq')
 # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
-                                test_df['best_cluster'],
-                                test_df['best_match']
+fvalue, pvalue = stats.f_oneway(test_df['maxbin_ms40'],
+                                test_df['maxbin_ms107'],
+                                test_df['metabat_specific'],
+                                test_df['metabat_veryspecific'],
+                                test_df['metabat_superspecific'],
+                                test_df['metabat_sensitive'],
+                                test_df['metabat_verysensitive'],
+                                test_df['metabat2']
                                 )
 m_comp = pairwise_tukeyhsd(endog=us_abs_str_df['ext_nc_uniq'], groups=us_abs_str_df['binner'], alpha=0.05)
-stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
+# stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
 
 print(f"\nThe Algorithm tested is UniteM Binners")
 print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
 print(f"\nResults of Tukey HSD test:")
 print(m_comp)
-print(f"\nResults of Wilcoxon Signed-Rank Test:")
-print('Statistics=%.3f, p=%.3f' % (stat, p))
+# print(f"\nResults of Wilcoxon Signed-Rank Test:")
+# print('Statistics=%.3f, p=%.3f' % (stat, p))
 # interpret
 alpha = 0.05
 if p > alpha:
@@ -637,7 +641,8 @@ stat, p = kruskal(test_df['maxbin_ms40'],
                   test_df['metabat_veryspecific'],
                   test_df['metabat_superspecific'],
                   test_df['metabat_sensitive'],
-                  test_df['metabat_verysensitive']
+                  test_df['metabat_verysensitive'],
+                  test_df['metabat2']
                   )
 print(f"\nResults of Kruskal-Wallis H Test:")
 print('Statistics=%.3f, p=%.3f' % (stat, p))
@@ -683,19 +688,24 @@ print(us_abs_str_stats_df)
 
 test_df = us_abs_str_df.pivot(index='label_sample', columns='binner', values='ext_mq_uniq')
 # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],
-                                test_df['best_cluster'],
-                                test_df['best_match']
+fvalue, pvalue = stats.f_oneway(test_df['maxbin_ms40'],
+                                test_df['maxbin_ms107'],
+                                test_df['metabat_specific'],
+                                test_df['metabat_veryspecific'],
+                                test_df['metabat_superspecific'],
+                                test_df['metabat_sensitive'],
+                                test_df['metabat_verysensitive'],
+                                test_df['metabat2']
                                 )
 m_comp = pairwise_tukeyhsd(endog=us_abs_str_df['ext_mq_uniq'], groups=us_abs_str_df['binner'], alpha=0.05)
-stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
+# stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
 
 print(f"\nThe Algorithm tested is UniteM Binners")
 print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
 print(f"\nResults of Tukey HSD test:")
 print(m_comp)
-print(f"\nResults of Wilcoxon Signed-Rank Test:")
-print('Statistics=%.3f, p=%.3f' % (stat, p))
+# print(f"\nResults of Wilcoxon Signed-Rank Test:")
+# print('Statistics=%.3f, p=%.3f' % (stat, p))
 # interpret
 alpha = 0.05
 if p > alpha:
@@ -708,7 +718,8 @@ stat, p = kruskal(test_df['maxbin_ms40'],
                   test_df['metabat_veryspecific'],
                   test_df['metabat_superspecific'],
                   test_df['metabat_sensitive'],
-                  test_df['metabat_verysensitive']
+                  test_df['metabat_verysensitive'],
+                  test_df['metabat2']
                   )
 print(f"\nResults of Kruskal-Wallis H Test:")
 print('Statistics=%.3f, p=%.3f' % (stat, p))

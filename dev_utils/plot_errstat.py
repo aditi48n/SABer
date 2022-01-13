@@ -1,6 +1,7 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns

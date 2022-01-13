@@ -194,7 +194,10 @@ sub_binstat_df = temp_cat_df.query("binner_config in @keep_binners_list & "
 sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
-sub_binstat_df.sort_values(by=['bin_rank'], inplace=True)
+sub_binstat_df['type_rank'] = [type2rank[x] for x in
+                               sub_binstat_df['dataset']
+                               ]
+sub_binstat_df.sort_values(by=['bin_rank', 'type_rank'], inplace=True)
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 
@@ -213,9 +216,10 @@ plt.close()
 
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
+                                         'type_rank',
                                          'level_mode', 'dataset']
                                         )['ext_nc_uniq'].sum().reset_index()
-sum_binstat_df.sort_values(by=['bin_rank'], inplace=True)
+sum_binstat_df.sort_values(by=['bin_rank', 'type_rank'], inplace=True)
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,

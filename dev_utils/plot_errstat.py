@@ -132,6 +132,8 @@ bin_cat_df['binner_config'] = [x + '_' + y for x, y in zip(bin_cat_df['binner'],
 bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
                                                         bin_cat_df['bin_mode']
                                                         )]
+bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
+
 cnt_df_list = []
 for level_mode in bin_cat_df['level_mode'].unique():
     print('############################################################')
@@ -185,7 +187,7 @@ print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 
 # Boxplots for mode and param set
-boxie = sns.catplot(x="label", y="ext_mq_uniq", hue="binner",
+boxie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,

@@ -5,6 +5,7 @@ from functools import reduce
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
+from scipy.stats import kruskal
 from scipy.stats import wilcoxon
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
@@ -100,8 +101,9 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
 
     print(f"The Algorithm tested is {algo_param}")
     print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
-    print(f"Results of Tukey HSD test:\n")
+    print(f"\nResults of Tukey HSD test:\n")
     print(m_comp)
+    print(f"\nResults of Wilcoxon Signed-Rank Test:\n")
     print('Statistics=%.3f, p=%.3f' % (stat, p))
     # interpret
     alpha = 0.05
@@ -109,6 +111,18 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
         print('Same distribution (fail to reject H0)')
     else:
         print('Different distribution (reject H0)')
+    stat, p = kruskal(test_df['majority_rule'],
+                      test_df['best_cluster'],
+                      test_df['best_match']
+                      )
+    print(f"\nResults of Kruskal-Wallis H Test:\n")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distributions (fail to reject H0)')
+    else:
+        print('Different distributions (reject H0)')
 
 sys.exit()
 

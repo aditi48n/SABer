@@ -176,7 +176,7 @@ print(dedup_cnt_df)
 keep_binners_list = list(dedup_cnt_df['binner'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 sub_binstat_df = bin_cat_df.query("binner in @keep_binners_list & "
-                                  "level_mode in @keeplevmod_list"
+                                  "level_mode in @keep_levmod_list"
                                   )
 print(sub_binstat_df)
 

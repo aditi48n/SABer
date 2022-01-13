@@ -5,6 +5,7 @@ from functools import reduce
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # plot aestetics
 sns.set_context("paper")
@@ -91,7 +92,12 @@ for algo in ss_abs_str_df['algo'].unique():
                                     test_df['best_cluster'],
                                     test_df['best_match']
                                     )
-    print(algo, fvalue, pvalue)
+    m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_nc_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
+
+    print(f"The Algorithm tested is {algo}")
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"Results of Tukey HSD test:\n")
+    print(m_comp)
 
 sys.exit()
 

@@ -743,3 +743,184 @@ us_box.savefig(os.path.join(workdir, 'UniteM.single.absolute.MQ.binner.boxplot.p
                )
 plt.clf()
 plt.close()
+
+########################################################################################################################
+# Multi UniteM
+########################################################################################################################
+print('############################################################')
+print('# Multi UniteM')
+print('############################################################')
+
+us_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
+print(us_df.head())
+print(us_df.columns)
+us_df['label'] = [type2label[x] for x in us_df['sample_type']]
+us_df['algo_rank'] = [algo2rank[x] for x in us_df['algo']]
+us_df['type_rank'] = [type2rank[x] for x in us_df['sample_type']]
+us_df['binner_rank'] = [binner2rank[x] for x in us_df['binner']]
+us_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
+                         zip(us_df['label'], us_df['sample_id'])
+                         ]
+us_abs_str_df = us_df.query("level == 'strain_absolute'")
+us_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
+                              'binner_rank'
+                              ], inplace=True)
+us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algo']
+                                             )[['ext_nc_uniq'
+                                                ]].median().reset_index()
+us_abs_str_median_df.columns = ['binner', 'algo', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algo']
+                                           )[['ext_nc_uniq'
+                                              ]].mean().reset_index()
+us_abs_str_mean_df.columns = ['binner', 'algo', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algo']
+                                          )[['ext_nc_uniq'
+                                             ]].std().reset_index()
+us_abs_str_std_df.columns = ['binner', 'algo', 'stdev']
+stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df,
+                 us_abs_str_std_df
+                 ]
+us_abs_str_stats_df = reduce(lambda x, y:
+                             pd.merge(x, y, on=['binner', 'algo']),
+                             stats_df_list
+                             )
+us_abs_str_stats_df.sort_values(by='mean', ascending=False,
+                                inplace=True
+                                )
+
+print(us_abs_str_stats_df)
+
+test_df = us_abs_str_df.pivot(index='label_sample', columns='binner', values='ext_nc_uniq')
+# stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+fvalue, pvalue = stats.f_oneway(test_df['maxbin_ms40'],
+                                test_df['maxbin_ms107'],
+                                test_df['metabat_specific'],
+                                test_df['metabat_veryspecific'],
+                                test_df['metabat_superspecific'],
+                                test_df['metabat_sensitive'],
+                                test_df['metabat_verysensitive'],
+                                test_df['metabat2']
+                                )
+m_comp = pairwise_tukeyhsd(endog=us_abs_str_df['ext_nc_uniq'], groups=us_abs_str_df['binner'], alpha=0.05)
+# stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
+
+print(f"\nThe Algorithm tested is UniteM Binners")
+print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+print(f"\nResults of Tukey HSD test:")
+print(m_comp)
+# print(f"\nResults of Wilcoxon Signed-Rank Test:")
+# print('Statistics=%.3f, p=%.3f' % (stat, p))
+# interpret
+# alpha = 0.05
+# if p > alpha:
+#    print('Same distribution (fail to reject H0)')
+# else:
+#    print('Different distribution (reject H0)')
+stat, p = kruskal(test_df['maxbin_ms40'],
+                  test_df['maxbin_ms107'],
+                  test_df['metabat_specific'],
+                  test_df['metabat_veryspecific'],
+                  test_df['metabat_superspecific'],
+                  test_df['metabat_sensitive'],
+                  test_df['metabat_verysensitive'],
+                  test_df['metabat2']
+                  )
+print(f"\nResults of Kruskal-Wallis H Test:")
+print('Statistics=%.3f, p=%.3f' % (stat, p))
+# interpret
+alpha = 0.05
+if p > alpha:
+    print('Same distributions (fail to reject H0)')
+else:
+    print('Different distributions (reject H0)')
+print(f"\nThe total number of NC bins for each binner is:\n")
+print(us_abs_str_df.groupby(['binner'])['ext_nc_uniq'].sum())
+
+# Boxplots for binner and param set
+us_box = sns.catplot(x="label", y="ext_nc_uniq", hue="binner",
+                     kind="box", data=us_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+us_box.savefig(os.path.join(workdir, 'UniteM.multi.absolute.NC.binner.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()
+
+# Medium Quality
+us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algo']
+                                             )[['ext_mq_uniq'
+                                                ]].median().reset_index()
+us_abs_str_median_df.columns = ['binner', 'algo', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algo']
+                                           )[['ext_mq_uniq'
+                                              ]].mean().reset_index()
+us_abs_str_mean_df.columns = ['binner', 'algo', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algo']
+                                          )[['ext_mq_uniq'
+                                             ]].std().reset_index()
+us_abs_str_std_df.columns = ['binner', 'algo', 'stdev']
+stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df, us_abs_str_std_df]
+us_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['binner', 'algo']), stats_df_list)
+us_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
+
+print(us_abs_str_stats_df)
+
+test_df = us_abs_str_df.pivot(index='label_sample', columns='binner', values='ext_mq_uniq')
+# stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+fvalue, pvalue = stats.f_oneway(test_df['maxbin_ms40'],
+                                test_df['maxbin_ms107'],
+                                test_df['metabat_specific'],
+                                test_df['metabat_veryspecific'],
+                                test_df['metabat_superspecific'],
+                                test_df['metabat_sensitive'],
+                                test_df['metabat_verysensitive'],
+                                test_df['metabat2']
+                                )
+m_comp = pairwise_tukeyhsd(endog=us_abs_str_df['ext_mq_uniq'], groups=us_abs_str_df['binner'], alpha=0.05)
+# stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
+
+print(f"\nThe Algorithm tested is UniteM Binners")
+print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+print(f"\nResults of Tukey HSD test:")
+print(m_comp)
+# print(f"\nResults of Wilcoxon Signed-Rank Test:")
+# print('Statistics=%.3f, p=%.3f' % (stat, p))
+# interpret
+# alpha = 0.05
+# if p > alpha:
+#    print('Same distribution (fail to reject H0)')
+# else:
+#    print('Different distribution (reject H0)')
+stat, p = kruskal(test_df['maxbin_ms40'],
+                  test_df['maxbin_ms107'],
+                  test_df['metabat_specific'],
+                  test_df['metabat_veryspecific'],
+                  test_df['metabat_superspecific'],
+                  test_df['metabat_sensitive'],
+                  test_df['metabat_verysensitive'],
+                  test_df['metabat2']
+                  )
+print(f"\nResults of Kruskal-Wallis H Test:")
+print('Statistics=%.3f, p=%.3f' % (stat, p))
+# interpret
+alpha = 0.05
+if p > alpha:
+    print('Same distributions (fail to reject H0)')
+else:
+    print('Different distributions (reject H0)')
+print(f"\nThe total number of NC bins for each binner is:\n")
+print(us_abs_str_df.groupby(['binner'])['ext_mq_uniq'].sum())
+
+# Boxplots for binner and param set
+us_box = sns.catplot(x="label", y="ext_mq_uniq", hue="binner",
+                     kind="box", data=us_abs_str_df, notch=True,
+                     linewidth=0.75, saturation=0.75, width=0.75,
+                     palette=sns.color_palette("muted")
+                     )
+us_box.savefig(os.path.join(workdir, 'UniteM.multi.absolute.MQ.binner.boxplot.png'),
+               dpi=300
+               )
+plt.clf()
+plt.close()

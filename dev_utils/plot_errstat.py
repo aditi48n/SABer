@@ -89,6 +89,9 @@ print(ss_abs_str_stats_df)
 
 for algo_param in ss_abs_str_df['algo_param'].unique():
     sub_ss_df = ss_abs_str_df.query("algo_param == @algo_param")
+    mr_count = sub_ss_df.query("mode == 'majority_rule'")['ext_nc_uniq'].sum()
+    bc_count = sub_ss_df.query("mode == 'best_cluster'")['ext_nc_uniq'].sum()
+    bm_count = sub_ss_df.query("mode == 'best_match'")['ext_nc_uniq'].sum()
     test_df = sub_ss_df.pivot(index='label_sample', columns='mode', values='ext_nc_uniq')
 
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
@@ -100,8 +103,8 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
     stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
 
     print(f"\nThe Algorithm tested is {algo_param}")
-    print(f"Results of ANOVA test:\n The F-statistic is:\n {fvalue}\n The p-value is: {pvalue}")
-    print(f"\nResults of Tukey HSD test:\n")
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nResults of Tukey HSD test:")
     print(m_comp)
     print(f"\nResults of Wilcoxon Signed-Rank Test:")
     print('Statistics=%.3f, p=%.3f' % (stat, p))
@@ -123,6 +126,10 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
         print('Same distributions (fail to reject H0)')
     else:
         print('Different distributions (reject H0)')
+    print(f"\nThe total number of NC bins for each mode is:\n")
+    print(f"\t Majority Rule: {mr_count}")
+    print(f"\t Best Cluster: {bc_count}")
+    print(f"\t Best Match: {bm_count}")
 
 sys.exit()
 

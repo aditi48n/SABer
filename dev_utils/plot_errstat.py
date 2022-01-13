@@ -150,10 +150,16 @@ bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
                                                         )]
 bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
 
+########################################################################################################################
+##### RUN NC STATS #####################################################################################################
+########################################################################################################################
+print('############################################################')
+print("RUN NC STATS")
+print('############################################################')
 cnt_df_list = []
 for level_mode in bin_cat_df['level_mode'].unique():
     print('############################################################')
-    print(f"\nThe Level tested is {level_mode}")
+    print(f"The Level tested is {level_mode}")
     print('############################################################')
     sub_df = bin_cat_df.query("level_mode == @level_mode")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
@@ -243,6 +249,110 @@ barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     palette=sns.color_palette("muted")
                     )
 barie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.barplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
+########################################################################################################################
+##### RUN MQ STATS #####################################################################################################
+########################################################################################################################
+print('############################################################')
+print("RUN MQ STATS")
+print('############################################################')
+cnt_df_list = []
+for level_mode in bin_cat_df['level_mode'].unique():
+    print('############################################################')
+    print(f"The Level tested is {level_mode}")
+    print('############################################################')
+    sub_df = bin_cat_df.query("level_mode == @level_mode")
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    fvalue, pvalue = sci_stats.f_oneway(
+        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_mq_uniq']
+          for group in sub_df['binner_config'].unique()
+          ))
+    m_comp = pairwise_tukeyhsd(endog=sub_df['ext_mq_uniq'],
+                               groups=sub_df['binner_config'],
+                               alpha=0.05
+                               )
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nResults of Tukey HSD test:")
+    print(m_comp)
+    stat, p = sci_stats.kruskal(
+        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_mq_uniq']
+          for group in sub_df['binner_config'].unique()
+          ))
+    print(f"\nResults of Kruskal-Wallis H Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distributions (fail to reject H0)')
+    else:
+        print('Different distributions (reject H0)')
+    count_nc_df = sub_df.groupby(['binner_config']
+                                 )['ext_mq_uniq'].sum().reset_index()
+    sorted_nc_df = count_nc_df.sort_values(by=['ext_mq_uniq'], ascending=False
+                                           ).reset_index()
+    sorted_nc_df['level_mode'] = level_mode
+    cnt_df_list.append(sorted_nc_df)
+    print(sorted_nc_df)
+
+cat_cnt_df = pd.concat(cnt_df_list)
+cat_cnt_df['binner'] = [x.split('_', 1)[0] for x in cat_cnt_df['binner_config']]
+dedup_cnt_df = cat_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
+print(dedup_cnt_df)
+keep_binners_list = list(dedup_cnt_df['binner_config'])
+keep_levmod_list = list(dedup_cnt_df['level_mode'])
+print(keep_levmod_list)
+print(keep_binners_list)
+temp_cat_df = bin_cat_df.copy()
+temp_cat_df['binner'] = [x.split('_', 1)[0] for x in temp_cat_df['binner']]
+sub_binstat_df = temp_cat_df.query("binner_config in @keep_binners_list & "
+                                   "level_mode in @keep_levmod_list"
+                                   )
+sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
+                              sub_binstat_df['binner']
+                              ]
+sub_binstat_df['type_rank'] = [type2rank[x] for x in
+                               sub_binstat_df['sample_type']
+                               ]
+sub_binstat_df['level_rank'] = [level2rank[x] for x in
+                                sub_binstat_df['level_mode']
+                                ]
+sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
+                               ], inplace=True
+                           )
+print(sub_binstat_df)
+print(sub_binstat_df['binner'].unique())
+
+# Boxplots for mode and param set
+boxie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
+# Barplots for mode and param set
+sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
+                                         'type_rank', 'level_rank',
+                                         'level_mode', 'dataset']
+                                        )['ext_mq_uniq'].sum().reset_index()
+sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
+                           inplace=True)
+barie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="bar", data=sum_binstat_df,
+                    linewidth=0.75, saturation=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+barie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.barplot.png'),
               dpi=300
               )
 plt.clf()

@@ -91,7 +91,7 @@ saber_multi_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                 saber_multi_df['param_set']
                                 )
                             ]
-saber_multi_df['bin_mode'] = 'co-bin'
+saber_multi_df['bin_mode'] = 'multi'
 saber_multi_df['sample_id'] = ['S' + str(x) for x in
                                saber_multi_df['sample_id']
                                ]
@@ -104,11 +104,16 @@ unitem_single_df['sample_id'] = ['S' + str(x) for x in
                                  unitem_single_df['sample_id']
                                  ]
 unitem_s_df = unitem_single_df.drop(columns=['algo'])[col_order]
-unitem_multi_df['bin_mode'] = 'co-bin'
+unitem_multi_df['bin_mode'] = 'multi'
 unitem_multi_df['sample_id'] = ['S' + str(x) for x in
                                 unitem_multi_df['sample_id']
                                 ]
 unitem_m_df = unitem_multi_df.drop(columns=['algo'])[col_order]
+
+# VAMB
+print(vamb_multi_df.head())
+
+sys.exit()
 
 print(saber_s_df.head())
 print(saber_m_df.head())

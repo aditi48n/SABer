@@ -63,6 +63,16 @@ binner2rank = {'maxbin': 0,
                'SABer': 4
                }
 
+level2rank = {'exact_assembly_single': 0,
+              'exact_absolute_single': 1,
+              'strain_assembly_single': 2,
+              'strain_absolute_single': 3,
+              'exact_assembly_multi': 4,
+              'exact_absolute_multi': 5,
+              'strain_assembly_multi': 6,
+              'strain_absolute_multi': 7
+              }
+
 # Load stats tables
 saber_single_df = pd.read_csv(saber_single_file, header=0, sep='\t')
 saber_multi_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
@@ -197,7 +207,12 @@ sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
 sub_binstat_df['type_rank'] = [type2rank[x] for x in
                                sub_binstat_df['sample_type']
                                ]
-sub_binstat_df.sort_values(by=['bin_rank', 'type_rank'], inplace=True)
+sub_binstat_df['level_rank'] = [level2rank[x] for x in
+                                sub_binstat_df['level_mode']
+                                ]
+sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
+                               ], inplace=True
+                           )
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 
@@ -216,10 +231,11 @@ plt.close()
 
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
-                                         'type_rank',
+                                         'type_rank', 'level_rank',
                                          'level_mode', 'dataset']
                                         )['ext_nc_uniq'].sum().reset_index()
-sum_binstat_df.sort_values(by=['bin_rank', 'type_rank'], inplace=True)
+sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
+                           inplace=True)
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,

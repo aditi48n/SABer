@@ -1,7 +1,6 @@
 import os
 import sys
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns
@@ -195,7 +194,12 @@ for level_mode in bin_cat_df['level_mode'].unique():
     print(sorted_nc_df)
 
 cat_cnt_df = pd.concat(cnt_df_list)
-cat_cnt_df['binner'] = [x.split('_', 1)[0] for x in cat_cnt_df['binner_config']]
+cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
+                        if 'SABer' in x else x.split('_', 1)[0]
+                        for x in cat_cnt_df['binner_config']
+                        ]
+print(cat_cnt_df)
+sys.exit()
 dedup_cnt_df = cat_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 print(dedup_cnt_df)
 keep_binners_list = list(dedup_cnt_df['binner_config'])

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import glob
-import logging
-import multiprocessing
 import sys
 from functools import reduce
 from os import makedirs, path
@@ -10,7 +8,6 @@ from os.path import join as joinpath
 
 import pandas as pd
 import pyfastx
-from tqdm import tqdm
 
 # specify that all columns should be shown
 pd.set_option('max_columns', None)
@@ -325,6 +322,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                                  'yes_NC', 'yes_MQ'
                                  ]].copy().drop_duplicates(subset='strain_label')
 
+    '''
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
@@ -416,7 +414,7 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
                      )
     score_tax_df.to_csv(denovo_errstat_file, index=False, sep='\t')
     stat_df.to_csv(denovo_mean_file, index=False, sep='\t')
-
+    '''
     ###########################################################################
     # Compile all results tables from analysis
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))
@@ -432,7 +430,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
             mq_s_poss = sub_poss_str_bp_df['yes_MQ'].sum()
             for algo in err_df['algorithm'].unique():
                 for level in err_df['level'].unique():
-                    sub_err_df = err_df.query('algorithm == @algo & level == @level')
+                    sub_err_df = err_df.query('sample_id == @sample & '
+                                              'algorithm == @algo & '
+                                              'level == @level')
                     sub_err_df.sort_values(['precision', 'sensitivity'],
                                            ascending=[False, False], inplace=True
                                            )

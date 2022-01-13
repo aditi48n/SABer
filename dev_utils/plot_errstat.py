@@ -113,6 +113,7 @@ unitem_m_df = unitem_multi_df.drop(columns=['algo'])[col_order]
 # VAMB
 print(vamb_multi_df.head())
 vamb_multi_df['bin_mode'] = 'multi'
+vamb_multi_df['binner'] = 'VAMB'
 vamb_multi_df['sample_id'] = ['S' + str(x) for x in
                               vamb_multi_df['sample_id']
                               ]

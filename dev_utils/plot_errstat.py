@@ -630,11 +630,11 @@ print(m_comp)
 # print(f"\nResults of Wilcoxon Signed-Rank Test:")
 # print('Statistics=%.3f, p=%.3f' % (stat, p))
 # interpret
-alpha = 0.05
-if p > alpha:
-    print('Same distribution (fail to reject H0)')
-else:
-    print('Different distribution (reject H0)')
+# alpha = 0.05
+# if p > alpha:
+#    print('Same distribution (fail to reject H0)')
+# else:
+#    print('Different distribution (reject H0)')
 stat, p = kruskal(test_df['maxbin_ms40'],
                   test_df['maxbin_ms107'],
                   test_df['metabat_specific'],
@@ -707,11 +707,11 @@ print(m_comp)
 # print(f"\nResults of Wilcoxon Signed-Rank Test:")
 # print('Statistics=%.3f, p=%.3f' % (stat, p))
 # interpret
-alpha = 0.05
-if p > alpha:
-    print('Same distribution (fail to reject H0)')
-else:
-    print('Different distribution (reject H0)')
+# alpha = 0.05
+# if p > alpha:
+#    print('Same distribution (fail to reject H0)')
+# else:
+#    print('Different distribution (reject H0)')
 stat, p = kruskal(test_df['maxbin_ms40'],
                   test_df['maxbin_ms107'],
                   test_df['metabat_specific'],

@@ -112,13 +112,17 @@ unitem_m_df = unitem_multi_df.drop(columns=['algo'])[col_order]
 
 # VAMB
 print(vamb_multi_df.head())
-
-sys.exit()
+vamb_multi_df['bin_mode'] = 'multi'
+vamb_multi_df['sample_id'] = ['S' + str(x) for x in
+                              vamb_multi_df['sample_id']
+                              ]
+vamb_m_df = vamb_multi_df.drop(columns=['algo'])[col_order]
 
 print(saber_s_df.head())
 print(saber_m_df.head())
 print(unitem_s_df.head())
 print(unitem_m_df.head())
+print(vamb_m_df.head())
 
 sys.exit()
 

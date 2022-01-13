@@ -140,6 +140,11 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
 print(f"Total Majority Rule: {MR_count}")
 print(f"Total Best Cluster: {BC_count}")
 print(f"Total Best Match: {BM_count}")
+lengs = len(ss_abs_str_df['algo_param'].unique())
+print(f"Average Majority Rule: {MR_count / lengs}")
+print(f"Average Best Cluster: {BC_count / lengs}")
+print(f"Average Best Match: {BM_count / lengs}")
+
 sys.exit()
 
 ss_abs_str_bar_df = ss_abs_str_df.groupby(['mode', 'param_set', 'algo']

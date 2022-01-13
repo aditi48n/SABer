@@ -47,14 +47,20 @@ param2rank = {'very_relaxed': 0,
               'strict': 2,
               'very_strict': 3
               }
-binner2rank = {'maxbin_ms40': 0,
-               'maxbin_ms107': 1,
-               'metabat_specific': 2,
-               'metabat_veryspecific': 3,
-               'metabat_superspecific': 4,
-               'metabat_sensitive': 5,
-               'metabat_verysensitive': 6,
-               'metabat2': 7
+binnerconf2rank = {'maxbin_ms40': 0,
+                   'maxbin_ms107': 1,
+                   'metabat_specific': 2,
+                   'metabat_veryspecific': 3,
+                   'metabat_superspecific': 4,
+                   'metabat_sensitive': 5,
+                   'metabat_verysensitive': 6,
+                   'metabat2': 7
+                   }
+binner2rank = {'maxbin': 0,
+               'metabat': 1,
+               'metabat2': 2,
+               'VAMB': 3,
+               'SABer': 4
                }
 
 # Load stats tables
@@ -185,6 +191,10 @@ temp_cat_df['binner'] = [x.split('_', 1)[0] for x in temp_cat_df['binner']]
 sub_binstat_df = temp_cat_df.query("binner_config in @keep_binners_list & "
                                    "level_mode in @keep_levmod_list"
                                    )
+sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
+                              sub_binstat_df['binner']
+                              ]
+sub_binstat_df.sort_values(by=['binner'], inplace=True).reset_index()
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 

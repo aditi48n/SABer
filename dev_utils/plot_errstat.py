@@ -99,7 +99,11 @@ print(saber_s_df.head())
 print(saber_m_df.head())
 # UniteM Binners
 print(unitem_single_df.head())
-
+unitem_single_df['sample_id'] = ['S' + str(x) for x in
+                                 unitem_single_df['sample_id']
+                                 ]
+unitem_s_df = unitem_single_df.drop(columns=['algo'])[col_order]
+print(unitem_s_df.head())
 sys.exit()
 
 ########################################################################################################################

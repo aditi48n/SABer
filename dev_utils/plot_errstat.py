@@ -71,7 +71,6 @@ col_order = ['binner', 'level', 'sample_type', 'sample_id',
              'str_nc_poss'
              ]
 # SABer first
-print(saber_single_df.head())
 saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                              for x, y, z in
                              zip(saber_single_df['algo'],
@@ -79,9 +78,27 @@ saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                  saber_single_df['param_set']
                                  )
                              ]
+saber_single_df['sample_id'] = ['S' + str(x) for x in
+                                saber_single_df['sample_id']
+                                ]
 saber_s_df = saber_single_df.drop(columns=['algo', 'mode', 'param_set']
                                   )[col_order]
+saber_multi_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
+                            for x, y, z in
+                            zip(saber_multi_df['algo'],
+                                saber_multi_df['mode'],
+                                saber_multi_df['param_set']
+                                )
+                            ]
+saber_multi_df['sample_id'] = ['S' + str(x) for x in
+                               saber_multi_df['sample_id']
+                               ]
+saber_m_df = saber_multi_df.drop(columns=['algo', 'mode', 'param_set']
+                                 )[col_order]
 print(saber_s_df.head())
+print(saber_m_df.head())
+# UniteM Binners
+print(unitem_single_df.head())
 
 sys.exit()
 

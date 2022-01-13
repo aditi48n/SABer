@@ -5,6 +5,7 @@ from functools import reduce
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
+from scipy.stats import wilcoxon
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # plot aestetics
@@ -95,11 +96,19 @@ for algo_param in ss_abs_str_df['algo_param'].unique():
                                     test_df['best_match']
                                     )
     m_comp = pairwise_tukeyhsd(endog=sub_ss_df['ext_nc_uniq'], groups=sub_ss_df['mode'], alpha=0.05)
+    stat, p = wilcoxon(test_df['majority_rule'], test_df['best_cluster'])
 
     print(f"The Algorithm tested is {algo_param}")
     print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
     print(f"Results of Tukey HSD test:\n")
     print(m_comp)
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distribution (fail to reject H0)')
+    else:
+        print('Different distribution (reject H0)')
 
 sys.exit()
 

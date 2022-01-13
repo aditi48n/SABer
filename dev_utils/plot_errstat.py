@@ -96,7 +96,7 @@ for algo_param_label in ss_abs_str_df['algo_param_label'].unique():
     mr_count = sub_ss_df.query("mode == 'majority_rule'")['ext_nc_uniq'].sum()
     bc_count = sub_ss_df.query("mode == 'best_cluster'")['ext_nc_uniq'].sum()
     bm_count = sub_ss_df.query("mode == 'best_match'")['ext_nc_uniq'].sum()
-    test_df = sub_ss_df.pivot(index='sample_id', columns='mode', values='ext_nc_uniq')
+    test_df = sub_ss_df.pivot(index='label_sample', columns='mode', values='ext_nc_uniq')
     print(test_df)
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = stats.f_oneway(test_df['majority_rule'],

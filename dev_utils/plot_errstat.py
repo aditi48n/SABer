@@ -185,8 +185,8 @@ print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
 
 # Boxplots for mode and param set
-boxie = sns.catplot(x="sample_type", y="ext_mq_uniq", hue="binner",
-                    col="level_mode", col_wrap=4,
+boxie = sns.catplot(x="label", y="ext_mq_uniq", hue="binner",
+                    col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")

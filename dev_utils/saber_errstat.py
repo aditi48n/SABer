@@ -213,12 +213,14 @@ def run_dnadiff(p):
 
 def parse_report(report_file):
     data = pd.read_csv(report_file, skiprows=9, nrows=4, header=None)
+    fix_list = []
     for i, row in data.iterrows():
         r_list = [x for x in row[0].split(' ') if x != '']
-        print(r_list)
-    sys.exit()
-    data.columns = ['stat', 'reference', 'query']
-    print(data)
+        fix_list.append(r_list)
+    fixed_df = pd.DataFrame(fix_list,
+                            columns=['stat', 'reference', 'query']
+                            )
+    print(fixed_df)
 
 
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):

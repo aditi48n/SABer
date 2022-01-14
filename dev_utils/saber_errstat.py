@@ -433,6 +433,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                     if (f.split('.')[-1] == 'fasta')
                     ]
     # Pair SRCs, SAGs, xPGs
+    simi_dict = {}
     for xpg in xpg_file_list:
         xpg_id = os.path.basename(xpg).rsplit('.', 2)[0]
         for sag in mocksag_list:
@@ -442,7 +443,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                 for src in src_genome_list:
                     src_id = os.path.basename(src).rsplit('.', 1)[0]
                     if xpg_base_id == src_id:
-                        print(xpg_id, sag_id, src_id)
+                        simi_dict[src_id] = [xpg, sag, src]
+    print(simi_dict[src_id])
     sys.exit()
 
     ###################################################################################################

@@ -215,6 +215,7 @@ def parse_report(report_file):
     data = pd.read_csv(report_file, skiprows=9, nrows=3, header=None,
                        delim_whitespace=True
                        )
+    data.dropna(how='all', axis=1, inplace=True)
     data.columns = ['stat', 'reference', 'query']
     print(data)
 

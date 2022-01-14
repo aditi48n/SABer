@@ -93,9 +93,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
                 final_out.write('\n'.join(final_mgsubs_list))
         # Combine final recruits and reference trusted contigs
         trust_dict = {t[0]: t[1] for t in trusted_list}
-        for best_label in set(inter_clust_df['best_label']):
-            print(best_label)
-            t_id = best_label.rsplit('.', 1)[0]
+        for t_id in set(inter_clust_df['best_label']):
             t_file = trust_dict[t_id]
             concat_file = o_join(xpg_sv_path, t_id + '.concat.fasta')
             with open(concat_file, 'w') as cat_out:

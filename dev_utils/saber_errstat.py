@@ -462,6 +462,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         xpg_prefix = os.path.join(dnadiff_path, p_key + '.xPG')
         arg_list.append([p_key, sag_prefix, src_fasta, sag_fasta])
         arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta])
+    print(arg_list)
     pool = multiprocessing.Pool(processes=nthreads)
     results = pool.imap_unordered(run_dnadiff(), arg_list)
     id_list = []

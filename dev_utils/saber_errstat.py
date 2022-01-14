@@ -234,12 +234,16 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         inter_errstat_file = joinpath(err_path, 'inter_clusters.errstat.tsv')
         inter_mean_file = joinpath(err_path, 'inter_clusters.errstat.mean.tsv')
         xpg_file_list = glob.glob(joinpath(saberout_path, 'xpgs/*.xPG.fasta'))
+        dnadiff_path = joinpath(err_path, 'dnadiff')
+
     except:
         print('No Anchored Bins Provided...')
     ##################################################################################################
     # Make working dir
     if not path.exists(err_path):
         makedirs(err_path)
+    if not path.exists(dnadiff_path):
+        makedirs(dnadiff_path)
 
     # Map src contig stats to OTU id
     src_cnt_df = pd.read_csv(src_contig_cnt, sep='\t', header=0)
@@ -444,8 +448,16 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                     src_id = os.path.basename(src).rsplit('.', 1)[0]
                     if xpg_base_id == src_id:
                         simi_dict[src_id] = [xpg, sag, src]
-    print(simi_dict[src_id])
-    sys.exit()
+    # Run dnadiff on all pairs
+    for p_key in simi_dict.keys():
+        print(p_key)
+        xpg_fasta = simi_dict[p_key][0]
+        sag_fasta = simi_dict[p_key][1]
+        src_fasta = simi_dict[p_key][2]
+        sag_prefix = os.path.join(dnadiff_path, p_key + '.SAG')
+        xpg_prefix = os.path.join(dnadiff_path, p_key + '.xPG')
+        run_dnadiff(sag_prefix, src_fasta, sag_fasta)
+        run_dnadiff(xpg_prefix, src_fasta, xpg_fasta)
 
     ###################################################################################################
     # De novo error analysis

@@ -496,8 +496,12 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     pool.close()
     pool.join()
     report_df = pd.concat(report_list)
-    print(report_df.head())
 
+    rep_piv_df = report_df.pivot_table(values='reference(bp)',
+                                       index=['ref_id', 'tag'],
+                                       columns='stat'
+                                       )
+    print(rep_piv_df)
     sys.exit()
     ###################################################################################################
     # De novo error analysis

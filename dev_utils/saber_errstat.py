@@ -198,10 +198,13 @@ def get_seqs(fasta_file):
     return fasta
 
 
-def run_dnadiff(prefix, ref, query):
+def run_dnadiff(p):
+    id, prefix, ref, query = p
     dna_cmd = ['dnadiff', '-p', prefix, ref, query]
     run_dna = Popen(dna_cmd)
     run_dna.communicate()
+
+    return
 
 
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):
@@ -449,16 +452,25 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                     if xpg_base_id == src_id:
                         simi_dict[src_id] = [xpg, sag, src]
     # Run dnadiff on all pairs
-    for p_key in simi_dict.keys():
+    arg_list = []
+    for p_key in tqdm(simi_dict.keys()):
         print(p_key)
         xpg_fasta = simi_dict[p_key][0]
         sag_fasta = simi_dict[p_key][1]
         src_fasta = simi_dict[p_key][2]
         sag_prefix = os.path.join(dnadiff_path, p_key + '.SAG')
         xpg_prefix = os.path.join(dnadiff_path, p_key + '.xPG')
-        run_dnadiff(sag_prefix, src_fasta, sag_fasta)
-        run_dnadiff(xpg_prefix, src_fasta, xpg_fasta)
-
+        arg_list.append([p_key, sag_prefix, src_fasta, sag_fasta])
+        arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta])
+    pool = multiprocessing.Pool(processes=nthreads)
+    results = pool.imap_unordered(run_dnadiff(), arg_list)
+    id_list = []
+    for i, output in tqdm(enumerate(results, 1)):
+        id_list.append(output)
+    logging.info('\n')
+    pool.close()
+    pool.join()
+    sys.exit()
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################

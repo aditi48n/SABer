@@ -216,9 +216,8 @@ def parse_report(p):
     data = pd.read_csv(report_file, skiprows=10, nrows=3, header=None)
     fix_list = []
     for i, row in data.iterrows():
-        r_list = [x for x in row[0].split(' ').split('(', 1)[0]
-                  if x != ''
-                  ]
+        print(row)
+        r_list = [x for x in row[0].split(' ').split('(', 1)[0] if x != '']
         fix_list.append(r_list)
     fixed_df = pd.DataFrame(fix_list,
                             columns=['stat', 'reference(bp)',

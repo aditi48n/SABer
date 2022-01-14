@@ -233,7 +233,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         inter_out_file = glob.glob(joinpath(saberout_path, '*.inter_clusters.tsv'))[0]
         inter_errstat_file = joinpath(err_path, 'inter_clusters.errstat.tsv')
         inter_mean_file = joinpath(err_path, 'inter_clusters.errstat.mean.tsv')
-        xpg_file_list = glob.glob(joinpath(saberout_path, 'xpgs/*.fasta'))
+        xpg_file_list = glob.glob(joinpath(saberout_path, 'xpgs/*.xPG.fasta'))
     except:
         print('No Anchored Bins Provided...')
     ##################################################################################################

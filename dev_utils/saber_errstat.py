@@ -199,12 +199,12 @@ def get_seqs(fasta_file):
 
 
 def run_dnadiff(p):
-    id, prefix, ref, query = p
+    q_id, prefix, ref, query = p
     dna_cmd = ['dnadiff', '-p', prefix, ref, query]
     run_dna = Popen(dna_cmd)
     run_dna.communicate()
 
-    return
+    return q_id
 
 
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):

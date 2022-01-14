@@ -501,7 +501,12 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                        index=['ref_id', 'tag'],
                                        columns='stat'
                                        ).reset_index()
-    print(ref_piv_df)
+    print(ref_piv_df.head())
+    print(ref_piv_df.shape)
+    dnadiff_file = joinpath(dnadiff_path, 'diffdna_allrefs.tsv')
+
+    ref_piv_df.to_csv(dnadiff_file, index=False, sep='\t')
+
     sys.exit()
     ###################################################################################################
     # De novo error analysis

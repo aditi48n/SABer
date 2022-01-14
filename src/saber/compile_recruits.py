@@ -95,12 +95,12 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
         for i, t_rec in enumerate(trusted_list):
             t_id, t_file = t_rec
             concat_file = o_join(xpg_sv_path, t_id + '.concat.fasta')
-            with open(concat_file, 'r') as cat_out:
+            with open(concat_file, 'w') as cat_out:
                 data = []
                 with open(t_file, 'r') as t_in:
                     data.extend(t_in.readlines())
                 recruit_bin = o_join(inter_sv_path, t_id + '.bin.fasta')
-                with open(recruit_bin, 'w') as r_file:
+                with open(recruit_bin, 'r') as r_file:
                     data.extend(r_file.readlines())
                 join_data = '\n'.join(data).replace('\n\n', '\n')
                 cat_out.write(join_data)

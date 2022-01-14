@@ -42,8 +42,6 @@ def EAxpg(p):
     src_total_bp = tot_bp_dict[src_id]
     algo_list = [algorithm]
     xPG_bp_cnt = int(diff_df.loc[diff_df['tag'] == 'xPG', 'AlignedBases'].values[0])
-    print(xPG_bp_cnt)
-    sys.exit()
     stats_lists = []
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])

@@ -4,7 +4,6 @@ import difflib
 import glob
 import logging
 import multiprocessing
-import os
 import subprocess
 from functools import reduce
 from os import makedirs, path, listdir
@@ -452,6 +451,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
     # list all source genomes
+    '''
     src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
                        if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna' or
                             f.split('.')[-1] == 'fa') and
@@ -497,16 +497,16 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     pool.join()
     report_df = pd.concat(report_list)
 
-    ref_piv_df = report_df.pivot_table(values='reference(bp)',
+    dnadiff_df = report_df.pivot_table(values='reference(bp)',
                                        index=['ref_id', 'tag'],
                                        columns='stat'
                                        ).reset_index()
-    print(ref_piv_df.head())
-    print(ref_piv_df.shape)
+
     dnadiff_file = joinpath(err_path, 'diffdna_allrefs.tsv')
-
-    ref_piv_df.to_csv(dnadiff_file, index=False, sep='\t')
-
+    dnadiff_df.to_csv(dnadiff_file, index=False, sep='\t')
+    '''
+    dnadiff_df = pd.read_csv(dnadiff_file, header=0, sep='\t')
+    print(dnadiff_df.head())
     sys.exit()
     ###################################################################################################
     # De novo error analysis

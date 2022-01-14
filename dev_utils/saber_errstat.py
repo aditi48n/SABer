@@ -475,7 +475,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                         simi_dict[src_id] = [xpg, sag, src]
     # Run dnadiff on all pairs
     arg_list = []
-    for p_key in tqdm(list(simi_dict.keys())[:1]):
+    for p_key in tqdm(list(simi_dict.keys())):
         xpg_fasta = simi_dict[p_key][0]
         sag_fasta = simi_dict[p_key][1]
         src_fasta = simi_dict[p_key][2]
@@ -503,7 +503,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                        ).reset_index()
     print(ref_piv_df.head())
     print(ref_piv_df.shape)
-    dnadiff_file = joinpath(dnadiff_path, 'diffdna_allrefs.tsv')
+    dnadiff_file = joinpath(err_path, 'diffdna_allrefs.tsv')
 
     ref_piv_df.to_csv(dnadiff_file, index=False, sep='\t')
 

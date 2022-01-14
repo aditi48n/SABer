@@ -4,10 +4,12 @@ import difflib
 import glob
 import logging
 import multiprocessing
+import os
 from functools import reduce
 from os import makedirs, path, listdir
 from os.path import isfile
 from os.path import join as joinpath
+from subprocess import Popen
 
 import numpy as np
 import pandas as pd
@@ -196,6 +198,12 @@ def get_seqs(fasta_file):
     return fasta
 
 
+def run_dnadiff(prefix, ref, query):
+    dna_cmd = ['dnadiff', '-p', prefix, ref, query]
+    run_dna = Popen(dna_cmd)
+    run_dna.communicate()
+
+
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):
     ##################################################################################################
     # INPUT files
@@ -214,6 +222,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     denovo_out_file = glob.glob(joinpath(saberout_path, '*.denovo_clusters.tsv'))[0]
     denovo_errstat_file = joinpath(err_path, 'denovo.errstat.tsv')
     denovo_mean_file = joinpath(err_path, 'denovo.errstat.mean.tsv')
+
     try:
         trusted_out_file = glob.glob(joinpath(saberout_path, '*.hdbscan_clusters.tsv'))[0]
         trusted_errstat_file = joinpath(err_path, 'hdbscan_clusters.errstat.tsv')
@@ -224,6 +233,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         inter_out_file = glob.glob(joinpath(saberout_path, '*.inter_clusters.tsv'))[0]
         inter_errstat_file = joinpath(err_path, 'inter_clusters.errstat.tsv')
         inter_mean_file = joinpath(err_path, 'inter_clusters.errstat.mean.tsv')
+        xpg_file_list = glob.glob(joinpath(saberout_path, 'xpgs/*.fasta'))
     except:
         print('No Anchored Bins Provided...')
     ##################################################################################################
@@ -408,8 +418,35 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
+
+    ###################################################################################################
+    # Run dnadiff on all refs, trusted contigs, and xPGs
+    ###################################################################################################
+    # list all source genomes
+    src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
+                       if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna' or
+                            f.split('.')[-1] == 'fa') and
+                           'Sample' not in f)
+                       ]
+    # list all mockSAGs
+    mocksag_list = [joinpath(mocksag_path, f) for f in listdir(mocksag_path)
+                    if (f.split('.')[-1] == 'fasta')
+                    ]
+    # Pair SRCs, SAGs, xPGs
+    for xpg in xpg_file_list:
+        xpg_id = os.path.basename(xpg).rsplit('.', 1)[0]
+        for sag in mocksag_list:
+            sag_id = os.path.basename(sag).rsplit('.', 1)[0]
+            for src in src_genome_list:
+                src_id = os.path.basename(src).rsplit('.', 1)[0]
+                print(xpg_id)
+                print(sag_id)
+                print(src_id)
+                sys.exit()
+
     ###################################################################################################
     # De novo error analysis
+    ###################################################################################################
     # setup mapping to CAMI ref genomes
     cluster_df = pd.read_csv(denovo_out_file, sep='\t', header=0)
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')

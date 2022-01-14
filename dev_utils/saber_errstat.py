@@ -199,7 +199,7 @@ def get_seqs(fasta_file):
 
 
 def run_dnadiff(p):
-    q_id, prefix, ref, query = p
+    q_id, prefix, ref, query, tag = p
     dna_cmd = ['dnadiff', '-p', prefix, ref, query]
     run_dna = subprocess.Popen(dna_cmd,
                                stdout=subprocess.DEVNULL,
@@ -208,19 +208,25 @@ def run_dnadiff(p):
     report_id = prefix + '.report'
     run_dna.communicate()
 
-    return report_id
+    return q_id, tag, report_id
 
 
-def parse_report(report_file):
+def parse_report(r_id, tag, report_file):
     data = pd.read_csv(report_file, skiprows=10, nrows=3, header=None)
     fix_list = []
     for i, row in data.iterrows():
-        r_list = [x for x in row[0].split(' ') if x != '']
+        r_list = [x for x in row[0].split(' ').split('(', 1)[0]
+                  if x != ''
+                  ]
         fix_list.append(r_list)
     fixed_df = pd.DataFrame(fix_list,
-                            columns=['stat', 'reference', 'query']
+                            columns=['stat', 'reference(bp)',
+                                     'query(bp)']
                             )
-    print(fixed_df)
+    fixed_df['ref_id'] = r_id
+    fixed_df['tag'] = tag
+
+    return fixed_df
 
 
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):
@@ -475,17 +481,22 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         src_fasta = simi_dict[p_key][2]
         sag_prefix = os.path.join(dnadiff_path, p_key + '.SAG')
         xpg_prefix = os.path.join(dnadiff_path, p_key + '.xPG')
-        arg_list.append([p_key, sag_prefix, src_fasta, sag_fasta])
-        arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta])
+        arg_list.append([p_key, sag_prefix, src_fasta, sag_fasta,
+                         'SAG']
+                        )
+        arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta,
+                         'xPG']
+                        )
     pool = multiprocessing.Pool(processes=nthreads)
     results = pool.imap_unordered(run_dnadiff, arg_list)
-    id_list = []
+    report_list = []
     for i, output in tqdm(enumerate(results, 1)):
-        id_list.append(output)
-        parse_report(output)
+        report_list.append(parse_report(output))
     logging.info('\n')
     pool.close()
     pool.join()
+    report_df = pd.concat(report_list)
+    print(report_df.head())
 
     sys.exit()
     ###################################################################################################

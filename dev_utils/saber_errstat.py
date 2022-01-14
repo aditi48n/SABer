@@ -41,7 +41,7 @@ def EAxpg(p):
     strain_truth = list(merge_recruits_df['strain_truth'])
     src_total_bp = tot_bp_dict[src_id]
     algo_list = [algorithm]
-    xPG_bp_cnt = diff_df.loc[diff_df['tag'] == 'xPG', 'AlignedBases']
+    xPG_bp_cnt = int(diff_df.loc[diff_df['tag'] == 'xPG', 'AlignedBases'].values[0])
     print(xPG_bp_cnt)
     sys.exit()
     stats_lists = []

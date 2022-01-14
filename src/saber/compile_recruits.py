@@ -16,7 +16,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
     hdbscan_sv_path = save_dirs_dict['hdbscan']
     ocsvm_sv_path = save_dirs_dict['ocsvm']
     inter_sv_path = save_dirs_dict['intersect']
-    xpg_sv_path = save_dirs_dict['xpg']
+    xpg_sv_path = save_dirs_dict['xpgs']
 
     logging.info('Combining All Recruits\n')
     mg_contigs_dict = s_utils.get_seqs(mg_file)

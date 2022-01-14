@@ -213,8 +213,7 @@ def run_dnadiff(p):
 
 def parse_report(report_file):
     data = pd.read_csv(report_file, skiprows=9, nrows=3, header=None)
-    print(data)
-    data.dropna(how='all', axis=1, inplace=True)
+    print(data.columns)
     data.columns = ['stat', 'reference', 'query']
     print(data)
 

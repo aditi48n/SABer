@@ -506,7 +506,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     '''
     dnadiff_file = joinpath(err_path, 'diffdna_allrefs.tsv')
     dnadiff_df = pd.read_csv(dnadiff_file, header=0, sep='\t')
-
+    print(dnadiff_df.head())
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################

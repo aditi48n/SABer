@@ -434,20 +434,20 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                     ]
     # Pair SRCs, SAGs, xPGs
     for xpg in xpg_file_list:
-        xpg_id = os.path.basename(xpg).rsplit('.', 1)[0]
+        xpg_id = os.path.basename(xpg).rsplit('.', 2)[0]
         print('xPG', xpg_id)
         for sag in mocksag_list:
             sag_id = os.path.basename(sag).rsplit('.', 1)[0]
             print('SAG', sag_id)
-            # if xpg_id == sag_id:
-            xpg_base_id = xpg_id.rsplit('.', 1)[0]
-            print('xPG_base', xpg_base_id)
-            for src in src_genome_list:
-                src_id = os.path.basename(src).rsplit('.', 1)[0]
-                print('SRC', src_id)
-                # if xpg_base_id == src_id:
-                # print(xpg_id, sag_id, src_id)
-                sys.exit()
+            if xpg_id == sag_id:
+                xpg_base_id = xpg_id.rsplit('.', 1)[0]
+                print('xPG_base', xpg_base_id)
+                for src in src_genome_list:
+                    src_id = os.path.basename(src).rsplit('.', 1)[0]
+                    print('SRC', src_id)
+                    if xpg_base_id == src_id:
+                        print(xpg_id, sag_id, src_id)
+                        sys.exit()
 
     ###################################################################################################
     # De novo error analysis

@@ -464,7 +464,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta])
     print(arg_list)
     pool = multiprocessing.Pool(processes=nthreads)
-    results = pool.imap_unordered(run_dnadiff(), arg_list)
+    results = pool.imap_unordered(run_dnadiff, arg_list)
     id_list = []
     for i, output in tqdm(enumerate(results, 1)):
         id_list.append(output)

@@ -5,11 +5,11 @@ import glob
 import logging
 import multiprocessing
 import os
+import subprocess
 from functools import reduce
 from os import makedirs, path, listdir
 from os.path import isfile
 from os.path import join as joinpath
-from subprocess import Popen
 
 import numpy as np
 import pandas as pd
@@ -201,7 +201,10 @@ def get_seqs(fasta_file):
 def run_dnadiff(p):
     q_id, prefix, ref, query = p
     dna_cmd = ['dnadiff', '-p', prefix, ref, query]
-    run_dna = Popen(dna_cmd)
+    run_dna = subprocess.Popen(dna_cmd,
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.STDOUT
+                               )
     run_dna.communicate()
 
     return q_id
@@ -454,7 +457,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     # Run dnadiff on all pairs
     arg_list = []
     for p_key in tqdm(simi_dict.keys()):
-        print(p_key)
         xpg_fasta = simi_dict[p_key][0]
         sag_fasta = simi_dict[p_key][1]
         src_fasta = simi_dict[p_key][2]
@@ -462,7 +464,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         xpg_prefix = os.path.join(dnadiff_path, p_key + '.xPG')
         arg_list.append([p_key, sag_prefix, src_fasta, sag_fasta])
         arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta])
-    print(arg_list)
     pool = multiprocessing.Pool(processes=nthreads)
     results = pool.imap_unordered(run_dnadiff, arg_list)
     id_list = []

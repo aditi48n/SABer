@@ -442,10 +442,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                 for src in src_genome_list:
                     src_id = os.path.basename(src).rsplit('.', 1)[0]
                     if xpg_base_id == src_id:
-                        print(xpg_id)
-                        print(sag_id)
-                        print(src_id)
-        sys.exit()
+                        print(xpg_id, sag_id, src_id)
+    sys.exit()
 
     ###################################################################################################
     # De novo error analysis

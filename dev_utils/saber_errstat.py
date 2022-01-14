@@ -211,7 +211,8 @@ def run_dnadiff(p):
     return q_id, tag, report_id
 
 
-def parse_report(r_id, tag, report_file):
+def parse_report(p):
+    r_id, tag, report_file = p
     data = pd.read_csv(report_file, skiprows=10, nrows=3, header=None)
     fix_list = []
     for i, row in data.iterrows():

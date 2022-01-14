@@ -497,11 +497,11 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     pool.join()
     report_df = pd.concat(report_list)
 
-    rep_piv_df = report_df.pivot_table(values='reference(bp)',
+    ref_piv_df = report_df.pivot_table(values='reference(bp)',
                                        index=['ref_id', 'tag'],
                                        columns='stat'
-                                       )
-    print(rep_piv_df)
+                                       ).reset_index()
+    print(ref_piv_df)
     sys.exit()
     ###################################################################################################
     # De novo error analysis

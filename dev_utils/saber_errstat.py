@@ -16,6 +16,101 @@ import pyfastx
 from tqdm import tqdm
 
 
+def EAxpg(p):
+    col_id, temp_id, temp_clust_df, temp_contig_df, temp_src2contig_list, \
+    temp_src2strain_list, algorithm, src_id, strain_id, tot_bp_dict, \
+    diff_df = p
+    temp_clust_df[algorithm] = 1
+    temp_contig_df[col_id] = temp_id
+    df_list = [temp_contig_df, temp_clust_df]
+    merge_recruits_df = reduce(lambda left, right: pd.merge(left, right,
+                                                            on=[col_id, 'contig_id'],
+                                                            how='left'),
+                               df_list
+                               )
+    merge_recruits_df.fillna(-1, inplace=True)
+    merge_recruits_df['exact_truth'] = [1 if x in temp_src2contig_list else -1
+                                        for x in merge_recruits_df['contig_id']
+                                        ]
+    merge_recruits_df['strain_truth'] = [1 if x in temp_src2strain_list else -1
+                                         for x in merge_recruits_df['contig_id']
+                                         ]
+    contig_id_list = list(merge_recruits_df['contig_id'])
+    contig_bp_list = list(merge_recruits_df['bp_cnt'])
+    exact_truth = list(merge_recruits_df['exact_truth'])
+    strain_truth = list(merge_recruits_df['strain_truth'])
+    src_total_bp = tot_bp_dict[src_id]
+    algo_list = [algorithm]
+    xPG_bp_cnt = diff_df.loc[diff_df['tag'] == 'xPG', 'AlignedBases'][0]
+    stats_lists = []
+    for algo in algo_list:
+        pred = list(merge_recruits_df[algo])
+        rec_stats_list = xpg_stats([temp_id, algo, contig_id_list,
+                                    contig_bp_list, exact_truth,
+                                    strain_truth, pred, src_total_bp,
+                                    src_id, strain_id, xPG_bp_cnt
+                                    ])
+        stats_lists.extend(rec_stats_list)
+
+    return stats_lists
+
+
+def xpg_stats(p):
+    sag_id, algo, contig_id_list, contig_bp_list, exact_truth, \
+    strain_truth, pred, tot_bp, src_id, strain_id, xpg_bp = p
+    pred_df = pd.DataFrame(zip(contig_id_list, contig_bp_list, pred),
+                           columns=['contig_id', 'contig_bp', 'pred']
+                           )
+    pred_df['sag_id'] = sag_id
+    pred_df['algorithm'] = algo
+    pred_df = pred_df[['sag_id', 'algorithm', 'contig_id', 'contig_bp', 'pred']]
+    pred_df['truth'] = exact_truth
+    pred_df['truth_strain'] = strain_truth
+    # calculate for hybrid exact/strain-level matches
+    TP = int(xpg_bp)  # calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
+    TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    # compute total possible bp for each genome
+    str_tot_bp_poss = TP + FN
+    # Complete SRC genome is not always present in contigs, need to correct for that.
+    working_bp = tot_bp - TP - FN
+    corrected_FN = FN + working_bp
+    str_list = calc_stats(sag_id, 'strain_assembly', algo, TP, FP, TN, FN,
+                          pred_df['truth_strain'], pred_df['pred']
+                          )
+    corr_str_list = calc_stats(sag_id, 'strain_absolute', algo, TP, FP, TN, corrected_FN,
+                               pred_df['truth_strain'], pred_df['pred']
+                               )
+    # ALL Recruits
+    # calculate for exact-level match
+    TP = int(xpg_bp)  # calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    # compute total possible bp for each genome
+    exa_tot_bp_poss = TP + FN
+    # Complete SRC genome is not always present in contigs, need to correct for that.
+    working_bp = tot_bp - TP - FN
+    corrected_FN = FN + working_bp
+    x_list = calc_stats(sag_id, 'exact_assembly', algo, TP, FP, TN, FN,
+                        pred_df['truth'], pred_df['pred']
+                        )
+    corr_x_list = calc_stats(sag_id, 'exact_absolute', algo, TP, FP, TN, corrected_FN,
+                             pred_df['truth'], pred_df['pred']
+                             )
+
+    # Add total possible bp's for complete genome
+    str_list.extend([str_tot_bp_poss, tot_bp])
+    x_list.extend([exa_tot_bp_poss, tot_bp])
+    corr_str_list.extend([str_tot_bp_poss, tot_bp])
+    corr_x_list.extend([exa_tot_bp_poss, tot_bp])
+
+    cat_list = [str_list, corr_str_list, x_list, corr_x_list]
+
+    return cat_list
+
+
 def EArecruit(p):  # Error Analysis for all recruits per sag
     col_id, temp_id, temp_clust_df, temp_contig_df, temp_src2contig_list, \
     temp_src2strain_list, algorithm, src_id, strain_id, tot_bp_dict = p
@@ -258,6 +353,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         inter_errstat_file = joinpath(err_path, 'inter_clusters.errstat.tsv')
         inter_mean_file = joinpath(err_path, 'inter_clusters.errstat.mean.tsv')
         xpg_file_list = glob.glob(joinpath(saberout_path, 'xpgs/*.xPG.fasta'))
+        xpg_errstat_file = joinpath(err_path, 'xpg_clusters.errstat.tsv')
+        xpg_mean_file = joinpath(err_path, 'xpg_clusters.errstat.mean.tsv')
         dnadiff_path = joinpath(err_path, 'dnadiff')
 
     except:
@@ -949,6 +1046,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     stat_df.to_csv(inter_mean_file, index=False, sep='\t')
     # except:
     #    print('Skipped Anchored Bin Error Analysis...')
+
     ##################################################################################################
     # xPGs errstat (includes SAGs and intersect)
     cluster_df = pd.read_csv(inter_out_file, header=0, sep='\t')
@@ -969,10 +1067,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     pool = multiprocessing.Pool(processes=nthreads)
     arg_list = []
     for clust in tqdm(cluster_df['best_label'].unique()):
-        print(clust)
-        sys.exit()
         # subset recruit dataframes
         sub_clust_df = cluster_df.query('best_label == @clust')
+        r_id = clust.rsplit('.', 1)[0]
+        sub_diff_df = dnadiff_df.query("ref_id == @r_id")
         dedup_clust_df = sub_clust_df[['best_label', 'contig_id']].drop_duplicates()
         # Map Sources/SAGs to Strain IDs
         src_id = sag2contig_df.query('sag_id == @clust')['CAMI_genomeID'].values[0]
@@ -983,10 +1081,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             src2contig_list = list(set(src_sub_df['contig_id'].values))
             src2strain_list = list(set(strain_sub_df['contig_id'].values))
             arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
-                             src2strain_list, 'intersect', src_id, strain_id, src_bp_dict
+                             src2strain_list, 'xPG', src_id, strain_id, src_bp_dict, sub_diff_df
                              ])
 
-    results = pool.imap_unordered(EArecruit, arg_list)
+    results = pool.imap_unordered(EAxpg, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
         score_list.extend(output)
@@ -1044,8 +1142,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                                    'NC_bins', 'MQ_bins'
                                                                    ]), dfs
                      )
-    sort_score_df.to_csv(inter_errstat_file, index=False, sep='\t')
-    stat_df.to_csv(inter_mean_file, index=False, sep='\t')
+    sort_score_df.to_csv(xpg_errstat_file, index=False, sep='\t')
+    stat_df.to_csv(xpg_mean_file, index=False, sep='\t')
     ###########################################################################
     # Compile all results tables from analysis
     completed_files = glob.glob(joinpath(err_path, '*.errstat.tsv'))

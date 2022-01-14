@@ -205,9 +205,15 @@ def run_dnadiff(p):
                                stdout=subprocess.DEVNULL,
                                stderr=subprocess.STDOUT
                                )
+    report_id = prefix + '.report'
     run_dna.communicate()
 
-    return q_id
+    return report_id
+
+
+def parse_report(report_file):
+    data = pd.read_csv(report_file, skiprows=10, nrows=3)
+    print(data)
 
 
 def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, sample_id, nthreads):
@@ -456,7 +462,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                         simi_dict[src_id] = [xpg, sag, src]
     # Run dnadiff on all pairs
     arg_list = []
-    for p_key in tqdm(simi_dict.keys()):
+    for p_key in tqdm(simi_dict.keys()[:1]):
         xpg_fasta = simi_dict[p_key][0]
         sag_fasta = simi_dict[p_key][1]
         src_fasta = simi_dict[p_key][2]
@@ -469,9 +475,11 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     id_list = []
     for i, output in tqdm(enumerate(results, 1)):
         id_list.append(output)
+        parse_report(output)
     logging.info('\n')
     pool.close()
     pool.join()
+
     sys.exit()
     ###################################################################################################
     # De novo error analysis

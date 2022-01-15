@@ -39,7 +39,6 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
-
     # HDBSCAN Bins
     for best_label in set(trusted_clust_df['best_label']):
         sub_merge_df = trusted_clust_df[['best_label', 'contig_id']
@@ -47,6 +46,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
         logging.info('Recruited %s contigs from HDBSCAN anchored analysis for %s\n' %
                      (sub_merge_df.shape[0], best_label)
                      )
+        '''
         final_rec = o_join(hdbscan_sv_path, str(best_label) + '.hdbscan.fasta')
         with open(final_rec, 'w') as final_out:
             contig_list = list(set(sub_merge_df['contig_id']))
@@ -57,6 +57,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
+        '''
     # OC-SVM Bins
     for best_label in set(ocsvm_clust_df['best_label']):
         sub_merge_df = ocsvm_clust_df[['best_label', 'contig_id']
@@ -64,6 +65,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
         logging.info('Recruited %s contigs from OC-SVM anchored analysis for %s\n' %
                      (sub_merge_df.shape[0], best_label)
                      )
+        '''
         final_rec = o_join(ocsvm_sv_path, str(best_label) + '.ocsvm.fasta')
         with open(final_rec, 'w') as final_out:
             contig_list = list(set(sub_merge_df['contig_id']))
@@ -74,6 +76,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
+        '''
     # Combined Bins
     if isinstance(inter_clust_df, pd.DataFrame):
         for best_label in set(inter_clust_df['best_label']):

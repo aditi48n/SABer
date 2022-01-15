@@ -5,6 +5,7 @@ import hashlib
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections import Counter
@@ -367,7 +368,7 @@ def runCleaner(dir_path, ptrn):
                 print("Error while deleting file : ", ent)
         elif os.path.isdir(ent):
             try:
-                os.rmdir(ent)
+                shutil.rmtree(ent)
             except:
                 print("Error while deleting directory : ", ent)
 

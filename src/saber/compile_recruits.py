@@ -117,7 +117,6 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
             run_mem.communicate()
     # Clean up the directory
     logging.info('Cleaning up intermediate files...\n')
-    s_utils.runCleaner(denovo_sv_path, "*.fasta")
     s_utils.runCleaner(mode_path, "hdbscan")
     s_utils.runCleaner(mode_path, "ocsvm")
     s_utils.runCleaner(xpg_sv_path, "*.concat.fasta")

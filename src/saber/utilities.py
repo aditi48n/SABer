@@ -369,7 +369,7 @@ def runCleaner(dir_path, ptrn):
             try:
                 os.rmdir(ent)
             except:
-                print("Error while deleting file : ", ent)
+                print("Error while deleting directory : ", ent)
 
 
 ##########################################################################

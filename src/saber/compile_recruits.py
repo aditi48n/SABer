@@ -7,7 +7,9 @@ import pandas as pd
 import utilities as s_utils
 
 
-def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, threads):
+def run_combine_recruits(save_dirs_dict, mg_file, clusters,
+                         trusted_list, mode, threads
+                         ):
     denovo_clust_df = clusters[0]
     trusted_clust_df = clusters[1]
     ocsvm_clust_df = clusters[2]
@@ -17,6 +19,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
     ocsvm_sv_path = save_dirs_dict['ocsvm']
     inter_sv_path = save_dirs_dict['intersect']
     xpg_sv_path = save_dirs_dict['xpgs']
+    mode_path = save_dirs_dict[mode]
 
     logging.info('Combining All Recruits\n')
     mg_contigs_dict = s_utils.get_seqs(mg_file)
@@ -46,7 +49,6 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
         logging.info('Recruited %s contigs from HDBSCAN anchored analysis for %s\n' %
                      (sub_merge_df.shape[0], best_label)
                      )
-        '''
         final_rec = o_join(hdbscan_sv_path, str(best_label) + '.hdbscan.fasta')
         with open(final_rec, 'w') as final_out:
             contig_list = list(set(sub_merge_df['contig_id']))
@@ -57,7 +59,6 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
-        '''
     # OC-SVM Bins
     for best_label in set(ocsvm_clust_df['best_label']):
         sub_merge_df = ocsvm_clust_df[['best_label', 'contig_id']
@@ -65,7 +66,6 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
         logging.info('Recruited %s contigs from OC-SVM anchored analysis for %s\n' %
                      (sub_merge_df.shape[0], best_label)
                      )
-        '''
         final_rec = o_join(ocsvm_sv_path, str(best_label) + '.ocsvm.fasta')
         with open(final_rec, 'w') as final_out:
             contig_list = list(set(sub_merge_df['contig_id']))
@@ -76,7 +76,6 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
-        '''
     # Combined Bins
     if isinstance(inter_clust_df, pd.DataFrame):
         for best_label in set(inter_clust_df['best_label']):
@@ -116,3 +115,9 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters, trusted_list, thread
             logging.info('Running BBtools dedup on %s\n' % t_id)
             run_mem = Popen(dedupe_cmd)
             run_mem.communicate()
+    # Clean up the directory
+    logging.info('Cleaning up intermediate files...\n')
+    s_utils.runCleaner(denovo_sv_path, "*.fasta")
+    s_utils.runCleaner(mode_path, "hdbscan")
+    s_utils.runCleaner(mode_path, "ocsvm")
+    s_utils.runCleaner(xpg_sv_path, "*.concat.fasta")

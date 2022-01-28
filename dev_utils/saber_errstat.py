@@ -69,10 +69,12 @@ def xpg_stats(p):
     pred_df['truth'] = exact_truth
     pred_df['truth_strain'] = strain_truth
     # calculate for hybrid exact/strain-level matches
-    TP = int(xpg_bp)  # calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    TP = int(xpg_bp)
+    inter_TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    diff_TP = TP - inter_TP
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = int(xpg_unaligned)  # calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     # compute total possible bp for each genome
     str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
@@ -86,10 +88,12 @@ def xpg_stats(p):
                                )
     # ALL Recruits
     # calculate for exact-level match
-    TP = int(xpg_bp)  # calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    TP = int(xpg_bp)
+    inter_TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    diff_TP = TP - inter_TP
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = int(xpg_unaligned)  # calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     # compute total possible bp for each genome
     exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.

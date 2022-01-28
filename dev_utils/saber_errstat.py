@@ -42,13 +42,15 @@ def EAxpg(p):
     src_total_bp = tot_bp_dict[src_id]
     algo_list = [algorithm]
     xPG_bp_cnt = int(diff_df.loc[diff_df['tag'] == 'xPG', 'AlignedBases'].values[0])
+    xPG_unaligned = int(diff_df.loc[diff_df['tag'] == 'xPG', 'UnalignedBases'].values[0])
     stats_lists = []
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])
         rec_stats_list = xpg_stats([temp_id, algo, contig_id_list,
                                     contig_bp_list, exact_truth,
                                     strain_truth, pred, src_total_bp,
-                                    src_id, strain_id, xPG_bp_cnt
+                                    src_id, strain_id, xPG_bp_cnt,
+                                    xPG_unaligned
                                     ])
         stats_lists.extend(rec_stats_list)
 
@@ -57,7 +59,7 @@ def EAxpg(p):
 
 def xpg_stats(p):
     sag_id, algo, contig_id_list, contig_bp_list, exact_truth, \
-    strain_truth, pred, tot_bp, src_id, strain_id, xpg_bp = p
+    strain_truth, pred, tot_bp, src_id, strain_id, xpg_bp, xpg_unaligned = p
     pred_df = pd.DataFrame(zip(contig_id_list, contig_bp_list, pred),
                            columns=['contig_id', 'contig_bp', 'pred']
                            )
@@ -70,7 +72,7 @@ def xpg_stats(p):
     TP = int(xpg_bp)  # calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FN = int(xpg_unaligned)  # calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     # compute total possible bp for each genome
     str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
@@ -87,7 +89,7 @@ def xpg_stats(p):
     TP = int(xpg_bp)  # calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    FN = int(xpg_unaligned)  # calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     # compute total possible bp for each genome
     exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.

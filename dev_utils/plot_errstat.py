@@ -62,7 +62,7 @@ binner2rank = {'maxbin': 0,
                'metabat2': 2,
                'VAMB': 3,
                'SABer_denovo': 4,
-               'SABer_intersect': 5
+               'SABer_intersect': 5,
                'SABer_xPG': 6
                }
 

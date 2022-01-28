@@ -30,7 +30,8 @@ type2label = {'CAMI_II_Airways': 'Air',
               'CAMI_II_Urogenital': 'Urog'
               }
 algo2rank = {'denovo': 0, 'hdbscan': 1,
-             'ocsvm': 2, 'intersect': 3
+             'ocsvm': 2, 'intersect': 3,
+             'xPG': 4
              }
 type2rank = {'CAMI_II_Airways': 0,
              'CAMI_II_Gastrointestinal': 1,
@@ -62,6 +63,7 @@ binner2rank = {'maxbin': 0,
                'VAMB': 3,
                'SABer_denovo': 4,
                'SABer_intersect': 5
+               'SABer_xPG': 6
                }
 
 level2rank = {'exact_assembly_single': 0,

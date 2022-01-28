@@ -1,11 +1,8 @@
 import os
 import sys
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import scipy.stats as sci_stats
 import seaborn as sns
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # specify that all columns should be shown
 pd.set_option('max_columns', None)
@@ -152,7 +149,8 @@ bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
                                                         bin_cat_df['bin_mode']
                                                         )]
 bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
-
+print(bin_cat_df.head())
+sys.exit()
 ########################################################################################################################
 ##### RUN NC STATS #####################################################################################################
 ########################################################################################################################

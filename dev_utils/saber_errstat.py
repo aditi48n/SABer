@@ -78,7 +78,6 @@ def xpg_stats(p):
     abs_FN = xpg_tot - TP
     asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     if asm_FN < 0:
-        print(asm_FN)
         asm_FN = 0
     if sag_id == 'GCA_001952895.1_ASM195289v1.3272':
         print(asm_FN)

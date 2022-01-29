@@ -79,7 +79,7 @@ saber_multi_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
 unitem_single_df = pd.read_csv(unitem_single_file, header=0, sep='\t')
 unitem_multi_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
 vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
-
+sys.exit()
 # Unify table formats
 col_order = ['binner', 'bin_mode', 'level', 'sample_type', 'sample_id',
              'mq_avg_p', 'mq_avg_r', 'mq_avg_mcc', 'nc_avg_p',

@@ -74,12 +74,13 @@ def xpg_stats(p):
     diff_TP = TP - inter_TP
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
+    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    abs_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     # compute total possible bp for each genome
     str_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    corrected_FN = FN + working_bp
+    corrected_FN = abs_FN + working_bp
     str_list = calc_stats(sag_id, 'strain_assembly', algo, TP, FP, TN, FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
@@ -93,12 +94,13 @@ def xpg_stats(p):
     diff_TP = TP - inter_TP
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
+    FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
+    abs_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     # compute total possible bp for each genome
     exa_tot_bp_poss = TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
     working_bp = tot_bp - TP - FN
-    corrected_FN = FN + working_bp
+    corrected_FN = abs_FN + working_bp
     x_list = calc_stats(sag_id, 'exact_assembly', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )

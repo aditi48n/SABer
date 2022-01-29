@@ -80,6 +80,9 @@ def xpg_stats(p):
     if asm_FN < 0:
         print(asm_FN)
         asm_FN = 0
+    if sag_id == 'GCA_001952895.1_ASM195289v1.3272':
+        print(asm_FN)
+        sys.exit()
     # compute total possible bp for each genome
     str_tot_bp_poss = TP + asm_FN
     # Complete SRC genome is not always present in contigs, need to correct for that.

@@ -79,10 +79,6 @@ def xpg_stats(p):
     asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     if asm_FN < 0:
         asm_FN = 0
-    if sag_id == 'GCA_001952895.1_ASM195289v1.3272':
-        print(asm_FN)
-        print(abs_FN)
-        sys.exit()
     # compute total possible bp for each genome
     str_tot_bp_poss = TP + asm_FN
     # Complete SRC genome is not always present in contigs, need to correct for that.

@@ -76,6 +76,8 @@ def xpg_stats(p):
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     abs_FN = tot_bp - TP
     asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
+    if asm_FN < 0:
+        asm_FN = 0
     # compute total possible bp for each genome
     str_tot_bp_poss = TP + asm_FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
@@ -96,6 +98,8 @@ def xpg_stats(p):
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     abs_FN = tot_bp - TP
     asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
+    if asm_FN < 0:
+        asm_FN = 0
     # compute total possible bp for each genome
     exa_tot_bp_poss = TP + asm_FN
     # Complete SRC genome is not always present in contigs, need to correct for that.

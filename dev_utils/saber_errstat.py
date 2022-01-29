@@ -43,6 +43,7 @@ def EAxpg(p):
     algo_list = [algorithm]
     xPG_bp_cnt = int(diff_df.loc[diff_df['tag'] == 'xPG', 'AlignedBases'].values[0])
     xPG_unaligned = int(diff_df.loc[diff_df['tag'] == 'xPG', 'UnalignedBases'].values[0])
+    xPG_total = int(diff_df.loc[diff_df['tag'] == 'xPG', 'TotalBases'].values[0])
     stats_lists = []
     for algo in algo_list:
         pred = list(merge_recruits_df[algo])
@@ -50,7 +51,7 @@ def EAxpg(p):
                                     contig_bp_list, exact_truth,
                                     strain_truth, pred, src_total_bp,
                                     src_id, strain_id, xPG_bp_cnt,
-                                    xPG_unaligned
+                                    xPG_unaligned, xPG_total
                                     ])
         stats_lists.extend(rec_stats_list)
 
@@ -59,7 +60,7 @@ def EAxpg(p):
 
 def xpg_stats(p):
     sag_id, algo, contig_id_list, contig_bp_list, exact_truth, \
-    strain_truth, pred, tot_bp, src_id, strain_id, xpg_bp, xpg_unaligned = p
+    strain_truth, pred, tot_bp, src_id, strain_id, xpg_bp, xpg_unaligned, xpg_tot = p
     pred_df = pd.DataFrame(zip(contig_id_list, contig_bp_list, pred),
                            columns=['contig_id', 'contig_bp', 'pred']
                            )
@@ -74,7 +75,7 @@ def xpg_stats(p):
     diff_TP = TP - inter_TP
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    abs_FN = tot_bp - TP
+    abs_FN = xpg_tot - TP
     asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     if asm_FN < 0:
         asm_FN = 0
@@ -96,7 +97,7 @@ def xpg_stats(p):
     diff_TP = TP - inter_TP
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    abs_FN = tot_bp - TP
+    abs_FN = xpg_tot - TP
     asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
     if asm_FN < 0:
         asm_FN = 0

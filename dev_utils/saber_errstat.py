@@ -820,6 +820,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    score_tax_df.drop(columns=['sag_id'], inplace=True)
 
     sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
                                               'sensitivity'],
@@ -920,6 +921,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    score_tax_df.drop(columns=['sag_id'], inplace=True)
 
     sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
                                               'sensitivity'],
@@ -1020,6 +1022,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    score_tax_df.drop(columns=['sag_id'], inplace=True)
 
     sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
                                               'sensitivity'],
@@ -1120,6 +1123,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     score_tax_df['MQ_bins'] = 'No'
     score_tax_df.loc[(score_tax_df['precision'] >= 0.9) &
                      (score_tax_df['sensitivity'] >= 0.5), 'MQ_bins'] = 'Yes'
+    score_tax_df.drop(columns=['sag_id'], inplace=True)
 
     sort_score_df = score_tax_df.sort_values(['best_label', 'level', 'precision',
                                               'sensitivity'],

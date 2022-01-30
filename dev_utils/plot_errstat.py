@@ -153,59 +153,58 @@ cat_list = []
 for binner in bin_cat_df['binner'].unique():
     for bin_mode in bin_cat_df['bin_mode'].unique():
         for dataset in bin_cat_df['dataset'].unique():
-            for algo in bin_cat_df['algorithm'].unique():
-                for level in bin_cat_df['level'].unique():
-                    print(binner, bin_mode, dataset, algo, level)
-                    sub_err_df = bin_cat_df.query('binner == @binner & bin_mode == @bin_mode & '
-                                                  'dataset == @dataset & algorithm == @algo & '
-                                                  'level == @level')
-                    sub_err_df.sort_values(['precision', 'sensitivity'],
-                                           ascending=[False, False], inplace=True
-                                           )
-                    sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
-                    l_20 = '>20Kb'
-                    ext_mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
-                    ext_nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
-                    str_mq_df = sub_str_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
-                    str_nc_df = sub_str_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+            for level in bin_cat_df['level'].unique():
+                print(binner, bin_mode, dataset, algo, level)
+                sub_err_df = bin_cat_df.query('binner == @binner & bin_mode == @bin_mode & '
+                                              'dataset == @dataset & level == @level'
+                                              )
+                sub_err_df.sort_values(['precision', 'sensitivity'],
+                                       ascending=[False, False], inplace=True
+                                       )
+                sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
+                l_20 = '>20Kb'
+                ext_mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                ext_nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+                str_mq_df = sub_str_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+                str_nc_df = sub_str_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
 
-                    mq_avg_mcc = ext_mq_df['MCC'].mean()
-                    nc_avg_mcc = ext_nc_df['MCC'].mean()
-                    mq_avg_p = ext_mq_df['precision'].mean()
-                    nc_avg_p = ext_nc_df['precision'].mean()
-                    mq_avg_r = ext_mq_df['sensitivity'].mean()
-                    nc_avg_r = ext_nc_df['sensitivity'].mean()
-                    ext_mq_cnt = ext_mq_df['MQ_bins'].count()
-                    ext_nc_cnt = ext_nc_df['NC_bins'].count()
-                    ext_mq_uniq = len(ext_mq_df['exact_label'].unique())
-                    ext_nc_uniq = len(ext_nc_df['exact_label'].unique())
-                    str_mq_cnt = str_mq_df['MQ_bins'].count()
-                    str_nc_cnt = str_nc_df['NC_bins'].count()
-                    str_mq_uniq = len(str_mq_df['strain_label'].unique())
-                    str_nc_uniq = len(str_nc_df['strain_label'].unique())
-                    sub_err_df['asm_per_bp'] = [x / y for x, y in
-                                                zip(sub_err_df['possible_bp'],
-                                                    sub_err_df['total_bp'])
-                                                ]
-                    sub_err_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in sub_err_df['asm_per_bp']]
-                    sub_err_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in sub_err_df['asm_per_bp']]
-                    sub_err_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
-                    poss_str_bp_df = sub_err_df[['strain_label', 'possible_bp',
-                                                 'total_bp', 'asm_per_bp',
-                                                 'yes_NC', 'yes_MQ'
-                                                 ]].copy().drop_duplicates(subset='strain_label')
-                    ext_mq_poss = sub_err_df['yes_MQ'].sum()
-                    ext_nc_poss = sub_err_df['yes_NC'].sum()
-                    str_mq_poss = poss_str_bp_df['yes_MQ'].sum()
-                    str_nc_poss = poss_str_bp_df['yes_NC'].sum()
-                    err_list = [binner, bin_mode, algo, level, mq_avg_p,
-                                mq_avg_r, mq_avg_mcc, nc_avg_p, nc_avg_r,
-                                nc_avg_mcc, ext_mq_cnt, ext_mq_uniq,
-                                ext_nc_cnt, ext_nc_uniq, str_mq_cnt, str_mq_uniq,
-                                str_nc_cnt, str_nc_uniq, ext_mq_poss, ext_nc_poss,
-                                str_mq_poss, str_nc_poss
-                                ]
-                    cat_list.append(err_list)
+                mq_avg_mcc = ext_mq_df['MCC'].mean()
+                nc_avg_mcc = ext_nc_df['MCC'].mean()
+                mq_avg_p = ext_mq_df['precision'].mean()
+                nc_avg_p = ext_nc_df['precision'].mean()
+                mq_avg_r = ext_mq_df['sensitivity'].mean()
+                nc_avg_r = ext_nc_df['sensitivity'].mean()
+                ext_mq_cnt = ext_mq_df['MQ_bins'].count()
+                ext_nc_cnt = ext_nc_df['NC_bins'].count()
+                ext_mq_uniq = len(ext_mq_df['exact_label'].unique())
+                ext_nc_uniq = len(ext_nc_df['exact_label'].unique())
+                str_mq_cnt = str_mq_df['MQ_bins'].count()
+                str_nc_cnt = str_nc_df['NC_bins'].count()
+                str_mq_uniq = len(str_mq_df['strain_label'].unique())
+                str_nc_uniq = len(str_nc_df['strain_label'].unique())
+                sub_err_df['asm_per_bp'] = [x / y for x, y in
+                                            zip(sub_err_df['possible_bp'],
+                                                sub_err_df['total_bp'])
+                                            ]
+                sub_err_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in sub_err_df['asm_per_bp']]
+                sub_err_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in sub_err_df['asm_per_bp']]
+                sub_err_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
+                poss_str_bp_df = sub_err_df[['strain_label', 'possible_bp',
+                                             'total_bp', 'asm_per_bp',
+                                             'yes_NC', 'yes_MQ'
+                                             ]].copy().drop_duplicates(subset='strain_label')
+                ext_mq_poss = sub_err_df['yes_MQ'].sum()
+                ext_nc_poss = sub_err_df['yes_NC'].sum()
+                str_mq_poss = poss_str_bp_df['yes_MQ'].sum()
+                str_nc_poss = poss_str_bp_df['yes_NC'].sum()
+                err_list = [binner, bin_mode, algo, level, mq_avg_p,
+                            mq_avg_r, mq_avg_mcc, nc_avg_p, nc_avg_r,
+                            nc_avg_mcc, ext_mq_cnt, ext_mq_uniq,
+                            ext_nc_cnt, ext_nc_uniq, str_mq_cnt, str_mq_uniq,
+                            str_nc_cnt, str_nc_uniq, ext_mq_poss, ext_nc_poss,
+                            str_mq_poss, str_nc_poss
+                            ]
+                cat_list.append(err_list)
 cat_cols = ['binner', 'bin_mode', 'algo', 'level', 'mq_avg_p', 'mq_avg_r',
             'mq_avg_mcc', 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt',
             'ext_mq_uniq', 'ext_nc_cnt', 'ext_nc_uniq', 'str_mq_cnt',

@@ -197,7 +197,7 @@ for binner in bin_cat_df['binner'].unique():
                 ext_nc_poss = sub_err_df['yes_NC'].sum()
                 str_mq_poss = poss_str_bp_df['yes_MQ'].sum()
                 str_nc_poss = poss_str_bp_df['yes_NC'].sum()
-                err_list = [binner, bin_mode, algo, level, mq_avg_p,
+                err_list = [binner, bin_mode, level, mq_avg_p,
                             mq_avg_r, mq_avg_mcc, nc_avg_p, nc_avg_r,
                             nc_avg_mcc, ext_mq_cnt, ext_mq_uniq,
                             ext_nc_cnt, ext_nc_uniq, str_mq_cnt, str_mq_uniq,
@@ -205,7 +205,7 @@ for binner in bin_cat_df['binner'].unique():
                             str_mq_poss, str_nc_poss
                             ]
                 cat_list.append(err_list)
-cat_cols = ['binner', 'bin_mode', 'algo', 'level', 'mq_avg_p', 'mq_avg_r',
+cat_cols = ['binner', 'bin_mode', 'level', 'mq_avg_p', 'mq_avg_r',
             'mq_avg_mcc', 'nc_avg_p', 'nc_avg_r', 'nc_avg_mcc', 'ext_mq_cnt',
             'ext_mq_uniq', 'ext_nc_cnt', 'ext_nc_uniq', 'str_mq_cnt',
             'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq', 'ext_mq_poss',

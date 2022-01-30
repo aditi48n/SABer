@@ -293,6 +293,7 @@ dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_
                                  header=0)
 sample_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
                                 header=0)
+# below should be kept in the above processing in the future
 dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_df['level'],
                                                                 dataset_metrics_df['bin_mode']
                                                                 )]

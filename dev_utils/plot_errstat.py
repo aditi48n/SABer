@@ -149,6 +149,47 @@ bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
 bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
 
 ########################################################################################################################
+##### Calc all basic metrics ###########################################################################################
+########################################################################################################################
+cat_list = []
+print(bin_cat_df.columns)
+sys.exit()
+for algo in bin_cat_df['algorithm'].unique():
+    for level in bin_cat_df['level'].unique():
+        sub_err_df = bin_cat_df.query('algorithm == @algo & level == @level')
+        sub_err_df.sort_values(['precision', 'sensitivity'],
+                               ascending=[False, False], inplace=True
+                               )
+        sub_str_df = sub_err_df.drop_duplicates(subset='strain_label')
+        l_20 = '>20Kb'
+        ext_mq_df = sub_err_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+        ext_nc_df = sub_err_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+        str_mq_df = sub_str_df.query("NC_bins == 'Yes' | MQ_bins == 'Yes' | @l_20 == 'Yes'")
+        str_nc_df = sub_str_df.query("NC_bins == 'Yes' | @l_20 == 'Yes'")
+
+        mq_avg_mcc = ext_mq_df['MCC'].mean()
+        nc_avg_mcc = ext_nc_df['MCC'].mean()
+        mq_avg_p = ext_mq_df['precision'].mean()
+        nc_avg_p = ext_nc_df['precision'].mean()
+        mq_avg_r = ext_mq_df['sensitivity'].mean()
+        nc_avg_r = ext_nc_df['sensitivity'].mean()
+        ext_mq_cnt = ext_mq_df['MQ_bins'].count()
+        ext_nc_cnt = ext_nc_df['NC_bins'].count()
+        ext_mq_uniq = len(ext_mq_df['exact_label'].unique())
+        ext_nc_uniq = len(ext_nc_df['exact_label'].unique())
+        str_mq_cnt = str_mq_df['MQ_bins'].count()
+        str_nc_cnt = str_nc_df['NC_bins'].count()
+        str_mq_uniq = len(str_mq_df['strain_label'].unique())
+        str_nc_uniq = len(str_nc_df['strain_label'].unique())
+
+        err_list = [algo, level, mq_avg_p, mq_avg_r, mq_avg_mcc,
+                    nc_avg_p, nc_avg_r, nc_avg_mcc, ext_mq_cnt,
+                    ext_mq_uniq, ext_nc_cnt, ext_nc_uniq,
+                    str_mq_cnt, str_mq_uniq, str_nc_cnt, str_nc_uniq
+                    ]
+        cat_list.append(err_list)
+
+########################################################################################################################
 ##### RUN NC STATS #####################################################################################################
 ########################################################################################################################
 print('############################################################')

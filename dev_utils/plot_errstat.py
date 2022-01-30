@@ -92,7 +92,7 @@ col_order = ['binner', 'bin_mode', 'level', 'sample_type', 'sample_id',
 # SABer first
 saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                              for x, y, z in
-                             zip(saber_single_df['algo'],
+                             zip(saber_single_df['algorithm'],
                                  saber_single_df['mode'],
                                  saber_single_df['param_set']
                                  )
@@ -101,11 +101,11 @@ saber_single_df['bin_mode'] = 'single'
 saber_single_df['sample_id'] = ['S' + str(x) for x in
                                 saber_single_df['sample_id']
                                 ]
-saber_s_df = saber_single_df.drop(columns=['algo', 'mode', 'param_set']
+saber_s_df = saber_single_df.drop(columns=['algorithm', 'mode', 'param_set']
                                   )[col_order]
 saber_multi_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                             for x, y, z in
-                            zip(saber_multi_df['algo'],
+                            zip(saber_multi_df['algorithm'],
                                 saber_multi_df['mode'],
                                 saber_multi_df['param_set']
                                 )
@@ -114,7 +114,7 @@ saber_multi_df['bin_mode'] = 'multi'
 saber_multi_df['sample_id'] = ['S' + str(x) for x in
                                saber_multi_df['sample_id']
                                ]
-saber_m_df = saber_multi_df.drop(columns=['algo', 'mode', 'param_set']
+saber_m_df = saber_multi_df.drop(columns=['algorithm', 'mode', 'param_set']
                                  )[col_order]
 
 # UniteM Binners
@@ -122,12 +122,12 @@ unitem_single_df['bin_mode'] = 'single'
 unitem_single_df['sample_id'] = ['S' + str(x) for x in
                                  unitem_single_df['sample_id']
                                  ]
-unitem_s_df = unitem_single_df.drop(columns=['algo'])[col_order]
+unitem_s_df = unitem_single_df.drop(columns=['algorithm'])[col_order]
 unitem_multi_df['bin_mode'] = 'multi'
 unitem_multi_df['sample_id'] = ['S' + str(x) for x in
                                 unitem_multi_df['sample_id']
                                 ]
-unitem_m_df = unitem_multi_df.drop(columns=['algo'])[col_order]
+unitem_m_df = unitem_multi_df.drop(columns=['algorithm'])[col_order]
 
 # VAMB
 print(vamb_multi_df.head())
@@ -136,7 +136,7 @@ vamb_multi_df['binner'] = 'VAMB'
 vamb_multi_df['sample_id'] = ['S' + str(x) for x in
                               vamb_multi_df['sample_id']
                               ]
-vamb_m_df = vamb_multi_df.drop(columns=['algo'])[col_order]
+vamb_m_df = vamb_multi_df.drop(columns=['algorithm'])[col_order]
 
 bin_cat_df = pd.concat([saber_s_df, saber_m_df,
                         unitem_s_df, unitem_m_df,
@@ -390,7 +390,7 @@ print('# Single SABer')
 print('############################################################')
 
 ss_df['label'] = [type2label[x] for x in ss_df['sample_type']]
-ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algo']]
+ss_df['algo_rank'] = [algo2rank[x] for x in ss_df['algorithm']]
 ss_df['type_rank'] = [type2rank[x] for x in ss_df['sample_type']]
 ss_df['mode_rank'] = [mode2rank[x] for x in ss_df['mode']]
 ss_df['param_rank'] = [param2rank[x] for x in ss_df['param_set']]
@@ -398,7 +398,7 @@ ss_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
                           zip(ss_df['mode'], ss_df['param_set'])
                           ]
 ss_df['algo_param'] = ['_'.join([str(x), str(y)]) for x, y in
-                       zip(ss_df['algo'], ss_df['param_set'])
+                       zip(ss_df['algorithm'], ss_df['param_set'])
                        ]
 ss_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
                          zip(ss_df['label'], ss_df['sample_id'])
@@ -407,20 +407,20 @@ ss_abs_str_df = ss_df.query("level == 'strain_absolute'")
 ss_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
-ss_abs_str_median_df = ss_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df = ss_abs_str_df.groupby(['mode', 'algorithm']
                                              )[['ext_nc_uniq'
                                                 ]].median().reset_index()
-ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
-ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df.columns = ['mode', 'algorithm', 'median']
+ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algorithm']
                                            )[['ext_nc_uniq'
                                               ]].mean().reset_index()
-ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
-ss_abs_str_std_df = ss_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_mean_df.columns = ['mode', 'algorithm', 'mean']
+ss_abs_str_std_df = ss_abs_str_df.groupby(['mode', 'algorithm']
                                           )[['ext_nc_uniq'
                                              ]].std().reset_index()
-ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+ss_abs_str_std_df.columns = ['mode', 'algorithm', 'stdev']
 stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
-ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algorithm']), stats_df_list)
 ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
@@ -484,7 +484,7 @@ print(f"Average Best Cluster: {BC_count / lengs}")
 print(f"Average Best Match: {BM_count / lengs}")
 
 # Boxplots for mode and param set
-ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algorithm",
                      col="param_set", col_wrap=2,
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
@@ -497,7 +497,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for mode
-ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algorithm",
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -509,7 +509,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for param set
-ss_box = sns.catplot(x="param_set", y="ext_nc_uniq", hue="algo",
+ss_box = sns.catplot(x="param_set", y="ext_nc_uniq", hue="algorithm",
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -521,20 +521,20 @@ plt.clf()
 plt.close()
 
 # Medium Quality
-ss_abs_str_median_df = ss_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df = ss_abs_str_df.groupby(['mode', 'algorithm']
                                              )[['ext_mq_uniq'
                                                 ]].median().reset_index()
-ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
-ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df.columns = ['mode', 'algorithm', 'median']
+ss_abs_str_mean_df = ss_abs_str_df.groupby(['mode', 'algorithm']
                                            )[['ext_mq_uniq'
                                               ]].mean().reset_index()
-ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
-ss_abs_str_std_df = ss_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_mean_df.columns = ['mode', 'algorithm', 'mean']
+ss_abs_str_std_df = ss_abs_str_df.groupby(['mode', 'algorithm']
                                           )[['ext_mq_uniq'
                                              ]].std().reset_index()
-ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+ss_abs_str_std_df.columns = ['mode', 'algorithm', 'stdev']
 stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
-ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algorithm']), stats_df_list)
 ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
@@ -598,7 +598,7 @@ print(f"Average Best Cluster: {BC_count / lengs}")
 print(f"Average Best Match: {BM_count / lengs}")
 
 # Boxplots for mode and param set
-ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algorithm",
                      col="param_set", col_wrap=2,
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
@@ -611,7 +611,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for mode
-ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algorithm",
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -623,7 +623,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for param set
-ss_box = sns.catplot(x="param_set", y="ext_mq_uniq", hue="algo",
+ss_box = sns.catplot(x="param_set", y="ext_mq_uniq", hue="algorithm",
                      kind="box", data=ss_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -643,7 +643,7 @@ print('############################################################')
 
 sm_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
 sm_df['label'] = [type2label[x] for x in sm_df['sample_type']]
-sm_df['algo_rank'] = [algo2rank[x] for x in sm_df['algo']]
+sm_df['algo_rank'] = [algo2rank[x] for x in sm_df['algorithm']]
 sm_df['type_rank'] = [type2rank[x] for x in sm_df['sample_type']]
 sm_df['mode_rank'] = [mode2rank[x] for x in sm_df['mode']]
 sm_df['param_rank'] = [param2rank[x] for x in sm_df['param_set']]
@@ -651,7 +651,7 @@ sm_df['mode_paramset'] = [str(x) + '_' + str(y) for x, y in
                           zip(sm_df['mode'], sm_df['param_set'])
                           ]
 sm_df['algo_param'] = ['_'.join([str(x), str(y)]) for x, y in
-                       zip(sm_df['algo'], sm_df['param_set'])
+                       zip(sm_df['algorithm'], sm_df['param_set'])
                        ]
 sm_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
                          zip(sm_df['label'], sm_df['sample_id'])
@@ -660,20 +660,20 @@ sm_abs_str_df = sm_df.query("level == 'strain_absolute'")
 sm_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'mode_rank', 'param_set'
                               ], inplace=True)
-ss_abs_str_median_df = sm_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df = sm_abs_str_df.groupby(['mode', 'algorithm']
                                              )[['ext_nc_uniq'
                                                 ]].median().reset_index()
-ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
-ss_abs_str_mean_df = sm_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df.columns = ['mode', 'algorithm', 'median']
+ss_abs_str_mean_df = sm_abs_str_df.groupby(['mode', 'algorithm']
                                            )[['ext_nc_uniq'
                                               ]].mean().reset_index()
-ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
-ss_abs_str_std_df = sm_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_mean_df.columns = ['mode', 'algorithm', 'mean']
+ss_abs_str_std_df = sm_abs_str_df.groupby(['mode', 'algorithm']
                                           )[['ext_nc_uniq'
                                              ]].std().reset_index()
-ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+ss_abs_str_std_df.columns = ['mode', 'algorithm', 'stdev']
 stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
-ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algorithm']), stats_df_list)
 ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
@@ -737,7 +737,7 @@ print(f"Average Best Cluster: {BC_count / lengs}")
 print(f"Average Best Match: {BM_count / lengs}")
 
 # Boxplots for mode and param set
-ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algorithm",
                      col="param_set", col_wrap=2,
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
@@ -750,7 +750,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for mode
-ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_nc_uniq", hue="algorithm",
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -762,7 +762,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for param set
-ss_box = sns.catplot(x="param_set", y="ext_nc_uniq", hue="algo",
+ss_box = sns.catplot(x="param_set", y="ext_nc_uniq", hue="algorithm",
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -774,20 +774,20 @@ plt.clf()
 plt.close()
 
 # Medium Quality
-ss_abs_str_median_df = sm_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df = sm_abs_str_df.groupby(['mode', 'algorithm']
                                              )[['ext_mq_uniq'
                                                 ]].median().reset_index()
-ss_abs_str_median_df.columns = ['mode', 'algo', 'median']
-ss_abs_str_mean_df = sm_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_median_df.columns = ['mode', 'algorithm', 'median']
+ss_abs_str_mean_df = sm_abs_str_df.groupby(['mode', 'algorithm']
                                            )[['ext_mq_uniq'
                                               ]].mean().reset_index()
-ss_abs_str_mean_df.columns = ['mode', 'algo', 'mean']
-ss_abs_str_std_df = sm_abs_str_df.groupby(['mode', 'algo']
+ss_abs_str_mean_df.columns = ['mode', 'algorithm', 'mean']
+ss_abs_str_std_df = sm_abs_str_df.groupby(['mode', 'algorithm']
                                           )[['ext_mq_uniq'
                                              ]].std().reset_index()
-ss_abs_str_std_df.columns = ['mode', 'algo', 'stdev']
+ss_abs_str_std_df.columns = ['mode', 'algorithm', 'stdev']
 stats_df_list = [ss_abs_str_median_df, ss_abs_str_mean_df, ss_abs_str_std_df]
-ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algo']), stats_df_list)
+ss_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['mode', 'algorithm']), stats_df_list)
 ss_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(ss_abs_str_stats_df)
@@ -851,7 +851,7 @@ print(f"Average Best Cluster: {BC_count / lengs}")
 print(f"Average Best Match: {BM_count / lengs}")
 
 # Boxplots for mode and param set
-ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algorithm",
                      col="param_set", col_wrap=2,
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
@@ -864,7 +864,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for mode
-ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algo",
+ss_box = sns.catplot(x="mode", y="ext_mq_uniq", hue="algorithm",
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -876,7 +876,7 @@ plt.clf()
 plt.close()
 
 # Boxplots for param set
-ss_box = sns.catplot(x="param_set", y="ext_mq_uniq", hue="algo",
+ss_box = sns.catplot(x="param_set", y="ext_mq_uniq", hue="algorithm",
                      kind="box", data=sm_abs_str_df, notch=True,
                      linewidth=0.75, saturation=0.75, width=0.75,
                      palette=sns.color_palette("muted")
@@ -898,7 +898,7 @@ us_df = pd.read_csv(unitem_single_file, header=0, sep='\t')
 print(us_df.head())
 print(us_df.columns)
 us_df['label'] = [type2label[x] for x in us_df['sample_type']]
-us_df['algo_rank'] = [algo2rank[x] for x in us_df['algo']]
+us_df['algo_rank'] = [algo2rank[x] for x in us_df['algorithm']]
 us_df['type_rank'] = [type2rank[x] for x in us_df['sample_type']]
 us_df['binner_rank'] = [binner2rank[x] for x in us_df['binner']]
 us_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
@@ -908,23 +908,23 @@ us_abs_str_df = us_df.query("level == 'strain_absolute'")
 us_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'binner_rank'
                               ], inplace=True)
-us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                              )[['ext_nc_uniq'
                                                 ]].median().reset_index()
-us_abs_str_median_df.columns = ['binner', 'algo', 'median']
-us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df.columns = ['binner', 'algorithm', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                            )[['ext_nc_uniq'
                                               ]].mean().reset_index()
-us_abs_str_mean_df.columns = ['binner', 'algo', 'mean']
-us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_mean_df.columns = ['binner', 'algorithm', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                           )[['ext_nc_uniq'
                                              ]].std().reset_index()
-us_abs_str_std_df.columns = ['binner', 'algo', 'stdev']
+us_abs_str_std_df.columns = ['binner', 'algorithm', 'stdev']
 stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df,
                  us_abs_str_std_df
                  ]
 us_abs_str_stats_df = reduce(lambda x, y:
-                             pd.merge(x, y, on=['binner', 'algo']),
+                             pd.merge(x, y, on=['binner', 'algorithm']),
                              stats_df_list
                              )
 us_abs_str_stats_df.sort_values(by='mean', ascending=False,
@@ -992,20 +992,20 @@ plt.clf()
 plt.close()
 
 # Medium Quality
-us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                              )[['ext_mq_uniq'
                                                 ]].median().reset_index()
-us_abs_str_median_df.columns = ['binner', 'algo', 'median']
-us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df.columns = ['binner', 'algorithm', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                            )[['ext_mq_uniq'
                                               ]].mean().reset_index()
-us_abs_str_mean_df.columns = ['binner', 'algo', 'mean']
-us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_mean_df.columns = ['binner', 'algorithm', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                           )[['ext_mq_uniq'
                                              ]].std().reset_index()
-us_abs_str_std_df.columns = ['binner', 'algo', 'stdev']
+us_abs_str_std_df.columns = ['binner', 'algorithm', 'stdev']
 stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df, us_abs_str_std_df]
-us_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['binner', 'algo']), stats_df_list)
+us_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['binner', 'algorithm']), stats_df_list)
 us_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(us_abs_str_stats_df)
@@ -1079,7 +1079,7 @@ us_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
 print(us_df.head())
 print(us_df.columns)
 us_df['label'] = [type2label[x] for x in us_df['sample_type']]
-us_df['algo_rank'] = [algo2rank[x] for x in us_df['algo']]
+us_df['algo_rank'] = [algo2rank[x] for x in us_df['algorithm']]
 us_df['type_rank'] = [type2rank[x] for x in us_df['sample_type']]
 us_df['binner_rank'] = [binner2rank[x] for x in us_df['binner']]
 us_df['label_sample'] = ['_'.join([str(x), str(y)]) for x, y in
@@ -1089,23 +1089,23 @@ us_abs_str_df = us_df.query("level == 'strain_absolute'")
 us_abs_str_df.sort_values(by=['type_rank', 'algo_rank',
                               'binner_rank'
                               ], inplace=True)
-us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                              )[['ext_nc_uniq'
                                                 ]].median().reset_index()
-us_abs_str_median_df.columns = ['binner', 'algo', 'median']
-us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df.columns = ['binner', 'algorithm', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                            )[['ext_nc_uniq'
                                               ]].mean().reset_index()
-us_abs_str_mean_df.columns = ['binner', 'algo', 'mean']
-us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_mean_df.columns = ['binner', 'algorithm', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                           )[['ext_nc_uniq'
                                              ]].std().reset_index()
-us_abs_str_std_df.columns = ['binner', 'algo', 'stdev']
+us_abs_str_std_df.columns = ['binner', 'algorithm', 'stdev']
 stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df,
                  us_abs_str_std_df
                  ]
 us_abs_str_stats_df = reduce(lambda x, y:
-                             pd.merge(x, y, on=['binner', 'algo']),
+                             pd.merge(x, y, on=['binner', 'algorithm']),
                              stats_df_list
                              )
 us_abs_str_stats_df.sort_values(by='mean', ascending=False,
@@ -1173,20 +1173,20 @@ plt.clf()
 plt.close()
 
 # Medium Quality
-us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                              )[['ext_mq_uniq'
                                                 ]].median().reset_index()
-us_abs_str_median_df.columns = ['binner', 'algo', 'median']
-us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_median_df.columns = ['binner', 'algorithm', 'median']
+us_abs_str_mean_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                            )[['ext_mq_uniq'
                                               ]].mean().reset_index()
-us_abs_str_mean_df.columns = ['binner', 'algo', 'mean']
-us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algo']
+us_abs_str_mean_df.columns = ['binner', 'algorithm', 'mean']
+us_abs_str_std_df = us_abs_str_df.groupby(['binner', 'algorithm']
                                           )[['ext_mq_uniq'
                                              ]].std().reset_index()
-us_abs_str_std_df.columns = ['binner', 'algo', 'stdev']
+us_abs_str_std_df.columns = ['binner', 'algorithm', 'stdev']
 stats_df_list = [us_abs_str_median_df, us_abs_str_mean_df, us_abs_str_std_df]
-us_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['binner', 'algo']), stats_df_list)
+us_abs_str_stats_df = reduce(lambda x, y: pd.merge(x, y, on=['binner', 'algorithm']), stats_df_list)
 us_abs_str_stats_df.sort_values(by='mean', ascending=False, inplace=True)
 
 print(us_abs_str_stats_df)

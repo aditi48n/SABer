@@ -154,10 +154,10 @@ for binner in bin_cat_df['binner'].unique():
     for bin_mode in bin_cat_df['bin_mode'].unique():
         for dataset in bin_cat_df['dataset'].unique():
             for level in bin_cat_df['level'].unique():
-                print(binner, bin_mode, dataset, algo, level)
                 sub_err_df = bin_cat_df.query('binner == @binner & bin_mode == @bin_mode & '
                                               'dataset == @dataset & level == @level'
                                               )
+                print(binner, bin_mode, dataset, level, sub_err_df.shape)
                 sub_err_df.sort_values(['precision', 'sensitivity'],
                                        ascending=[False, False], inplace=True
                                        )

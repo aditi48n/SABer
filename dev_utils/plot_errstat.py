@@ -119,7 +119,7 @@ unitem_single_df['bin_mode'] = 'single'
 unitem_single_df['sample_id'] = ['S' + str(x) for x in
                                  unitem_single_df['sample_id']
                                  ]
-unitem_s_df = unitem_single_df.drop(columns=['algorithm'])[col_order]
+unitem_s_df = unitem_single_df  # .drop(columns=['algorithm'])[col_order]
 unitem_multi_df['bin_mode'] = 'multi'
 unitem_multi_df['sample_id'] = ['S' + str(x) for x in
                                 unitem_multi_df['sample_id']

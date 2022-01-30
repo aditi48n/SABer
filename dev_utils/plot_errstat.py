@@ -212,6 +212,7 @@ cat_cols = ['binner', 'bin_mode', 'level', 'mq_avg_p', 'mq_avg_r',
             'ext_nc_poss', 'str_mq_poss', 'str_nc_poss'
             ]
 cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
+cat_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.avg_metrics.tsv'), sep='\t', index=False)
 print(cat_metrics_df.head())
 sys.exit()
 ########################################################################################################################

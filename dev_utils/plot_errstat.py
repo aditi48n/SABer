@@ -1,8 +1,11 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
+import scipy.stats as sci_stats
 import seaborn as sns
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # specify that all columns should be shown
 pd.set_option('max_columns', None)
@@ -149,7 +152,7 @@ bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
 ########################################################################################################################
 ##### Calc all basic metrics ###########################################################################################
 ########################################################################################################################
-
+'''
 # By dataset
 cat_list = []
 for binner in bin_cat_df['binner'].unique():
@@ -285,7 +288,17 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'sample_id', 'mq_avg_p', '
             ]
 cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
 cat_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
-sys.exit()
+'''
+dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t',
+                                 header=0)
+sample_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
+                                header=0)
+dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_df['level'],
+                                                                dataset_metrics_df['bin_mode']
+                                                                )]
+sample_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(sample_metrics_df['level'],
+                                                               sample_metrics_df['bin_mode']
+                                                               )]
 ########################################################################################################################
 ##### RUN NC STATS #####################################################################################################
 ########################################################################################################################
@@ -293,11 +306,11 @@ print('############################################################')
 print("RUN NC STATS")
 print('############################################################')
 cnt_df_list = []
-for level_mode in bin_cat_df['level_mode'].unique():
+for level_mode in sample_metrics_df['level_mode'].unique():
     print('############################################################')
     print(f"The Level tested is {level_mode}")
     print('############################################################')
-    sub_df = bin_cat_df.query("level_mode == @level_mode")
+    sub_df = sample_metrics_df.query("level_mode == @level_mode")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = sci_stats.f_oneway(
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
@@ -343,7 +356,7 @@ keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
-temp_cat_df = bin_cat_df.copy()
+temp_cat_df = sample_metrics_df.copy()
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
@@ -406,11 +419,11 @@ print('############################################################')
 print("RUN MQ STATS")
 print('############################################################')
 cnt_df_list = []
-for level_mode in bin_cat_df['level_mode'].unique():
+for level_mode in sample_metrics_df['level_mode'].unique():
     print('############################################################')
     print(f"The Level tested is {level_mode}")
     print('############################################################')
-    sub_df = bin_cat_df.query("level_mode == @level_mode")
+    sub_df = sample_metrics_df.query("level_mode == @level_mode")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = sci_stats.f_oneway(
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_mq_uniq']
@@ -456,7 +469,7 @@ keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
-temp_cat_df = bin_cat_df.copy()
+temp_cat_df = sample_metrics_df.copy()
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']

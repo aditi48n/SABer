@@ -155,6 +155,7 @@ for binner in bin_cat_df['binner'].unique():
         for dataset in bin_cat_df['dataset'].unique():
             for algo in bin_cat_df['algorithm'].unique():
                 for level in bin_cat_df['level'].unique():
+                    print(binner, bin_mode, dataset, algo, level)
                     sub_err_df = bin_cat_df.query('binner == @binner & bin_mode == @bin_mode & '
                                                   'dataset == @dataset & algorithm == @algo & '
                                                   'level == @level')

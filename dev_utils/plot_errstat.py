@@ -156,7 +156,7 @@ for binner in bin_cat_df['binner'].unique():
             for algo in bin_cat_df['algorithm'].unique():
                 for level in bin_cat_df['level'].unique():
                     sub_err_df = bin_cat_df.query('binner == @binner & bin_mode == @bin_mode & '
-                                                  'dataset == @dataset & algorithm == @algorithm & '
+                                                  'dataset == @dataset & algorithm == @algo & '
                                                   'level == @level')
                     sub_err_df.sort_values(['precision', 'sensitivity'],
                                            ascending=[False, False], inplace=True

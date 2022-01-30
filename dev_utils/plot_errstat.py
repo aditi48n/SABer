@@ -211,7 +211,7 @@ cat_cols = ['binner', 'bin_mode', 'level', 'mq_avg_p', 'mq_avg_r',
             'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq', 'ext_mq_poss',
             'ext_nc_poss', 'str_mq_poss', 'str_nc_poss'
             ]
-cat_metrics_df = pd.concat(cat_list, columns=cat_cols)
+cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
 print(cat_metrics_df.head())
 sys.exit()
 ########################################################################################################################

@@ -382,7 +382,7 @@ sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
 sub_binstat_df['type_rank'] = [type2rank[x] for x in
-                               sub_binstat_df['sample_type']
+                               sub_binstat_df['dataset']
                                ]
 sub_binstat_df['level_rank'] = [level2rank[x] for x in
                                 sub_binstat_df['level_mode']
@@ -495,7 +495,7 @@ sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
 sub_binstat_df['type_rank'] = [type2rank[x] for x in
-                               sub_binstat_df['sample_type']
+                               sub_binstat_df['dataset']
                                ]
 sub_binstat_df['level_rank'] = [level2rank[x] for x in
                                 sub_binstat_df['level_mode']

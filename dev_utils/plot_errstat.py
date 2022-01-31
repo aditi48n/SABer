@@ -467,7 +467,14 @@ def draw_heatmap(*args, **kwargs):
 
 
 fg = sns.FacetGrid(sub_binstat_df, col='bin_mode', row='level')
-fg.map_dataframe(draw_heatmap, 'binner', 'dataset', 'nc_avg_p', cbar=False, square=True)
+fg.map_dataframe(draw_heatmap, 'binner', 'dataset', 'nc_avg_p', cbar=False, cmap='coolwarm')
+# get figure background color
+facecolor = plt.gcf().get_facecolor()
+for ax in fg.axes.flat:
+    # set aspect of all axis
+    ax.set_aspect('equal', 'box-forced')
+    # set background color of axis instance
+    ax.set_axis_bgcolor(facecolor)
 fg.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
            dpi=300
            )

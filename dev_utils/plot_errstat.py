@@ -219,7 +219,7 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'mq_avg_p', 'mq_avg_r',
             ]
 cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
 cat_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t', index=False)
-'''
+
 # By sample
 cat_list = []
 for binner in bin_cat_df['binner'].unique():
@@ -292,13 +292,13 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'sample_id', 'mq_avg_p', '
             ]
 sample_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
 sample_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
-
+'''
 dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t',
                                  header=0)
-'''
+
 sample_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
                                 header=0)
-'''
+
 # below should be kept in the above processing in the future
 dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_df['level'],
                                                                 dataset_metrics_df['bin_mode']
@@ -306,6 +306,12 @@ dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_
 sample_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(sample_metrics_df['level'],
                                                                sample_metrics_df['bin_mode']
                                                                )]
+dataset_metrics_df['binner_config'] = [x + '_' + y for x, y in zip(dataset_metrics_df['binner'],
+                                                                   dataset_metrics_df['bin_mode']
+                                                                   )]
+sample_metrics_df['binner_config'] = [x + '_' + y for x, y in zip(sample_metrics_df['binner'],
+                                                                  sample_metrics_df['bin_mode']
+                                                                  )]
 ########################################################################################################################
 ##### RUN NC STATS #####################################################################################################
 ########################################################################################################################

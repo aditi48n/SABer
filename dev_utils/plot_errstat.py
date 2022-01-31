@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -409,7 +410,8 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.boxplot.png'),
               )
 plt.clf()
 plt.close()
-
+print(sub_binstat_df.head())
+time.sleep((10000000))
 # Boxplots for precision
 boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
                     col="level_mode", col_wrap=2,

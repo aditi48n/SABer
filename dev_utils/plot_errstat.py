@@ -370,7 +370,8 @@ dedup_cnt_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                                    )]
 bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
 print(dedup_cnt_df)
-temp_cat_df = sample_metrics_df.copy()
+keep_level = ['exact_absolute', 'strain_absolute']
+temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
                                                   temp_cat_df['level_mode']
@@ -448,7 +449,8 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_MCC.boxplot.png'),
 plt.clf()
 plt.close()
 
-temp_cat_df = dataset_metrics_df.copy()
+keep_level = ['exact_absolute', 'strain_absolute']
+temp_cat_df = dataset_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
                                                   temp_cat_df['level_mode']
@@ -552,7 +554,8 @@ keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
-temp_cat_df = sample_metrics_df.copy()
+keep_level = ['exact_absolute', 'strain_absolute']
+temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
                                                   temp_cat_df['level_mode']
@@ -590,8 +593,8 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.boxplot.png'),
               )
 plt.clf()
 plt.close()
-
-temp_cat_df = dataset_metrics_df.copy()
+keep_level = ['exact_absolute', 'strain_absolute']
+temp_cat_df = dataset_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
                                                   temp_cat_df['level_mode']

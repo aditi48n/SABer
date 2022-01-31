@@ -464,7 +464,7 @@ p_df = pd.pivot_table(data=ex_abs_single_df,
                       values='nc_avg_p',
                       columns='dataset')
 print(p_df.head())
-p = sns.heatmap(ex_abs_single_df,
+p = sns.heatmap(p_df,
                 cmap='coolwarm',
                 annot=True,
                 fmt=".1f",

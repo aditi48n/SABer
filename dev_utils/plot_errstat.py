@@ -371,7 +371,7 @@ print(keep_levmod_list)
 print(keep_binners_list)
 temp_cat_df = sample_metrics_df.copy()
 print(temp_cat_df.head())
-
+print(temp_cat_df['dataset'].unique())
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']

@@ -33,11 +33,11 @@ algo2rank = {'denovo': 0, 'hdbscan': 1,
              'ocsvm': 2, 'intersect': 3,
              'xPG': 4
              }
-type2rank = {'CAMI_II_Airways': 0,
-             'CAMI_II_Gastrointestinal': 1,
-             'CAMI_II_Oral': 2,
-             'CAMI_II_Skin': 3,
-             'CAMI_II_Urogenital': 4
+type2rank = {'Air': 0,
+             'GI': 1,
+             'Oral': 2,
+             'Skin': 3,
+             'Urog': 4
              }
 mode2rank = {'majority_rule': 0,
              'best_cluster': 1,
@@ -370,8 +370,6 @@ keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
 temp_cat_df = sample_metrics_df.copy()
-print(temp_cat_df.head())
-print(temp_cat_df['dataset'].unique())
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']

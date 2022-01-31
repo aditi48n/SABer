@@ -472,9 +472,9 @@ p = sns.heatmap(p_df,
                 cbar=False,
                 square=True)
 
-p.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
-          dpi=300
-          )
+p.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
+                 dpi=300
+                 )
 plt.clf()
 plt.close()
 

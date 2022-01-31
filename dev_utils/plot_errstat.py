@@ -497,12 +497,12 @@ plt.clf()
 plt.close()
 print(sub_binstat_df.head())
 print(sub_binstat_df.query("dataset == 'Air' & "
-                           "binner == 'maxbin & "
-                           "level_mode == 'exact_absolute_single & "
+                           "binner == 'maxbin' & "
+                           "level_mode == 'exact_absolute_single' & "
                            ).shape)
 print(sub_binstat_df.query("dataset == 'Air' & "
-                           "binner == 'maxbin & "
-                           "level_mode == 'exact_absolute_single & "
+                           "binner == 'maxbin' & "
+                           "level_mode == 'exact_absolute_single' & "
                            )['binner_config_level_mode'].unique()
       )
 flurp

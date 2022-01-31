@@ -70,46 +70,40 @@ def xpg_stats(p):
     pred_df['truth'] = exact_truth
     pred_df['truth_strain'] = strain_truth
     # calculate for hybrid exact/strain-level matches
-    TP = int(xpg_bp)
     inter_TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    diff_TP = TP - inter_TP
+    diff_TP = int(xpg_bp) - inter_TP
+    TP = inter_TP + diff_TP
     FP = calc_fp(pred_df['truth_strain'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    abs_FN = xpg_tot - TP
-    asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
-    if asm_FN < 0:
-        asm_FN = 0
+    FN = tot_bp - TP
     # compute total possible bp for each genome
-    str_tot_bp_poss = TP + asm_FN
+    str_tot_bp_poss = inter_TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
-    # working_bp = tot_bp - TP - FN
-    # corrected_FN = FN + working_bp
-    str_list = calc_stats(sag_id, 'strain_assembly', algo, TP, FP, TN, asm_FN,
+    working_bp = tot_bp - TP - FN
+    corrected_FN = FN + working_bp
+    str_list = calc_stats(sag_id, 'strain_assembly', algo, TP, FP, TN, FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
-    corr_str_list = calc_stats(sag_id, 'strain_absolute', algo, TP, FP, TN, abs_FN,
+    corr_str_list = calc_stats(sag_id, 'strain_absolute', algo, TP, FP, TN, corrected_FN,
                                pred_df['truth_strain'], pred_df['pred']
                                )
     # ALL Recruits
     # calculate for exact-level match
-    TP = int(xpg_bp)
     inter_TP = calc_tp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    diff_TP = TP - inter_TP
+    diff_TP = int(xpg_bp) - inter_TP
+    TP = inter_TP + diff_TP
     FP = calc_fp(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
     TN = calc_tn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp'])
-    abs_FN = xpg_tot - TP
-    asm_FN = calc_fn(pred_df['truth'], pred_df['pred'], pred_df['contig_bp']) - diff_TP
-    if asm_FN < 0:
-        asm_FN = 0
+    FN = tot_bp - TP
     # compute total possible bp for each genome
-    exa_tot_bp_poss = TP + asm_FN
+    exa_tot_bp_poss = inter_TP + FN
     # Complete SRC genome is not always present in contigs, need to correct for that.
-    # working_bp = tot_bp - TP - FN
-    # corrected_FN = FN + working_bp
-    x_list = calc_stats(sag_id, 'exact_assembly', algo, TP, FP, TN, asm_FN,
+    working_bp = tot_bp - TP - FN
+    corrected_FN = FN + working_bp
+    x_list = calc_stats(sag_id, 'exact_assembly', algo, TP, FP, TN, FN,
                         pred_df['truth'], pred_df['pred']
                         )
-    corr_x_list = calc_stats(sag_id, 'exact_absolute', algo, TP, FP, TN, abs_FN,
+    corr_x_list = calc_stats(sag_id, 'exact_absolute', algo, TP, FP, TN, corrected_FN,
                              pred_df['truth'], pred_df['pred']
                              )
 

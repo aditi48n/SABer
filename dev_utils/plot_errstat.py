@@ -1,7 +1,6 @@
 import os
 import sys
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns
@@ -369,6 +368,7 @@ keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
+sys.exit()
 temp_cat_df = sample_metrics_df.copy()
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
@@ -476,8 +476,7 @@ sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                         )['ext_nc_uniq'].sum().reset_index()
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)
-print(sum_binstat_df)
-sys.exit()
+
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,

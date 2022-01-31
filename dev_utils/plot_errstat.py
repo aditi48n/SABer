@@ -464,7 +464,7 @@ p_df = pd.pivot_table(data=ex_abs_single_df,
                       values='mq_avg_p',
                       columns='dataset')
 print(p_df.head())
-p = sns.heatmap(p_df, cmap='coolwarm')
+p = sns.heatmap(p_df, cmap='coolwarm', vmax=1.0, robust=True)
 
 p.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_P.heatmap.png'),
                  dpi=300, bbox_inches="tight"
@@ -477,7 +477,7 @@ r_df = pd.pivot_table(data=ex_abs_single_df,
                       values='mq_avg_r',
                       columns='dataset')
 print(r_df.head())
-r = sns.heatmap(r_df, cmap='coolwarm')
+r = sns.heatmap(r_df, cmap='coolwarm', vmax=1.0, robust=True)
 
 r.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_R.heatmap.png'),
                  dpi=300, bbox_inches="tight"
@@ -490,7 +490,7 @@ mcc_df = pd.pivot_table(data=ex_abs_single_df,
                         values='mq_avg_mcc',
                         columns='dataset')
 print(mcc_df.head())
-mcc = sns.heatmap(mcc_df, cmap='coolwarm')
+mcc = sns.heatmap(mcc_df, cmap='coolwarm', vmax=1.0, robust=True)
 
 mcc.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_MCC.heatmap.png'),
                    dpi=300, bbox_inches="tight"

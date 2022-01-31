@@ -457,61 +457,6 @@ barie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.barplot.png'),
 plt.clf()
 plt.close()
 
-print(sub_binstat_df.head())
-ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'strain_absolute'")
-p_df = pd.pivot_table(data=ex_abs_single_df,
-                      index='binner',
-                      values='mq_avg_p',
-                      columns='dataset')
-print(p_df.head())
-p = sns.heatmap(p_df, cmap='coolwarm', vmax=1.0, robust=True)
-
-p.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_P.heatmap.png'),
-                 dpi=300, bbox_inches="tight"
-                 )
-plt.clf()
-plt.close()
-
-r_df = pd.pivot_table(data=ex_abs_single_df,
-                      index='binner',
-                      values='mq_avg_r',
-                      columns='dataset')
-print(r_df.head())
-r = sns.heatmap(r_df, cmap='coolwarm', vmax=1.0, robust=True)
-
-r.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_R.heatmap.png'),
-                 dpi=300, bbox_inches="tight"
-                 )
-plt.clf()
-plt.close()
-
-mcc_df = pd.pivot_table(data=ex_abs_single_df,
-                        index='binner',
-                        values='mq_avg_mcc',
-                        columns='dataset')
-print(mcc_df.head())
-mcc = sns.heatmap(mcc_df, cmap='coolwarm', vmax=1.0, robust=True)
-
-mcc.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_MCC.heatmap.png'),
-                   dpi=300, bbox_inches="tight"
-                   )
-plt.clf()
-plt.close()
-
-cnt_df = pd.pivot_table(data=ex_abs_single_df,
-                        index='binner',
-                        values='ext_mq_uniq',
-                        columns='dataset')
-print(cnt_df.head())
-cnt = sns.heatmap(cnt_df, cmap='coolwarm', robust=True)
-
-cnt.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_CNT.heatmap.png'),
-                   dpi=300, bbox_inches="tight"
-                   )
-plt.clf()
-plt.close()
-
-flurp
 # Boxplots for precision
 boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
                     col="level_mode", col_wrap=2,
@@ -550,7 +495,8 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_MCC.boxplot.png'),
               )
 plt.clf()
 plt.close()
-
+print(sub_binstat_df.head())
+flurp
 ########################################################################################################################
 ##### RUN MQ STATS #####################################################################################################
 ########################################################################################################################

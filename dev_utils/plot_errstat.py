@@ -369,7 +369,7 @@ keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
-temp_cat_df = dataset_metrics_df.copy()
+temp_cat_df = sample_metrics_df.copy()
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
@@ -405,6 +405,30 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.boxplot.png'),
               )
 plt.clf()
 plt.close()
+
+temp_cat_df = dataset_metrics_df.copy()
+temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
+                         if 'SABer' in x else x.split('_', 1)[0]
+                         for x in temp_cat_df['binner_config']
+                         ]
+temp_filter_df = temp_cat_df.query("binner not in @filter_list")
+sub_binstat_df = temp_filter_df.query("binner_config in @keep_binners_list & "
+                                      "level_mode in @keep_levmod_list"
+                                      )
+sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
+                              sub_binstat_df['binner']
+                              ]
+sub_binstat_df['type_rank'] = [type2rank[x] for x in
+                               sub_binstat_df['dataset']
+                               ]
+sub_binstat_df['level_rank'] = [level2rank[x] for x in
+                                sub_binstat_df['level_mode']
+                                ]
+sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
+                               ], inplace=True
+                           )
+print(sub_binstat_df)
+print(sub_binstat_df['binner'].unique())
 
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
@@ -482,7 +506,7 @@ keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
-temp_cat_df = dataset_metrics_df.copy()
+temp_cat_df = sample_metrics_df.copy()
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
@@ -518,6 +542,30 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.boxplot.png'),
               )
 plt.clf()
 plt.close()
+
+temp_cat_df = dataset_metrics_df.copy()
+temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
+                         if 'SABer' in x else x.split('_', 1)[0]
+                         for x in temp_cat_df['binner_config']
+                         ]
+temp_filter_df = temp_cat_df.query("binner not in @filter_list")
+sub_binstat_df = temp_filter_df.query("binner_config in @keep_binners_list & "
+                                      "level_mode in @keep_levmod_list"
+                                      )
+sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
+                              sub_binstat_df['binner']
+                              ]
+sub_binstat_df['type_rank'] = [type2rank[x] for x in
+                               sub_binstat_df['dataset']
+                               ]
+sub_binstat_df['level_rank'] = [level2rank[x] for x in
+                                sub_binstat_df['level_mode']
+                                ]
+sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
+                               ], inplace=True
+                           )
+print(sub_binstat_df)
+print(sub_binstat_df['binner'].unique())
 
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',

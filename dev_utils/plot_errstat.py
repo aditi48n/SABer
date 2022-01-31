@@ -1,6 +1,7 @@
 import os
 import sys
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as sci_stats
 import seaborn as sns
@@ -363,21 +364,23 @@ cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
 filter_list = ['SABer_hdbscan', 'SABer_ocsvm']
 filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
 dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
+dedup_cnt_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                            in zip(dedup_cnt_df['binner_config'],
+                                                   dedup_cnt_df['level_mode']
+                                                   )]
+bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
 print(dedup_cnt_df)
-keep_binners_list = list(dedup_cnt_df['binner_config'])
-keep_levmod_list = list(dedup_cnt_df['level_mode'])
-print(keep_levmod_list)
-print(keep_binners_list)
-sys.exit()
 temp_cat_df = sample_metrics_df.copy()
+temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                           in zip(temp_cat_df['binner_config'],
+                                                  temp_cat_df['level_mode']
+                                                  )]
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
                          ]
 temp_filter_df = temp_cat_df.query("binner not in @filter_list")
-sub_binstat_df = temp_filter_df.query("binner_config in @keep_binners_list & "
-                                      "level_mode in @keep_levmod_list"
-                                      )
+sub_binstat_df = temp_filter_df.query("binner_config_level_mode in @bclm_list")
 sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
@@ -446,14 +449,16 @@ plt.clf()
 plt.close()
 
 temp_cat_df = dataset_metrics_df.copy()
+temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                           in zip(temp_cat_df['binner_config'],
+                                                  temp_cat_df['level_mode']
+                                                  )]
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
                          ]
 temp_filter_df = temp_cat_df.query("binner not in @filter_list")
-sub_binstat_df = temp_filter_df.query("binner_config in @keep_binners_list & "
-                                      "level_mode in @keep_levmod_list"
-                                      )
+sub_binstat_df = temp_filter_df.query("binner_config_level_mode in @bclm_list")
 sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
@@ -547,14 +552,16 @@ keep_levmod_list = list(dedup_cnt_df['level_mode'])
 print(keep_levmod_list)
 print(keep_binners_list)
 temp_cat_df = sample_metrics_df.copy()
+temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                           in zip(temp_cat_df['binner_config'],
+                                                  temp_cat_df['level_mode']
+                                                  )]
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
                          ]
 temp_filter_df = temp_cat_df.query("binner not in @filter_list")
-sub_binstat_df = temp_filter_df.query("binner_config in @keep_binners_list & "
-                                      "level_mode in @keep_levmod_list"
-                                      )
+sub_binstat_df = temp_filter_df.query("binner_config_level_mode in @bclm_list")
 sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]
@@ -584,14 +591,16 @@ plt.clf()
 plt.close()
 
 temp_cat_df = dataset_metrics_df.copy()
+temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                           in zip(temp_cat_df['binner_config'],
+                                                  temp_cat_df['level_mode']
+                                                  )]
 temp_cat_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                          if 'SABer' in x else x.split('_', 1)[0]
                          for x in temp_cat_df['binner_config']
                          ]
 temp_filter_df = temp_cat_df.query("binner not in @filter_list")
-sub_binstat_df = temp_filter_df.query("binner_config in @keep_binners_list & "
-                                      "level_mode in @keep_levmod_list"
-                                      )
+sub_binstat_df = temp_filter_df.query("binner_config_level_mode in @bclm_list")
 sub_binstat_df['bin_rank'] = [binner2rank[x] for x in
                               sub_binstat_df['binner']
                               ]

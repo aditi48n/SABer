@@ -458,7 +458,7 @@ plt.clf()
 plt.close()
 
 print(sub_binstat_df.head())
-ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'exact_absolute'")
+ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'strain_absolute'")
 p_df = pd.pivot_table(data=ex_abs_single_df,
                       index='binner',
                       values='mq_avg_p',

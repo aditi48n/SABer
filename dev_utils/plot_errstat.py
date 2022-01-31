@@ -477,6 +477,7 @@ sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)
 print(sum_binstat_df)
+sys.exit()
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,

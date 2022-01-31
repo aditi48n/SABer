@@ -498,6 +498,19 @@ mcc.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_MCC.heatmap.png'),
 plt.clf()
 plt.close()
 
+cnt_df = pd.pivot_table(data=ex_abs_single_df,
+                        index='binner',
+                        values='ext_mq_uniq',
+                        columns='dataset')
+print(cnt_df.head())
+cnt = sns.heatmap(cnt_df, cmap='coolwarm', robust=True)
+
+cnt.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_CNT.heatmap.png'),
+                   dpi=300, bbox_inches="tight"
+                   )
+plt.clf()
+plt.close()
+
 flurp
 # Boxplots for precision
 boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",

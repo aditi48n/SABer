@@ -468,7 +468,8 @@ sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
                            )
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
-
+print(sub_binstat_df.columns)
+sys.exit()
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                          'type_rank', 'level_rank',

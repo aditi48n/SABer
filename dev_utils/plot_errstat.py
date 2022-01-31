@@ -410,6 +410,45 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.boxplot.png'),
 plt.clf()
 plt.close()
 
+# Boxplots for precision
+boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
+# Boxplots for recall
+boxie = sns.catplot(x="dataset", y="nc_avg_r", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_R.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
+# Boxplots for mcc
+boxie = sns.catplot(x="dataset", y="nc_avg_mcc", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_MCC.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = dataset_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
@@ -457,55 +496,6 @@ barie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.barplot.png'),
 plt.clf()
 plt.close()
 
-# Boxplots for precision
-boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
-                    col="level_mode", col_wrap=2,
-                    kind="box", data=sub_binstat_df, notch=True,
-                    linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
-                    )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.boxplot.png'),
-              dpi=300
-              )
-plt.clf()
-plt.close()
-
-# Boxplots for recall
-boxie = sns.catplot(x="dataset", y="nc_avg_r", hue="binner",
-                    col="level_mode", col_wrap=2,
-                    kind="box", data=sub_binstat_df, notch=True,
-                    linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
-                    )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_R.boxplot.png'),
-              dpi=300
-              )
-plt.clf()
-plt.close()
-
-# Boxplots for mcc
-boxie = sns.catplot(x="dataset", y="nc_avg_mcc", hue="binner",
-                    col="level_mode", col_wrap=2,
-                    kind="box", data=sub_binstat_df, notch=True,
-                    linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
-                    )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_MCC.boxplot.png'),
-              dpi=300
-              )
-plt.clf()
-plt.close()
-print(sub_binstat_df.head())
-print(sub_binstat_df.query("dataset == 'Air' & "
-                           "binner == 'maxbin' & "
-                           "level_mode == 'exact_absolute_single'"
-                           ).shape)
-print(sub_binstat_df.query("dataset == 'Air' & "
-                           "binner == 'maxbin' & "
-                           "level_mode == 'exact_absolute_single'"
-                           )['binner_config_level_mode'].unique()
-      )
-flurp
 ########################################################################################################################
 ##### RUN MQ STATS #####################################################################################################
 ########################################################################################################################
@@ -602,6 +592,46 @@ boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.boxplot.png'),
               )
 plt.clf()
 plt.close()
+
+# Boxplots for precision
+boxie = sns.catplot(x="dataset", y="mq_avg_p", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_P.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
+# Boxplots for recall
+boxie = sns.catplot(x="dataset", y="mq_avg_r", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_R.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
+# Boxplots for mcc
+boxie = sns.catplot(x="dataset", y="mq_avg_mcc", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=sub_binstat_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_MCC.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
+
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = dataset_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y

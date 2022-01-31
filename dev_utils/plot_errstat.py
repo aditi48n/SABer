@@ -458,7 +458,8 @@ plt.clf()
 plt.close()
 
 print(sub_binstat_df.head())
-p_df = pd.pivot_table(data=sub_binstat_df,
+ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'exact_absolute'")
+p_df = pd.pivot_table(data=ex_abs_single_df,
                       index='binner',
                       values='nc_avg_p',
                       columns='dataset')

@@ -461,14 +461,40 @@ print(sub_binstat_df.head())
 ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'exact_absolute'")
 p_df = pd.pivot_table(data=ex_abs_single_df,
                       index='binner',
-                      values='nc_avg_p',
+                      values='mq_avg_p',
                       columns='dataset')
 print(p_df.head())
 p = sns.heatmap(p_df, cmap='coolwarm')
 
-p.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
+p.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_P.heatmap.png'),
                  dpi=300, bbox_inches="tight"
                  )
+plt.clf()
+plt.close()
+
+r_df = pd.pivot_table(data=ex_abs_single_df,
+                      index='binner',
+                      values='mq_avg_r',
+                      columns='dataset')
+print(r_df.head())
+r = sns.heatmap(r_df, cmap='coolwarm')
+
+r.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_R.heatmap.png'),
+                 dpi=300, bbox_inches="tight"
+                 )
+plt.clf()
+plt.close()
+
+mcc_df = pd.pivot_table(data=ex_abs_single_df,
+                        index='binner',
+                        values='mq_avg_mcc',
+                        columns='dataset')
+print(mcc_df.head())
+mcc = sns.heatmap(mcc_df, cmap='coolwarm')
+
+mcc.figure.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_MCC.heatmap.png'),
+                   dpi=300, bbox_inches="tight"
+                   )
 plt.clf()
 plt.close()
 

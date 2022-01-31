@@ -458,26 +458,23 @@ plt.clf()
 plt.close()
 
 print(sub_binstat_df.head())
+ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'exact_absolute'")
+p_df = pd.pivot_table(data=ex_abs_single_df,
+                      index='binner',
+                      values='nc_avg_p',
+                      columns='dataset')
+print(p_df.head())
+p = sns.heatmap(ex_abs_single_df,
+                cmap='coolwarm',
+                annot=True,
+                fmt=".1f",
+                annot_kws={'size': 10},
+                cbar=False,
+                square=True)
 
-
-def draw_heatmap(*args, **kwargs):
-    data = kwargs.pop('data')
-    d = data.pivot(index=args[1], columns=args[0], values=args[2])
-    sns.heatmap(d, **kwargs)
-
-
-fg = sns.FacetGrid(sub_binstat_df, col='bin_mode', row='level')
-fg.map_dataframe(draw_heatmap, 'binner', 'dataset', 'nc_avg_p', cbar=False, cmap='coolwarm')
-# get figure background color
-facecolor = plt.gcf().get_facecolor()
-for ax in fg.axes.flat:
-    # set aspect of all axis
-    ax.set_aspect('equal', 'box-forced')
-    # set background color of axis instance
-    ax.set_axis_bgcolor(facecolor)
-fg.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
-           dpi=300
-           )
+p.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
+          dpi=300
+          )
 plt.clf()
 plt.close()
 

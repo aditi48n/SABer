@@ -493,6 +493,7 @@ barie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.barplot.png'),
               )
 plt.clf()
 plt.close()
+sum_binstat_df.to_csv(os.path.join(workdir, 'NC.sub_df.tsv'), sep='\t', index=False)
 
 ########################################################################################################################
 ##### RUN MQ STATS #####################################################################################################

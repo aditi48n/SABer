@@ -468,8 +468,7 @@ sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
                            )
 print(sub_binstat_df)
 print(sub_binstat_df['binner'].unique())
-print(list(sub_binstat_df.columns))
-sys.exit()
+
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                          'type_rank', 'level_rank',
@@ -477,6 +476,7 @@ sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                         )['ext_nc_uniq'].sum().reset_index()
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)
+print(sum_binstat_df)
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,

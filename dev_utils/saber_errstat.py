@@ -80,7 +80,7 @@ def xpg_stats(p):
     if asm_FN < 0:
         asm_FN = 0
     # compute total possible bp for each genome
-    str_tot_bp_poss = inter_TP + asm_FN
+    str_tot_bp_poss = TP + asm_FN
     str_list = calc_stats(sag_id, 'strain_assembly', algo, TP, FP, TN, asm_FN,
                           pred_df['truth_strain'], pred_df['pred']
                           )
@@ -99,7 +99,7 @@ def xpg_stats(p):
     if asm_FN < 0:
         asm_FN = 0
     # compute total possible bp for each genome
-    exa_tot_bp_poss = inter_TP + asm_FN
+    exa_tot_bp_poss = TP + asm_FN
     x_list = calc_stats(sag_id, 'exact_assembly', algo, TP, FP, TN, asm_FN,
                         pred_df['truth'], pred_df['pred']
                         )

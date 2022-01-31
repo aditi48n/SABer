@@ -458,12 +458,22 @@ plt.clf()
 plt.close()
 
 print(sub_binstat_df.head())
-ex_abs_single_df = sub_binstat_df.query("bin_mode == 'single' & level == 'exact_absolute'")
-p_df = pd.pivot_table(data=ex_abs_single_df,
-                      index='binner',
-                      values='nc_avg_p',
-                      columns='dataset')
-print(p_df.head())
+
+
+def draw_heatmap(*args, **kwargs):
+    data = kwargs.pop('data')
+    d = data.pivot(index=args[1], columns=args[0], values=args[2])
+    sns.heatmap(d, **kwargs)
+
+
+fg = sns.FacetGrid(sub_binstat_df, col='bin_mode', row='level')
+fg.map_dataframe(draw_heatmap, 'binner', 'dataset', 'nc_avg_p', cbar=False, square=True)
+fg.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.heatmap.png'),
+           dpi=300
+           )
+plt.clf()
+plt.close()
+
 flurp
 # Boxplots for precision
 boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",

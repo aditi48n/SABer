@@ -219,18 +219,22 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'mq_avg_p', 'mq_avg_r',
             ]
 cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
 cat_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t', index=False)
-
+'''
 # By sample
 cat_list = []
 for binner in bin_cat_df['binner'].unique():
-    for bin_mode in bin_cat_df['bin_mode'].unique():
-        for dataset in bin_cat_df['dataset'].unique():
-            for level in bin_cat_df['level'].unique():
-                for sample_id in bin_cat_df['sample_id'].unique():
-                    sub_err_df = bin_cat_df.query('binner == @binner & bin_mode == @bin_mode & '
-                                                  'dataset == @dataset & level == @level & '
-                                                  'sample_id == @sample_id'
-                                                  )
+    binner_df = bin_cat_df.query('binner == @binner')
+    for bin_mode in binner_df['bin_mode'].unique():
+        bin_mode_df = binner_df.query('bin_mode == @bin_mode')
+        for dataset in bin_mode_df['dataset'].unique():
+            dataset_df = bin_mode_df.query('dataset == @dataset')
+            for level in dataset_df['level'].unique():
+                level_df = dataset_df.query('level == @level')
+                for sample_id in level_df['sample_id'].unique():
+                    sub_err_df = level_df.query('binner == @binner & bin_mode == @bin_mode & '
+                                                'dataset == @dataset & level == @level & '
+                                                'sample_id == @sample_id'
+                                                )
                     if sub_err_df.shape[0] != 0:
                         print(binner, bin_mode, dataset, level, sample_id, sub_err_df.shape)
                         sub_err_df.sort_values(['precision', 'sensitivity'],
@@ -286,13 +290,15 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'sample_id', 'mq_avg_p', '
             'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq', 'ext_mq_poss',
             'ext_nc_poss', 'str_mq_poss', 'str_nc_poss'
             ]
-cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
-cat_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
-'''
+sample_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
+sample_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
+
 dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t',
                                  header=0)
+'''
 sample_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
                                 header=0)
+'''
 # below should be kept in the above processing in the future
 dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_df['level'],
                                                                 dataset_metrics_df['bin_mode']

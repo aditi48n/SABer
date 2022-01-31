@@ -460,7 +460,7 @@ plt.close()
 print(sub_binstat_df.head())
 p_df = pd.pivot_table(data=sub_binstat_df,
                       index='binner',
-                      values='precision',
+                      values='nc_avg_p',
                       columns='dataset')
 print(p_df.head())
 flurp

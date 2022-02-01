@@ -472,6 +472,8 @@ scat.figure.savefig(os.path.join(workdir,
                                  'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
                     dpi=300
                     )
+plt.ylim(0, 1.0)
+plt.xlim(0, 1.0)
 plt.clf()
 plt.close()
 flurp

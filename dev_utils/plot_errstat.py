@@ -512,7 +512,7 @@ xpg_keep_list = ['best_label', 'exact_label',
                  ]
 xpg_df = bin_cat_df.query("algorithm == 'xPG' & "
                           "level == 'strain_absolute' & "
-                          "NC_bins == 'Yes"
+                          "NC_bins == 'Yes'"
                           )[xpg_keep_list]
 print(xpg_df.head())
 print(diffdna_single_df.head())

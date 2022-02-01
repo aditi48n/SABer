@@ -479,7 +479,7 @@ R_df = pd.melt(sagxpg_single_df,
                )
 print(R_df.head())
 boxie = sns.catplot(x="sample_type", y="value", hue="variable",
-                    col='mode', row='param_set', col_wrap=2,
+                    col='mode', row='param_set',
                     kind="box", data=R_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")

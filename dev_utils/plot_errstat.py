@@ -463,7 +463,7 @@ sagxpg_single_df['xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
                           sagxpg_single_df['TotalBases_xPG']
 sagxpg_single_df['SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
                           sagxpg_single_df['TotalBases_SAG']
-sagxpg_single_df['F1_SAG'] = [calc_f1score(1.0, x) for x in sagxpg_single_df['R_SAG']]
+sagxpg_single_df['F1_SAG'] = [calc_f1score(1.0, x) for x in sagxpg_single_df['SAG']]
 sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
                               zip(sagxpg_single_df['precision'],
                                   sagxpg_single_df['sensitivity']

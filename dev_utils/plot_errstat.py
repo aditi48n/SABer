@@ -483,7 +483,6 @@ R_df.columns = ['best_label', 'dataset', 'sample_type',
                 ]
 print(R_df.head())
 cmap = sns.color_palette("muted")
-flurp
 palette_map = {'xPG': cmap[1], 'SAG': cmap[0]}
 boxie = sns.catplot(x="dataset", y="recall", hue="data_type",
                     col='mode', row='param_set',

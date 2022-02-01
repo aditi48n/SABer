@@ -333,11 +333,68 @@ dataset_metrics_df['binner_config'] = [x + '_' + y for x, y in zip(dataset_metri
 sample_metrics_df['binner_config'] = [x + '_' + y for x, y in zip(sample_metrics_df['binner'],
                                                                   sample_metrics_df['bin_mode']
                                                                   )]
+########################################################################################################################
+##### RUN NC STATS #####################################################################################################
+########################################################################################################################
+print('############################################################')
+print("RUN NC STATS")
+print('############################################################')
+cnt_df_list = []
+for level_mode in sample_metrics_df['level_mode'].unique():
+    print('############################################################')
+    print(f"The Level tested is {level_mode}")
+    print('############################################################')
+    sub_df = sample_metrics_df.query("level_mode == @level_mode")
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    fvalue, pvalue = sci_stats.f_oneway(
+        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
+          for group in sub_df['binner_config'].unique()
+          ))
+    m_comp = pairwise_tukeyhsd(endog=sub_df['ext_nc_uniq'],
+                               groups=sub_df['binner_config'],
+                               alpha=0.05
+                               )
+    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
+    print(f"\nResults of Tukey HSD test:")
+    print(m_comp)
+    stat, p = sci_stats.kruskal(
+        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
+          for group in sub_df['binner_config'].unique()
+          ))
+    print(f"\nResults of Kruskal-Wallis H Test:")
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # interpret
+    alpha = 0.05
+    if p > alpha:
+        print('Same distributions (fail to reject H0)')
+    else:
+        print('Different distributions (reject H0)')
+    count_nc_df = sub_df.groupby(['binner_config']
+                                 )['ext_nc_uniq'].sum().reset_index()
+    sorted_nc_df = count_nc_df.sort_values(by=['ext_nc_uniq'], ascending=False
+                                           ).reset_index()
+    sorted_nc_df['level_mode'] = level_mode
+    cnt_df_list.append(sorted_nc_df)
+    print(sorted_nc_df)
 
-########################################################################################################################
-##### RUN NC/MQ diffdna SAG/xPG ########################################################################################
-########################################################################################################################
+cat_cnt_df = pd.concat(cnt_df_list)
+cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
+                        if 'SABer' in x else x.split('_', 1)[0]
+                        for x in cat_cnt_df['binner_config']
+                        ]
+filter_list = ['SABer_hdbscan', 'SABer_ocsvm']
+filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
+dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
+dedup_cnt_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                            in zip(dedup_cnt_df['binner_config'],
+                                                   dedup_cnt_df['level_mode']
+                                                   )]
+dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_sample.counts.tsv'),
+                    sep='\t', index=False
+                    )
+
 # Calculate the Recall diff between SAGs and xPGs
+bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
 bin_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                           in zip(bin_cat_df['binner_config'],
                                                  bin_cat_df['level_mode']
@@ -439,68 +496,6 @@ boxie.savefig(os.path.join(workdir, 'boxplots/SABer.SAG_xPG.NC.boxplot.png'),
               )
 plt.clf()
 plt.close()
-
-flurp
-########################################################################################################################
-##### RUN NC STATS #####################################################################################################
-########################################################################################################################
-print('############################################################')
-print("RUN NC STATS")
-print('############################################################')
-cnt_df_list = []
-for level_mode in sample_metrics_df['level_mode'].unique():
-    print('############################################################')
-    print(f"The Level tested is {level_mode}")
-    print('############################################################')
-    sub_df = sample_metrics_df.query("level_mode == @level_mode")
-    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
-    fvalue, pvalue = sci_stats.f_oneway(
-        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
-          for group in sub_df['binner_config'].unique()
-          ))
-    m_comp = pairwise_tukeyhsd(endog=sub_df['ext_nc_uniq'],
-                               groups=sub_df['binner_config'],
-                               alpha=0.05
-                               )
-    print(f"Results of ANOVA test:\n The F-statistic is: {fvalue}\n The p-value is: {pvalue}")
-    print(f"\nResults of Tukey HSD test:")
-    print(m_comp)
-    stat, p = sci_stats.kruskal(
-        *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
-          for group in sub_df['binner_config'].unique()
-          ))
-    print(f"\nResults of Kruskal-Wallis H Test:")
-    print('Statistics=%.3f, p=%.3f' % (stat, p))
-    # interpret
-    alpha = 0.05
-    if p > alpha:
-        print('Same distributions (fail to reject H0)')
-    else:
-        print('Different distributions (reject H0)')
-    count_nc_df = sub_df.groupby(['binner_config']
-                                 )['ext_nc_uniq'].sum().reset_index()
-    sorted_nc_df = count_nc_df.sort_values(by=['ext_nc_uniq'], ascending=False
-                                           ).reset_index()
-    sorted_nc_df['level_mode'] = level_mode
-    cnt_df_list.append(sorted_nc_df)
-    print(sorted_nc_df)
-
-cat_cnt_df = pd.concat(cnt_df_list)
-cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
-                        if 'SABer' in x else x.split('_', 1)[0]
-                        for x in cat_cnt_df['binner_config']
-                        ]
-filter_list = ['SABer_hdbscan', 'SABer_ocsvm']
-filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
-dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
-dedup_cnt_df['binner_config_level_mode'] = [x + '_' + y for x, y
-                                            in zip(dedup_cnt_df['binner_config'],
-                                                   dedup_cnt_df['level_mode']
-                                                   )]
-dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_sample.counts.tsv'),
-                    sep='\t', index=False
-                    )
-bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
 
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")

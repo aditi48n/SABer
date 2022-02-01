@@ -401,8 +401,8 @@ bin_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                                  )]
 xpg_keep_list = ['best_label', 'exact_label',
                  'precision', 'sensitivity', 'MCC',
-                 'dataset', 'sample_id', 'mode',
-                 'param_set'
+                 'dataset', 'sample_type', 'sample_id',
+                 'mode', 'param_set'
                  ]
 bin_cat_df.rename(columns={">20Kb": "over20Kb"}, inplace=True)
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
@@ -418,37 +418,37 @@ xpg_single_df['ref_id'] = [x.rsplit('.', 1)[0]
                            for x in xpg_single_df['best_label']
                            ]
 diffxpg_single_df = xpg_single_df.merge(diffdna_single_df,
-                                        on=['ref_id', 'dataset',
+                                        on=['ref_id', 'sample_type',
                                             'sample_id', 'mode',
                                             'param_set'],
                                         how='left'
                                         )
-diff_filter_list = ['best_label', 'dataset', 'sample_id',
-                    'mode', 'param_set'
+diff_filter_list = ['best_label', 'dataset', 'sample_type',
+                    'sample_id', 'mode', 'param_set'
                     ]
 aln_single_df = diffxpg_single_df.pivot_table(values='AlignedBases',
                                               index=diff_filter_list,
                                               columns='tag'
                                               ).reset_index()
-aln_single_df.columns = ['best_label', 'dataset', 'sample_id',
-                         'mode', 'param_set', 'AlignedBases_SAG',
-                         'AlignedBases_xPG'
+aln_single_df.columns = ['best_label', 'dataset', 'sample_type',
+                         'sample_id', 'mode', 'param_set',
+                         'AlignedBases_SAG', 'AlignedBases_xPG'
                          ]
 tot_single_df = diffxpg_single_df.pivot(values='TotalBases',
                                         index=diff_filter_list,
                                         columns='tag'
                                         ).reset_index()
-tot_single_df.columns = ['best_label', 'dataset', 'sample_id',
-                         'mode', 'param_set', 'TotalBases_SAG',
-                         'TotalBases_xPG'
+tot_single_df.columns = ['best_label', 'dataset', 'sample_type',
+                         'sample_id', 'mode', 'param_set',
+                         'TotalBases_SAG', 'TotalBases_xPG'
                          ]
 unaln_single_df = diffxpg_single_df.pivot(values='UnalignedBases',
                                           index=diff_filter_list,
                                           columns='tag'
                                           ).reset_index()
-unaln_single_df.columns = ['best_label', 'dataset', 'sample_id',
-                           'mode', 'param_set', 'UnalignedBases_SAG',
-                           'UnalignedBases_xPG'
+unaln_single_df.columns = ['best_label', 'dataset', 'sample_type',
+                           'sample_id', 'mode', 'param_set',
+                           'UnalignedBases_SAG', 'UnalignedBases_xPG'
                            ]
 
 df_list = [xpg_single_df, aln_single_df,

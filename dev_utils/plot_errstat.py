@@ -408,6 +408,7 @@ bin_cat_df.rename(columns={">20Kb": "over20Kb"}, inplace=True)
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
                                  "bin_mode == 'single' & "
+                                 "NC_bins == 'Yes' & "
                                  "MQ_bins == 'Yes' & "
                                  "over20Kb == 'Yes' & "
                                  "binner_config_level_mode in @bclm_list"
@@ -467,12 +468,9 @@ sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
                               zip(sagxpg_single_df['precision'],
                                   sagxpg_single_df['sensitivity']
                                   )]
-scat = sns.regplot(x="F1_SAG", y="F1_xPG", data=sagxpg_single_df)
-'''
 scat = sns.scatterplot(data=sagxpg_single_df, x="F1_SAG", y="F1_xPG",
-                       palette="black", alpha=0.75, edgecolor='w'
+                       color="black", alpha=0.75, edgecolor='w'
                        )
-'''
 plt.ylim(0, 1.0)
 plt.xlim(0, 1.0)
 scat.figure.savefig(os.path.join(workdir,

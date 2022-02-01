@@ -407,16 +407,12 @@ xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
 xpg_single_df['ref_id'] = [x.rsplit('.', 1)[0]
                            for x in xpg_single_df['best_label']
                            ]
-print(xpg_single_df.head())
-print(diffdna_single_df.head())
-
 diffxpg_single_df = xpg_single_df.merge(diffdna_single_df,
                                         on=['ref_id', 'sample_type',
                                             'sample_id', 'mode',
                                             'param_set'],
                                         how='left'
                                         )
-print(diffxpg_single_df.head())
 diff_filter_list = ['best_label', 'sample_type', 'sample_id',
                     'mode', 'param_set'
                     ]
@@ -458,7 +454,6 @@ sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
 sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
                             sagxpg_single_df['TotalBases_SAG']
 
-print(sagxpg_single_df.head())
 scat = sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_SAG",
                        palette="blue", alpha=0.75
                        )
@@ -466,10 +461,10 @@ sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_xPG",
                 palette="oranage", alpha=0.75
                 )
 
-scat.savefig(os.path.join(workdir,
-                          'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
-             dpi=300
-             )
+scat.figure.savefig(os.path.join(workdir,
+                                 'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
+                    dpi=300
+                    )
 plt.clf()
 plt.close()
 flurp

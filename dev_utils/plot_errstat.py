@@ -500,7 +500,22 @@ sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_dataset.
                       sep='\t', index=False
                       )
 
-print(bin_cat_df.head())
+# Calculate the Recall diff between SAGs and xPGs
+diffdna_single_df = pd.read_csv(diffdna_single_file, sep='\t',
+                                header=0
+                                )
+diffdna_multi_df = pd.read_csv(diffdna_multi_file, sep='\t',
+                               header=0
+                               )
+xpg_keep_list = ['best_label', 'exact_label',
+                 'precision', 'sensitivity', 'MCC'
+                 ]
+xpg_df = bin_cat_df.query("algorithm == 'xPG' & "
+                          "level == 'strain_absolute' & "
+                          "NC_bins == 'Yes"
+                          )[xpg_keep_list]
+print(xpg_df.head())
+print(diffdna_single_df.head())
 sys.exit()
 
 ########################################################################################################################

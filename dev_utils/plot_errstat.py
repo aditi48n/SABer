@@ -466,7 +466,7 @@ sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
                                   sagxpg_single_df['sensitivity']
                                   )]
 scat = sns.scatterplot(data=sagxpg_single_df, x="F1_SAG", y="F1_xPG",
-                       palette="black", alpha=0.75
+                       palette="black", alpha=0.75, edgecolor='w'
                        )
 scat.figure.savefig(os.path.join(workdir,
                                  'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),

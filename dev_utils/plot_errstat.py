@@ -459,10 +459,10 @@ sagxpg_single_df = reduce(lambda left, right:
                                    on=diff_filter_list,
                                    how='left'), df_list
                           )
-sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
-                            sagxpg_single_df['TotalBases_xPG']
-sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
-                            sagxpg_single_df['TotalBases_SAG']
+sagxpg_single_df['xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
+                          sagxpg_single_df['TotalBases_xPG']
+sagxpg_single_df['SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
+                          sagxpg_single_df['TotalBases_SAG']
 sagxpg_single_df['F1_SAG'] = [calc_f1score(1.0, x) for x in sagxpg_single_df['R_SAG']]
 sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
                               zip(sagxpg_single_df['precision'],
@@ -472,17 +472,22 @@ sagxpg_single_df['percent_increase'] = ((sagxpg_single_df['AlignedBases_xPG'] -
                                          sagxpg_single_df['AlignedBases_SAG']) /
                                         sagxpg_single_df['AlignedBases_SAG']
                                         ) * 100
-val_list = ['R_xPG', 'R_SAG']
+val_list = ['xPG', 'SAG']
 R_df = pd.melt(sagxpg_single_df,
                id_vars=diff_filter_list,
                value_vars=val_list
                )
+R_df.columns = ['best_label', 'dataset', 'sample_type',
+                'sample_id', 'mode', 'param_set',
+                'data_type', 'recall'
+                ]
 print(R_df.head())
-boxie = sns.catplot(x="dataset", y="value", hue="variable",
+palette_map = {'xPG': 'orange', 'SAG': 'blue'}
+boxie = sns.catplot(x="dataset", y="recall", hue="data_type",
                     col='mode', row='param_set',
                     kind="box", data=R_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=palette_map
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/SABer.SAG_xPG.NC.boxplot.png'),
               dpi=300

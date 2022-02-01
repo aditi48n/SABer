@@ -18,8 +18,10 @@ saber_multi_file = sys.argv[2]
 unitem_single_file = sys.argv[3]
 unitem_multi_file = sys.argv[4]
 vamb_multi_file = sys.argv[5]
+diffdna_single_file = sys.argv[6]
+diffdna_multi_file = sys.argv[7]
 # working directory
-workdir = sys.argv[6]
+workdir = sys.argv[8]
 
 # column renaming/mapping dictionaries
 type2label = {'CAMI_II_Airways': 'Air',
@@ -497,6 +499,10 @@ plt.close()
 sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_dataset.counts.tsv'),
                       sep='\t', index=False
                       )
+
+print(bin_cat_df.head())
+sys.exit()
+
 ########################################################################################################################
 ##### RUN MQ STATS #####################################################################################################
 ########################################################################################################################

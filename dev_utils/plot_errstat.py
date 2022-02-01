@@ -476,7 +476,8 @@ sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                          'type_rank', 'level_rank',
-                                         'level_mode', 'dataset']
+                                         'level_mode', 'dataset',
+                                         'binner_config_level_mode']
                                         )['ext_nc_uniq'].sum().reset_index()
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)
@@ -656,7 +657,8 @@ sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                          'type_rank', 'level_rank',
-                                         'level_mode', 'dataset']
+                                         'level_mode', 'dataset',
+                                         'binner_config_level_mode']
                                         )['ext_mq_uniq'].sum().reset_index()
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)

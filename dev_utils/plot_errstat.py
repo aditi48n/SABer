@@ -421,6 +421,10 @@ aln_single_df = diffxpg_single_df.pivot_table(values='AlignedBases',
                                                      ],
                                               columns='tag'
                                               ).reset_index()
+aln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
+                         'mode', 'param_set', 'AlignedBases_SAG',
+                         'AlignedBases_xPG'
+                         ]
 tot_single_df = diffxpg_single_df.pivot(values='TotalBases',
                                         index=['best_label',
                                                'sample_type',
@@ -430,6 +434,10 @@ tot_single_df = diffxpg_single_df.pivot(values='TotalBases',
                                                ],
                                         columns='tag'
                                         ).reset_index()
+tot_single_df.columns = ['best_label', 'sample_type', 'sample_id',
+                         'mode', 'param_set', 'TotalBases_SAG',
+                         'TotalBases_xPG'
+                         ]
 unaln_single_df = diffxpg_single_df.pivot(values='UnalignedBases',
                                           index=['best_label',
                                                  'sample_type',
@@ -439,6 +447,10 @@ unaln_single_df = diffxpg_single_df.pivot(values='UnalignedBases',
                                                  ],
                                           columns='tag'
                                           ).reset_index()
+unaln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
+                           'mode', 'param_set', 'UnalignedBases_SAG',
+                           'UnalignedBases_xPG'
+                           ]
 print(aln_single_df.head())
 print(tot_single_df.head())
 print(unaln_single_df.head())

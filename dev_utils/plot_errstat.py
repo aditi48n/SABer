@@ -218,8 +218,8 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'mq_avg_p', 'mq_avg_r',
             'str_mq_uniq', 'str_nc_cnt', 'str_nc_uniq', 'ext_mq_poss',
             'ext_nc_poss', 'str_mq_poss', 'str_nc_poss'
             ]
-cat_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
-cat_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t', index=False)
+dataset_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
+dataset_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t', index=False)
 
 # By sample
 cat_list = []

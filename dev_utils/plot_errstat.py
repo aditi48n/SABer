@@ -152,7 +152,7 @@ bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
 ########################################################################################################################
 ##### Calc all basic metrics ###########################################################################################
 ########################################################################################################################
-
+'''
 # By dataset
 cat_list = []
 for binner in bin_cat_df['binner'].unique():
@@ -293,11 +293,11 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'sample_id', 'mq_avg_p', '
             ]
 sample_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
 sample_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
-
-dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t',
+'''
+dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'tables/ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t',
                                  header=0)
 
-sample_metrics_df = pd.read_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
+sample_metrics_df = pd.read_csv(os.path.join(workdir, 'tables/ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
                                 header=0)
 
 # below should be kept in the above processing in the future
@@ -369,8 +369,10 @@ dedup_cnt_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                             in zip(dedup_cnt_df['binner_config'],
                                                    dedup_cnt_df['level_mode']
                                                    )]
+dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_sample.counts.tsv'),
+                    sep='\t', index=False
+                    )
 bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
-print(dedup_cnt_df)
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
@@ -395,8 +397,6 @@ sub_binstat_df['level_rank'] = [level2rank[x] for x in
 sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
                                ], inplace=True
                            )
-print(sub_binstat_df)
-print(sub_binstat_df['binner'].unique())
 
 # Boxplots for mode and param set
 boxie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
@@ -405,7 +405,7 @@ boxie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -418,7 +418,7 @@ boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_P.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_P.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -431,7 +431,7 @@ boxie = sns.catplot(x="dataset", y="nc_avg_r", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_R.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_R.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -444,7 +444,7 @@ boxie = sns.catplot(x="dataset", y="nc_avg_mcc", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC_MCC.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_MCC.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -474,9 +474,6 @@ sub_binstat_df['level_rank'] = [level2rank[x] for x in
 sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
                                ], inplace=True
                            )
-print(sub_binstat_df)
-print(sub_binstat_df['binner'].unique())
-
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                          'type_rank', 'level_rank',
@@ -491,12 +488,15 @@ barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     linewidth=0.75, saturation=0.75,
                     palette=sns.color_palette("muted")
                     )
-barie.savefig(os.path.join(workdir, 'ALL_BINNERS.NC.barplot.png'),
+barie.savefig(os.path.join(workdir, 'barplots/ALL_BINNERS.NC.barplot.png'),
               dpi=300
               )
 plt.clf()
 plt.close()
 
+sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_dataset.counts.tsv'),
+                      sep='\t', index=False
+                      )
 ########################################################################################################################
 ##### RUN MQ STATS #####################################################################################################
 ########################################################################################################################
@@ -549,11 +549,11 @@ cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
 filter_list = ['SABer_hdbscan', 'SABer_ocsvm']
 filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
 dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
-print(dedup_cnt_df)
+dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.MQ.uniq_sample.counts.tsv'),
+                    sep='\t', index=False
+                    )
 keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
-print(keep_levmod_list)
-print(keep_binners_list)
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
@@ -578,9 +578,6 @@ sub_binstat_df['level_rank'] = [level2rank[x] for x in
 sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
                                ], inplace=True
                            )
-print(sub_binstat_df)
-print(sub_binstat_df['binner'].unique())
-
 # Boxplots for mode and param set
 boxie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
@@ -588,7 +585,7 @@ boxie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -601,7 +598,7 @@ boxie = sns.catplot(x="dataset", y="mq_avg_p", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_P.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_P.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -614,7 +611,7 @@ boxie = sns.catplot(x="dataset", y="mq_avg_r", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_R.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_R.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -627,7 +624,7 @@ boxie = sns.catplot(x="dataset", y="mq_avg_mcc", hue="binner",
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")
                     )
-boxie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ_MCC.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_MCC.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -657,9 +654,6 @@ sub_binstat_df['level_rank'] = [level2rank[x] for x in
 sub_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'
                                ], inplace=True
                            )
-print(sub_binstat_df)
-print(sub_binstat_df['binner'].unique())
-
 # Barplots for mode and param set
 sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                          'type_rank', 'level_rank',
@@ -673,11 +667,15 @@ barie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
                     linewidth=0.75, saturation=0.75,
                     palette=sns.color_palette("muted")
                     )
-barie.savefig(os.path.join(workdir, 'ALL_BINNERS.MQ.barplot.png'),
+barie.savefig(os.path.join(workdir, 'barplots/ALL_BINNERS.MQ.barplot.png'),
               dpi=300
               )
 plt.clf()
 plt.close()
+
+sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.MQ.uniq_dataset.counts.tsv'),
+                      sep='\t', index=False
+                      )
 
 sys.exit()
 ########################################################################################################################

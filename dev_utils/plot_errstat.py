@@ -459,26 +459,12 @@ sagxpg_single_df = reduce(lambda left, right:
                                    on=diff_filter_list,
                                    how='left'), df_list
                           )
-sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
-                            sagxpg_single_df['TotalBases_xPG']
-sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
-                            sagxpg_single_df['TotalBases_SAG']
-sagxpg_single_df['F1_SAG'] = [calc_f1score(1.0, x) for x in sagxpg_single_df['R_SAG']]
-sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
-                              zip(sagxpg_single_df['precision'],
-                                  sagxpg_single_df['sensitivity']
-                                  )]
-scat = sns.scatterplot(data=sagxpg_single_df, x="F1_SAG", y="F1_xPG",
-                       color="black", alpha=0.75, edgecolor='w'
-                       )
-plt.ylim(0.8, 1.0)
-plt.xlim(0, 1.0)
-scat.figure.savefig(os.path.join(workdir,
-                                 'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
-                    dpi=300
-                    )
-plt.clf()
-plt.close()
+sagxpg_single_df['percent_increase'] = ((sagxpg_single_df['AlignedBases_xPG'] -
+                                         sagxpg_single_df['AlignedBases_SAG']) /
+                                        sagxpg_single_df['AlignedBases_SAG']
+                                        ) * 100
+print(sagxpg_single_df.head())
+
 flurp
 
 keep_level = ['exact_absolute', 'strain_absolute']

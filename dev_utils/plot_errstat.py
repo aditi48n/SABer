@@ -412,19 +412,33 @@ diffxpg_single_df = xpg_df.merge(diffdna_single_df,
                                  how='left'
                                  )
 print(diffxpg_single_df.head())
-aln_single_df = diffxpg_single_df.pivot(index='best_label',
-                                        columns='tag',
-                                        values='AlignedBases'
+aln_single_df = diffxpg_single_df.pivot_table(values='AlignedBases',
+                                              index=['best_label',
+                                                     'sample_type',
+                                                     'sample_id',
+                                                     'mode',
+                                                     'param_set'
+                                                     ],
+                                              columns='tag'
+                                              )
+tot_single_df = diffxpg_single_df.pivot(values='TotalBases',
+                                        index=['best_label',
+                                               'sample_type',
+                                               'sample_id',
+                                               'mode',
+                                               'param_set'
+                                               ],
+                                        columns='tag'
                                         )
-tot_single_df = diffxpg_single_df.pivot(index='best_label',
-                                        columns='tag',
-                                        values='TotalBases'
-                                        )
-unaln_single_df = diffxpg_single_df.pivot(index='best_label',
-                                          columns='tag',
-                                          values='UnalignedBases'
+unaln_single_df = diffxpg_single_df.pivot(values='UnalignedBases',
+                                          index=['best_label',
+                                                 'sample_type',
+                                                 'sample_id',
+                                                 'mode',
+                                                 'param_set'
+                                                 ],
+                                          columns='tag'
                                           )
-
 print(aln_single_df.head())
 print(tot_single_df.head())
 print(unaln_single_df.head())

@@ -83,7 +83,12 @@ saber_multi_df = pd.read_csv(saber_multi_file, header=0, sep='\t')
 unitem_single_df = pd.read_csv(unitem_single_file, header=0, sep='\t')
 unitem_multi_df = pd.read_csv(unitem_multi_file, header=0, sep='\t')
 vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
-
+diffdna_single_df = pd.read_csv(diffdna_single_file, sep='\t',
+                                header=0
+                                )
+diffdna_multi_df = pd.read_csv(diffdna_multi_file, sep='\t',
+                               header=0
+                               )
 # Unify table formats
 # col_order = ['binner', 'bin_mode', 'level', 'sample_type', 'sample_id',
 #             'best_label', 'precision', 'sensitivity', 'MCC', 'F1',
@@ -374,6 +379,28 @@ dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_sample.cou
                     sep='\t', index=False
                     )
 bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
+
+# Calculate the Recall diff between SAGs and xPGs
+bin_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
+                                          in zip(bin_cat_df['binner_config'],
+                                                 bin_cat_df['level_mode']
+                                                 )]
+xpg_keep_list = ['best_label', 'exact_label',
+                 'precision', 'sensitivity', 'MCC',
+                 'sample_type', 'sample_id', 'mode',
+                 'param_set'
+                 ]
+xpg_df = bin_cat_df.query("algorithm == 'xPG' & "
+                          "level == 'strain_absolute' & "
+                          "NC_bins == 'Yes' & "
+                          "binner_config_level_mode in @bclm_list"
+                          )[xpg_keep_list]
+xpg_df['ref_id'] = [x.rsplit('.', 1)[0] for x in xpg_df['best_label']]
+diffxpg_single_df = xpg_df.merge(diffdna_single_df, on='ref_id', how='left')
+print(xpg_df.head())
+print(diffdna_single_df.head())
+print(diffxpg_single_df.head())
+
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
@@ -500,22 +527,6 @@ sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_dataset.
                       sep='\t', index=False
                       )
 
-# Calculate the Recall diff between SAGs and xPGs
-diffdna_single_df = pd.read_csv(diffdna_single_file, sep='\t',
-                                header=0
-                                )
-diffdna_multi_df = pd.read_csv(diffdna_multi_file, sep='\t',
-                               header=0
-                               )
-xpg_keep_list = ['best_label', 'exact_label',
-                 'precision', 'sensitivity', 'MCC'
-                 ]
-xpg_df = bin_cat_df.query("algorithm == 'xPG' & "
-                          "level == 'strain_absolute' & "
-                          "NC_bins == 'Yes'"
-                          )[xpg_keep_list]
-print(xpg_df.head())
-print(diffdna_single_df.head())
 sys.exit()
 
 ########################################################################################################################

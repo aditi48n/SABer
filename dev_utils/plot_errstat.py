@@ -96,6 +96,12 @@ diffdna_multi_df = pd.read_csv(diffdna_multi_file, sep='\t',
 #             '>20Kb', 'NC_bins', 'MQ_bins'
 #             ]
 # SABer first
+diffdna_single_df['sample_id'] = ['S' + str(x) for x in
+                                  diffdna_single_df['sample_id']
+                                  ]
+diffdna_multi_df['sample_id'] = ['S' + str(x) for x in
+                                 diffdna_multi_df['sample_id']
+                                 ]
 saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                              for x, y, z in
                              zip(saber_single_df['algorithm'],

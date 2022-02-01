@@ -404,7 +404,7 @@ xpg_keep_list = ['best_label', 'exact_label',
                  'sample_type', 'sample_id', 'mode',
                  'param_set'
                  ]
-bin_cat_df.replace(columns={">20Kb": "20Kb"}, inplace=True)
+bin_cat_df.rename(columns={">20Kb": "20Kb"}, inplace=True)
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
                                  "bin_mode == 'single' & "

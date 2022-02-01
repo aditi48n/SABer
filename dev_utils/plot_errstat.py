@@ -396,11 +396,16 @@ xpg_df = bin_cat_df.query("algorithm == 'xPG' & "
                           "binner_config_level_mode in @bclm_list"
                           )[xpg_keep_list]
 xpg_df['ref_id'] = [x.rsplit('.', 1)[0] for x in xpg_df['best_label']]
-diffxpg_single_df = xpg_df.merge(diffdna_single_df, on='ref_id', how='left')
+diffxpg_single_df = xpg_df.merge(diffdna_single_df,
+                                 on=['ref_id', 'sample_type',
+                                     'sample_id', 'mode',
+                                     'param_set'],
+                                 how='left'
+                                 )
 print(xpg_df.head())
 print(diffdna_single_df.head())
 print(diffxpg_single_df.head())
-
+flurp
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y

@@ -397,21 +397,24 @@ xpg_keep_list = ['best_label', 'exact_label',
                  'sample_type', 'sample_id', 'mode',
                  'param_set'
                  ]
-xpg_df = bin_cat_df.query("algorithm == 'xPG' & "
-                          "level == 'strain_absolute' & "
-                          "NC_bins == 'Yes' & "
-                          "binner_config_level_mode in @bclm_list"
-                          )[xpg_keep_list]
-xpg_df['ref_id'] = [x.rsplit('.', 1)[0] for x in xpg_df['best_label']]
-print(xpg_df.head())
+xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
+                                 "level == 'strain_absolute' & "
+                                 "mode == 'single' & "
+                                 "NC_bins == 'Yes' & "
+                                 "binner_config_level_mode in @bclm_list"
+                                 )[xpg_keep_list]
+xpg_single_df['ref_id'] = [x.rsplit('.', 1)[0]
+                           for x in xpg_single_df['best_label']
+                           ]
+print(xpg_single_df.head())
 print(diffdna_single_df.head())
 
-diffxpg_single_df = xpg_df.merge(diffdna_single_df,
-                                 on=['ref_id', 'sample_type',
-                                     'sample_id', 'mode',
-                                     'param_set'],
-                                 how='left'
-                                 )
+diffxpg_single_df = xpg_single_df.merge(diffdna_single_df,
+                                        on=['ref_id', 'sample_type',
+                                            'sample_id', 'mode',
+                                            'param_set'],
+                                        how='left'
+                                        )
 print(diffxpg_single_df.head())
 diff_filter_list = ['best_label', 'sample_type', 'sample_id',
                     'mode', 'param_set'
@@ -440,10 +443,10 @@ unaln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
                            'mode', 'param_set', 'UnalignedBases_SAG',
                            'UnalignedBases_xPG'
                            ]
-print(aln_single_df.head())
-print(tot_single_df.head())
-print(unaln_single_df.head())
-df_list = [xpg_df, aln_single_df, tot_single_df, unaln_single_df]
+
+df_list = [xpg_single_df, aln_single_df,
+           tot_single_df, unaln_single_df
+           ]
 sagxpg_single_df = reduce(lambda left, right:
                           pd.merge(left, right,
                                    on=diff_filter_list,
@@ -455,7 +458,19 @@ sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
                             sagxpg_single_df['TotalBases_SAG']
 
 print(sagxpg_single_df.head())
+scat = sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_SAG",
+                       palette="blue", alpha=0.75
+                       )
+sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_xPG",
+                palette="oranage", alpha=0.75
+                )
 
+scat.savefig(os.path.join(workdir,
+                          'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
+             dpi=300
+             )
+plt.clf()
+plt.close()
 flurp
 
 keep_level = ['exact_absolute', 'strain_absolute']

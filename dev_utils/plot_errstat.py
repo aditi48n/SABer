@@ -459,11 +459,37 @@ sagxpg_single_df = reduce(lambda left, right:
                                    on=diff_filter_list,
                                    how='left'), df_list
                           )
+sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
+                            sagxpg_single_df['TotalBases_xPG']
+sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
+                            sagxpg_single_df['TotalBases_SAG']
+sagxpg_single_df['F1_SAG'] = [calc_f1score(1.0, x) for x in sagxpg_single_df['R_SAG']]
+sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
+                              zip(sagxpg_single_df['precision'],
+                                  sagxpg_single_df['sensitivity']
+                                  )]
 sagxpg_single_df['percent_increase'] = ((sagxpg_single_df['AlignedBases_xPG'] -
                                          sagxpg_single_df['AlignedBases_SAG']) /
                                         sagxpg_single_df['AlignedBases_SAG']
                                         ) * 100
-print(sagxpg_single_df.head())
+val_list = ['R_xPG', 'R_SAG']
+R_df = pd.melt(sagxpg_single_df,
+               id_vars=diff_filter_list,
+               value_vars=val_list
+               )
+print(R_df.head())
+flurp
+boxie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
+                    col="level_mode", col_wrap=2,
+                    kind="box", data=R_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=sns.color_palette("muted")
+                    )
+boxie.savefig(os.path.join(workdir, 'boxplots/SABer.SAG_xPG.NC.boxplot.png'),
+              dpi=300
+              )
+plt.clf()
+plt.close()
 
 flurp
 

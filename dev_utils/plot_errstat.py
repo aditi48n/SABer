@@ -465,9 +465,14 @@ sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
                               zip(sagxpg_single_df['precision'],
                                   sagxpg_single_df['sensitivity']
                                   )]
+scat = sns.regplot(x="F1_SAG", y="F1_xPG", data=sagxpg_single_df,
+                   alpha=0.75, edgecolor='w'
+                   )
+'''
 scat = sns.scatterplot(data=sagxpg_single_df, x="F1_SAG", y="F1_xPG",
                        palette="black", alpha=0.75, edgecolor='w'
                        )
+'''
 scat.figure.savefig(os.path.join(workdir,
                                  'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
                     dpi=300

@@ -397,6 +397,8 @@ xpg_keep_list = ['best_label', 'exact_label',
                  'sample_type', 'sample_id', 'mode',
                  'param_set'
                  ]
+print(bin_cat_df.head())
+flurp
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
                                  "mode == 'single' & "

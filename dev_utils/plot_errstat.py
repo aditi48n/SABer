@@ -477,10 +477,8 @@ R_df = pd.melt(sagxpg_single_df,
                id_vars=diff_filter_list,
                value_vars=val_list
                )
-print(R_df.head())
-flurp
-boxie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
-                    col="level_mode", col_wrap=2,
+boxie = sns.catplot(x="dataset", y="value", hue="variable",
+                    col='mode', row='param_set', col_wrap=2,
                     kind="box", data=R_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=sns.color_palette("muted")

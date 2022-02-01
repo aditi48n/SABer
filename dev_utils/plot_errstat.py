@@ -407,10 +407,12 @@ xpg_keep_list = ['best_label', 'exact_label',
 
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
-                                 "bin_mode == 'multi' & "
-                                 "NC_bins == 'Yes' & "
+                                 "bin_mode == 'single' & "
+                                 "MQ_bins == 'Yes' & "
                                  "binner_config_level_mode in @bclm_list"
                                  )[xpg_keep_list]
+print(bin_cat_df.head())
+flurp
 xpg_single_df['ref_id'] = [x.rsplit('.', 1)[0]
                            for x in xpg_single_df['best_label']
                            ]

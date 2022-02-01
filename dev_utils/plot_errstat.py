@@ -18,9 +18,8 @@ saber_multi_file = sys.argv[2]
 unitem_single_file = sys.argv[3]
 unitem_multi_file = sys.argv[4]
 vamb_multi_file = sys.argv[5]
-
 # working directory
-workdir = os.path.dirname(saber_single_file)
+workdir = sys.argv[6]
 
 # column renaming/mapping dictionaries
 type2label = {'CAMI_II_Airways': 'Air',

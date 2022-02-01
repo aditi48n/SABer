@@ -401,7 +401,7 @@ bin_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                                  )]
 xpg_keep_list = ['best_label', 'exact_label',
                  'precision', 'sensitivity', 'MCC',
-                 'sample_type', 'sample_id', 'mode',
+                 'dataset', 'sample_id', 'mode',
                  'param_set'
                  ]
 bin_cat_df.rename(columns={">20Kb": "over20Kb"}, inplace=True)
@@ -418,19 +418,19 @@ xpg_single_df['ref_id'] = [x.rsplit('.', 1)[0]
                            for x in xpg_single_df['best_label']
                            ]
 diffxpg_single_df = xpg_single_df.merge(diffdna_single_df,
-                                        on=['ref_id', 'sample_type',
+                                        on=['ref_id', 'dataset',
                                             'sample_id', 'mode',
                                             'param_set'],
                                         how='left'
                                         )
-diff_filter_list = ['best_label', 'sample_type', 'sample_id',
+diff_filter_list = ['best_label', 'dataset', 'sample_id',
                     'mode', 'param_set'
                     ]
 aln_single_df = diffxpg_single_df.pivot_table(values='AlignedBases',
                                               index=diff_filter_list,
                                               columns='tag'
                                               ).reset_index()
-aln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
+aln_single_df.columns = ['best_label', 'dataset', 'sample_id',
                          'mode', 'param_set', 'AlignedBases_SAG',
                          'AlignedBases_xPG'
                          ]
@@ -438,7 +438,7 @@ tot_single_df = diffxpg_single_df.pivot(values='TotalBases',
                                         index=diff_filter_list,
                                         columns='tag'
                                         ).reset_index()
-tot_single_df.columns = ['best_label', 'sample_type', 'sample_id',
+tot_single_df.columns = ['best_label', 'dataset', 'sample_id',
                          'mode', 'param_set', 'TotalBases_SAG',
                          'TotalBases_xPG'
                          ]
@@ -446,7 +446,7 @@ unaln_single_df = diffxpg_single_df.pivot(values='UnalignedBases',
                                           index=diff_filter_list,
                                           columns='tag'
                                           ).reset_index()
-unaln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
+unaln_single_df.columns = ['best_label', 'dataset', 'sample_id',
                            'mode', 'param_set', 'UnalignedBases_SAG',
                            'UnalignedBases_xPG'
                            ]
@@ -478,7 +478,7 @@ R_df = pd.melt(sagxpg_single_df,
                value_vars=val_list
                )
 print(R_df.head())
-boxie = sns.catplot(x="sample_type", y="value", hue="variable",
+boxie = sns.catplot(x="dataset", y="value", hue="variable",
                     col='mode', row='param_set',
                     kind="box", data=R_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,

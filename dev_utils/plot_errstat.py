@@ -1,5 +1,6 @@
 import os
 import sys
+from functools import reduce
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -412,13 +413,11 @@ diffxpg_single_df = xpg_df.merge(diffdna_single_df,
                                  how='left'
                                  )
 print(diffxpg_single_df.head())
+diff_filter_list = ['best_label', 'sample_type', 'sample_id',
+                    'mode', 'param_set'
+                    ]
 aln_single_df = diffxpg_single_df.pivot_table(values='AlignedBases',
-                                              index=['best_label',
-                                                     'sample_type',
-                                                     'sample_id',
-                                                     'mode',
-                                                     'param_set'
-                                                     ],
+                                              index=diff_filter_list,
                                               columns='tag'
                                               ).reset_index()
 aln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
@@ -426,12 +425,7 @@ aln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
                          'AlignedBases_xPG'
                          ]
 tot_single_df = diffxpg_single_df.pivot(values='TotalBases',
-                                        index=['best_label',
-                                               'sample_type',
-                                               'sample_id',
-                                               'mode',
-                                               'param_set'
-                                               ],
+                                        index=diff_filter_list,
                                         columns='tag'
                                         ).reset_index()
 tot_single_df.columns = ['best_label', 'sample_type', 'sample_id',
@@ -439,12 +433,7 @@ tot_single_df.columns = ['best_label', 'sample_type', 'sample_id',
                          'TotalBases_xPG'
                          ]
 unaln_single_df = diffxpg_single_df.pivot(values='UnalignedBases',
-                                          index=['best_label',
-                                                 'sample_type',
-                                                 'sample_id',
-                                                 'mode',
-                                                 'param_set'
-                                                 ],
+                                          index=diff_filter_list,
                                           columns='tag'
                                           ).reset_index()
 unaln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
@@ -454,6 +443,13 @@ unaln_single_df.columns = ['best_label', 'sample_type', 'sample_id',
 print(aln_single_df.head())
 print(tot_single_df.head())
 print(unaln_single_df.head())
+df_list = [xpg_df, aln_single_df, tot_single_df, unaln_single_df]
+sagxpg_single_df = reduce(lambda left, right:
+                          pd.merge(left, right,
+                                   on=diff_filter_list,
+                                   how='left'), df_list
+                          )
+print(sagxpg_single_df.head())
 
 flurp
 

@@ -14,6 +14,19 @@ pd.set_option('max_columns', None)
 # plot aestetics
 sns.set_context("paper")
 
+
+def calc_mcc(TP, TN, FP, FN):
+    N = TN + TP + FN + FP
+    S = (TP + FN) / N
+    P = (TP + FP) / N
+    D = ((S * P) * (1 - S) * (1 - P)) ** (1 / 2)
+    if D == 0:
+        D = 1
+    MCC = ((TP / N) - S * P) / D
+
+    return MCC
+
+
 saber_single_file = sys.argv[1]
 saber_multi_file = sys.argv[2]
 unitem_single_file = sys.argv[3]
@@ -453,6 +466,12 @@ sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
                             sagxpg_single_df['TotalBases_xPG']
 sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
                             sagxpg_single_df['TotalBases_SAG']
+print(sagxpg_single_df.head())
+flurp
+sagxpg_single_df['MCC_SAG'] = [calc_mcc(TP, TN, FP, FN)
+                               for x in zip(sagxpg_single_df['AlignedBases_SAG'],
+                                            sagxpg_single_df['TotalBases_SAG']
+                                            )]
 
 scat = sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_SAG",
                        palette="blue", alpha=0.75

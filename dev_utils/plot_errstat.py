@@ -481,6 +481,7 @@ R_df.columns = ['best_label', 'dataset', 'sample_type',
                 'sample_id', 'mode', 'param_set',
                 'data_type', 'recall'
                 ]
+R_df.sort_values(by=['data_type'], inplace=True)
 print(R_df.head())
 cmap = sns.color_palette("muted")
 palette_map = {'xPG': cmap[1], 'SAG': cmap[0]}

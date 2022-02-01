@@ -449,6 +449,11 @@ sagxpg_single_df = reduce(lambda left, right:
                                    on=diff_filter_list,
                                    how='left'), df_list
                           )
+sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
+                            sagxpg_single_df['TotalBases_xPG']
+sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
+                            sagxpg_single_df['TotalBases_SAG']
+
 print(sagxpg_single_df.head())
 
 flurp

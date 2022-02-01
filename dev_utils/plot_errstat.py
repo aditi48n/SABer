@@ -411,9 +411,26 @@ diffxpg_single_df = xpg_df.merge(diffdna_single_df,
                                      'param_set'],
                                  how='left'
                                  )
-
 print(diffxpg_single_df.head())
+aln_single_df = diffxpg_single_df.pivot(index='best_label',
+                                        columns='tag',
+                                        values='AlignedBases'
+                                        )
+tot_single_df = diffxpg_single_df.pivot(index='best_label',
+                                        columns='tag',
+                                        values='TotalBases'
+                                        )
+unaln_single_df = diffxpg_single_df.pivot(index='best_label',
+                                          columns='tag',
+                                          values='UnalignedBases'
+                                          )
+
+print(aln_single_df.head())
+print(tot_single_df.head())
+print(unaln_single_df.head())
+
 flurp
+
 keep_level = ['exact_absolute', 'strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y

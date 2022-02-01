@@ -404,12 +404,12 @@ xpg_keep_list = ['best_label', 'exact_label',
                  'sample_type', 'sample_id', 'mode',
                  'param_set'
                  ]
-
+bin_cat_df.replace(columns={">20Kb": "20Kb"}, inplace=True)
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
                                  "bin_mode == 'single' & "
                                  "MQ_bins == 'Yes' & "
-                                 ">20Kb == 'Yes' & "
+                                 "20Kb == 'Yes' & "
                                  "binner_config_level_mode in @bclm_list"
                                  )[xpg_keep_list]
 

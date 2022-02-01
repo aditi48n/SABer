@@ -15,16 +15,10 @@ pd.set_option('max_columns', None)
 sns.set_context("paper")
 
 
-def calc_mcc(TP, TN, FP, FN):
-    N = TN + TP + FN + FP
-    S = (TP + FN) / N
-    P = (TP + FP) / N
-    D = ((S * P) * (1 - S) * (1 - P)) ** (1 / 2)
-    if D == 0:
-        D = 1
-    MCC = ((TP / N) - S * P) / D
+def calc_f1score(P, R):
+    F1_score = 2 * ((P * R) / (P + R))
 
-    return MCC
+    return F1_score
 
 
 saber_single_file = sys.argv[1]
@@ -466,20 +460,14 @@ sagxpg_single_df['R_xPG'] = sagxpg_single_df['AlignedBases_xPG'] / \
                             sagxpg_single_df['TotalBases_xPG']
 sagxpg_single_df['R_SAG'] = sagxpg_single_df['AlignedBases_SAG'] / \
                             sagxpg_single_df['TotalBases_SAG']
-print(sagxpg_single_df.head())
-flurp
-sagxpg_single_df['MCC_SAG'] = [calc_mcc(TP, TN, FP, FN)
-                               for x in zip(sagxpg_single_df['AlignedBases_SAG'],
-                                            sagxpg_single_df['TotalBases_SAG']
-                                            )]
-
-scat = sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_SAG",
-                       palette="blue", alpha=0.75
+sagxpg_single_df['F1_SAG'] = [calc_f1score(1.0, x) for x in sagxpg_single_df['R_SAG']]
+sagxpg_single_df['F1_xPG'] = [calc_f1score(x, y) for x, y in
+                              zip(sagxpg_single_df['precision'],
+                                  sagxpg_single_df['sensitivity']
+                                  )]
+scat = sns.scatterplot(data=sagxpg_single_df, x="F1_SAG", y="F1_xPG",
+                       palette="black", alpha=0.75
                        )
-sns.scatterplot(data=sagxpg_single_df, x="R_SAG", y="R_xPG",
-                palette="oranage", alpha=0.75
-                )
-
 scat.figure.savefig(os.path.join(workdir,
                                  'scatters/ALL_BINNERS.SAG_xPG.single.NC.scatters.png'),
                     dpi=300

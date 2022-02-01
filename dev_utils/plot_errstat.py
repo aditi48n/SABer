@@ -399,8 +399,6 @@ bin_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                           in zip(bin_cat_df['binner_config'],
                                                  bin_cat_df['level_mode']
                                                  )]
-print(bin_cat_df.head())
-flurp
 xpg_keep_list = ['best_label', 'exact_label',
                  'precision', 'sensitivity', 'MCC',
                  'dataset', 'sample_id', 'mode',

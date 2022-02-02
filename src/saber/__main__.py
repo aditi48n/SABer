@@ -48,6 +48,8 @@ def main():
 
     cmd = commands.get(args.command)
     print(8)
+    print(sys.argv[2:])
+    print(args.command)
     cmd(sys.argv[2:])
     logging.info("SABer has finished successfully.\n")
 

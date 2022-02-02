@@ -84,13 +84,14 @@ level2rank = {'exact_assembly_single': 0,
               'strain_assembly_multi': 6,
               'strain_absolute_multi': 7
               }
-cmap = sns.color_palette("muted")
+cmap = sns.color_palette()
+cmap_muted = sns.color_palette("muted")
 cmap_pastel = sns.color_palette("pastel")
-binner2cmap = {'maxbin': cmap[0],
-               'metabat': cmap_pastel[2],
-               'metabat2': cmap[2],
-               'VAMB': cmap[4],
-               'SABer_denovo': cmap[3],
+binner2cmap = {'maxbin': cmap_pastel[0],
+               'metabat': cmap_pastel[9],
+               'metabat2': cmap_pastel[2],
+               'VAMB': cmap_pastel[4],
+               'SABer_denovo': cmap_pastel[3],
                'SABer_intersect': cmap_pastel[1],
                'SABer_xPG': cmap[1]
                }
@@ -493,7 +494,7 @@ R_df.columns = ['best_label', 'dataset', 'sample_type',
                 ]
 R_df['type_rank'] = [type2rank[x] for x in R_df['dataset']]
 R_df.sort_values(by=['data_type', 'type_rank'], inplace=True)
-palette_map = {'xPG': cmap[1], 'SAG': cmap[0]}
+palette_map = {'xPG': cmap_muted[1], 'SAG': cmap_muted[0]}
 boxie = sns.catplot(x="dataset", y="recall", hue="data_type",
                     col='mode', row='param_set',
                     kind="box", data=R_df, notch=True,

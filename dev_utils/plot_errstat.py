@@ -497,7 +497,8 @@ boxie.savefig(os.path.join(workdir, 'boxplots/SABer.SAG_xPG.NC.boxplot.png'),
 plt.clf()
 plt.close()
 
-keep_level = ['exact_absolute', 'strain_absolute']
+# keep_level = ['exact_absolute', 'strain_absolute']
+keep_level = ['strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
@@ -574,7 +575,8 @@ boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_MCC.boxplot.png'),
 plt.clf()
 plt.close()
 
-keep_level = ['exact_absolute', 'strain_absolute']
+# keep_level = ['exact_absolute', 'strain_absolute']
+keep_level = ['strain_absolute']
 temp_cat_df = dataset_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
@@ -606,7 +608,6 @@ sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                         )['ext_nc_uniq'].sum().reset_index()
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)
-
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,
@@ -682,7 +683,8 @@ dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.MQ.uniq_sample.cou
                     )
 keep_binners_list = list(dedup_cnt_df['binner_config'])
 keep_levmod_list = list(dedup_cnt_df['level_mode'])
-keep_level = ['exact_absolute', 'strain_absolute']
+# keep_level = ['exact_absolute', 'strain_absolute']
+keep_level = ['strain_absolute']
 temp_cat_df = sample_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],
@@ -758,7 +760,8 @@ boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_MCC.boxplot.png'),
 plt.clf()
 plt.close()
 
-keep_level = ['exact_absolute', 'strain_absolute']
+# keep_level = ['exact_absolute', 'strain_absolute']
+keep_level = ['strain_absolute']
 temp_cat_df = dataset_metrics_df.copy().query("level in @keep_level")
 temp_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                            in zip(temp_cat_df['binner_config'],

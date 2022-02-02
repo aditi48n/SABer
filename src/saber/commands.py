@@ -57,6 +57,8 @@ def recruit(sys_args):
     :param sys_args: List of arguments parsed from the command-line.
     :return: None
     """
+    logging.info("Welcome to SABer!\nStarting recruitment process...")
+
     parser = s_args.SABerArgumentParser(description="Recruit environmental reads to reference contigs.")
     parser.add_recruit_args()
     args = parser.parse_args(sys_args)
@@ -77,8 +79,6 @@ def recruit(sys_args):
     recruit_s.vr, recruit_s.r = args.vr_params, args.r_params
     recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
     recruit_s.a = args.auto_params
-
-    logging.info("Welcome to SABer!\nStarting recruitment process...")
 
     # Quick check to see which mode was selected
     mode_list = [recruit_s.vr, recruit_s.r, recruit_s.s, recruit_s.vs]

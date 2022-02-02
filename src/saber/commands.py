@@ -57,8 +57,6 @@ def recruit(sys_args):
     :param sys_args: List of arguments parsed from the command-line.
     :return: None
     """
-    logging.info("Welcome to SABer!\nStarting recruitment process...\n")
-
     parser = s_args.SABerArgumentParser(description="Recruit environmental reads to reference contigs.")
     parser.add_recruit_args()
     args = parser.parse_args(sys_args)

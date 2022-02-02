@@ -84,6 +84,16 @@ level2rank = {'exact_assembly_single': 0,
               'strain_assembly_multi': 6,
               'strain_absolute_multi': 7
               }
+cmap = sns.color_palette("muted")
+cmap_pastel = sns.color_palette("pastel")
+binner2cmap = {'maxbin': cmap[0],
+               'metabat': cmap_pastel[2],
+               'metabat2': cmap[2],
+               'VAMB': cmap[4],
+               'SABer_denovo': cmap[3],
+               'SABer_intersect': cmap_pastel[1],
+               'SABer_xPG': cmap[1]
+               }
 
 # Load stats tables
 saber_single_df = pd.read_csv(saber_single_file, header=0, sep='\t')
@@ -483,7 +493,6 @@ R_df.columns = ['best_label', 'dataset', 'sample_type',
                 ]
 R_df['type_rank'] = [type2rank[x] for x in R_df['dataset']]
 R_df.sort_values(by=['data_type', 'type_rank'], inplace=True)
-cmap = sns.color_palette("muted")
 palette_map = {'xPG': cmap[1], 'SAG': cmap[0]}
 boxie = sns.catplot(x="dataset", y="recall", hue="data_type",
                     col='mode', row='param_set',
@@ -528,7 +537,7 @@ boxie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC.boxplot.png'),
               dpi=300
@@ -541,7 +550,7 @@ boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_P.boxplot.png'),
               dpi=300
@@ -554,7 +563,7 @@ boxie = sns.catplot(x="dataset", y="nc_avg_r", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_R.boxplot.png'),
               dpi=300
@@ -567,7 +576,7 @@ boxie = sns.catplot(x="dataset", y="nc_avg_mcc", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_MCC.boxplot.png'),
               dpi=300
@@ -612,7 +621,7 @@ barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,
                     linewidth=0.75, saturation=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 barie.savefig(os.path.join(workdir, 'barplots/ALL_BINNERS.NC.barplot.png'),
               dpi=300
@@ -713,7 +722,7 @@ boxie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ.boxplot.png'),
               dpi=300
@@ -726,7 +735,7 @@ boxie = sns.catplot(x="dataset", y="mq_avg_p", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_P.boxplot.png'),
               dpi=300
@@ -739,7 +748,7 @@ boxie = sns.catplot(x="dataset", y="mq_avg_r", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_R.boxplot.png'),
               dpi=300
@@ -752,7 +761,7 @@ boxie = sns.catplot(x="dataset", y="mq_avg_mcc", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_MCC.boxplot.png'),
               dpi=300
@@ -797,7 +806,7 @@ barie = sns.catplot(x="dataset", y="ext_mq_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,
                     linewidth=0.75, saturation=0.75,
-                    palette=sns.color_palette("muted")
+                    palette=binner2cmap
                     )
 barie.savefig(os.path.join(workdir, 'barplots/ALL_BINNERS.MQ.barplot.png'),
               dpi=300

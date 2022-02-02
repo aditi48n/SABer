@@ -416,6 +416,18 @@ xpg_keep_list = ['best_label', 'exact_label',
                  'mode', 'param_set'
                  ]
 bin_cat_df.rename(columns={">20Kb": "over20Kb"}, inplace=True)
+
+# output best config P, R, and MCC to table
+metric_df = bin_cat_df.query("level == 'strain_absolute' & "
+                             "NC_bins == 'Yes' & "
+                             "MQ_bins == 'Yes' & "
+                             "over20Kb == 'Yes' & "
+                             "binner_config_level_mode in @bclm_list"
+                             )
+metric_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.metrics.tsv'),
+                 sep='\t', index=False
+                 )
+
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
                                  "bin_mode == 'single' & "

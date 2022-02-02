@@ -494,7 +494,7 @@ R_df.columns = ['best_label', 'dataset', 'sample_type',
                 ]
 R_df['type_rank'] = [type2rank[x] for x in R_df['dataset']]
 R_df.sort_values(by=['data_type', 'type_rank'], inplace=True)
-palette_map = {'xPG': cmap_muted[1], 'SAG': cmap_muted[0]}
+palette_map = {'xPG': cmap_muted[1], 'SAG': cmap_muted[7]}
 boxie = sns.catplot(x="dataset", y="recall", hue="data_type",
                     col='mode', row='param_set',
                     kind="box", data=R_df, notch=True,

@@ -32,8 +32,7 @@ def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,
     # Clean up the directory
     logging.info('Cleaning up intermediate files...\n')
     for s in ["*.sam", "*.bam", "*.stderr.txt", "*.stdout.txt"]:
-        if 'sorted' not in s:
-            s_utils.runCleaner(abr_path, s)
+        s_utils.runCleaner(abr_path, s)
 
     return mg_scale_out, mg_covm_out
 

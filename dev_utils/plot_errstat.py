@@ -419,19 +419,19 @@ bin_cat_df.rename(columns={">20Kb": "over20Kb"}, inplace=True)
 
 # output best config P, R, and MCC to table
 metric_df = bin_cat_df.query("level == 'strain_absolute' & "
-                             "NC_bins == 'Yes' & "
+                             # "NC_bins == 'Yes' & "
                              "MQ_bins == 'Yes' & "
                              "over20Kb == 'Yes' & "
                              "binner_config_level_mode in @bclm_list"
                              )
-metric_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.metrics.tsv'),
+metric_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.MQ.metrics.tsv'),
                  sep='\t', index=False
                  )
 
 xpg_single_df = bin_cat_df.query("algorithm == 'xPG' & "
                                  "level == 'strain_absolute' & "
                                  "bin_mode == 'single' & "
-                                 "NC_bins == 'Yes' & "
+                                 #"NC_bins == 'Yes' & "
                                  "MQ_bins == 'Yes' & "
                                  "over20Kb == 'Yes' & "
                                  "binner_config_level_mode in @bclm_list"
@@ -512,7 +512,7 @@ boxie = sns.catplot(x="dataset", y="recall", hue="data_type",
                     alpha=0.50, jitter=0.25,
                     data=R_df, palette=palette_map
                     )
-boxie.savefig(os.path.join(workdir, 'boxplots/SABer.SAG_xPG.NC.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/SABer.SAG_xPG.MQ.boxplot.png'),
               dpi=300
               )
 plt.clf()
@@ -558,39 +558,39 @@ plt.clf()
 plt.close()
 
 # Boxplots for precision
-boxie = sns.catplot(x="dataset", y="nc_avg_p", hue="binner",
+boxie = sns.catplot(x="dataset", y="mq_avg_p", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=binner2cmap
                     )
-boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_P.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_P.boxplot.png'),
               dpi=300
               )
 plt.clf()
 plt.close()
 
 # Boxplots for recall
-boxie = sns.catplot(x="dataset", y="nc_avg_r", hue="binner",
+boxie = sns.catplot(x="dataset", y="mq_avg_r", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=binner2cmap
                     )
-boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_R.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_R.boxplot.png'),
               dpi=300
               )
 plt.clf()
 plt.close()
 
 # Boxplots for mcc
-boxie = sns.catplot(x="dataset", y="nc_avg_mcc", hue="binner",
+boxie = sns.catplot(x="dataset", y="mq_avg_mcc", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="box", data=sub_binstat_df, notch=True,
                     linewidth=0.75, saturation=0.75, width=0.75,
                     palette=binner2cmap
                     )
-boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.NC_MCC.boxplot.png'),
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.MQ_MCC.boxplot.png'),
               dpi=300
               )
 plt.clf()

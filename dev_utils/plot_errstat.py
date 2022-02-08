@@ -659,7 +659,8 @@ size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             for x in size_filter_df['binner_config']
                             ]
 scattie = sns.scatterplot(x="sensitivity", y="precision",
-                          hue="binner", palette=binner2cmap
+                          hue="binner", palette=binner2cmap,
+                          data=size_filter_df
                           )
 scattie.savefig(os.path.join(workdir, 'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
                 dpi=300

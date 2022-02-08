@@ -416,6 +416,7 @@ xpg_keep_list = ['best_label', 'exact_label',
                  'mode', 'param_set'
                  ]
 bin_cat_df.rename(columns={">20Kb": "over20Kb"}, inplace=True)
+bin_cat_df['bin_bp'] = bin_cat_df['TP'] + bin_cat_df['FP']
 
 # output best config P, R, and MCC to table
 metric_df = bin_cat_df.query("level == 'strain_absolute' & "
@@ -659,21 +660,22 @@ size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             if 'SABer' in x else x.split('_', 1)[0]
                             for x in size_filter_df['binner_config']
                             ]
-avg_df = size_filter_df.groupby(['binner', 'bin_mode']
-                                )['precision', 'sensitivity'].mean().reset_index()
-# scattie = sns.scatterplot(x="sensitivity", y="precision",
-#                          hue="binner", col="bin_mode",
-#                          palette=binner2cmap, data=avg_df
-#                          )
-rellie = sns.relplot(data=avg_df, x="sensitivity", y="precision",
-                     col="bin_mode", hue="binner", style="binner",
-                     kind="scatter", palette=binner2cmap
-                     )
-rellie.savefig(
-    os.path.join(workdir,
-                 'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
-    dpi=300
-)
+indices = ['binner', 'bin_mode']
+cols = ['precision', 'sensitivity', 'mcc']
+piv_metric_df = pd.melt(size_filter_df, id_vars=indices,
+                        value_vars=cols, var_name='metric',
+                        value_name='value'
+                        )
+# Boxplots of metrics for bins >=200Kbp
+boxie = sns.catplot(x="metric", y="value", hue="binner",
+                    col="bin_mode", col_wrap=2,
+                    kind="box", data=piv_metric_df, notch=True,
+                    linewidth=0.75, saturation=0.75, width=0.75,
+                    palette=binner2cmap
+                    )
+boxie.savefig(os.path.join(workdir, 'boxplots/ALL_BINNERS.200Kbp.boxplot.png'),
+              dpi=300)
+
 plt.clf()
 plt.close()
 print(size_filter_df.head())

@@ -653,7 +653,6 @@ sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_dataset.
 bin_cat_df['bin_bp'] = bin_cat_df['TP'] + bin_cat_df['FP']
 size_filter_df = bin_cat_df.query("level == 'strain_absolute' & "
                                   "bin_bp >= 200000 & "
-                                  "MQ_bins == 'Yes' & "
                                   "binner_config_level_mode in @bclm_list"
                                   )
 size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]

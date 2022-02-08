@@ -385,7 +385,9 @@ for level_mode in sample_metrics_df['level_mode'].unique():
     for bc0 in bc_list:
         bc0_df = sub_df.query('binner_config == @bc0')
         for bc1 in bc_list:
-            if bc0 != bc1:
+            if ((bc0 != bc1) &
+                    (bc0.split('_', 1)[0] != bc1.split('_', 1)[0])
+            ):
                 bc1_df = sub_df.query('binner_config == @bc1')
                 print('Comparing:', bc0, 'and', bc1)
                 wc_stat = sci_stats.wilcoxon(bc0_df['ext_nc_uniq'],

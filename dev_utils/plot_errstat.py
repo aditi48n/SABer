@@ -654,8 +654,7 @@ size_filter_df = bin_cat_df.query("level == 'strain_absolute' & "
                                   "bin_bp >= 200000 &"
                                   "binner_config_level_mode in @bclm_list"
                                   )
-print(bin_cat_df.shape)
-print(size_filter_df.shape)
+print(size_filter_df.head())
 flurp
 
 ########################################################################################################################

@@ -658,9 +658,11 @@ size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             if 'SABer' in x else x.split('_', 1)[0]
                             for x in size_filter_df['binner_config']
                             ]
+avg_df = size_filter_df.groupby(['binner']
+                                )['precision', 'sensitivity'].mean().reset_index()
 scattie = sns.scatterplot(x="sensitivity", y="precision",
                           hue="binner", palette=binner2cmap,
-                          data=size_filter_df
+                          data=avg_df
                           )
 scattie.figure.savefig(
     os.path.join(workdir,

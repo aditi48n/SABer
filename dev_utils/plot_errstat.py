@@ -661,7 +661,7 @@ size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             for x in size_filter_df['binner_config']
                             ]
 indices = ['binner', 'bin_mode']
-cols = ['precision', 'sensitivity', 'mcc']
+cols = ['precision', 'sensitivity', 'MCC']
 piv_metric_df = pd.melt(size_filter_df, id_vars=indices,
                         value_vars=cols, var_name='metric',
                         value_name='value'

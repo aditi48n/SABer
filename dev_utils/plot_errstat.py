@@ -669,7 +669,7 @@ rellie = sns.relplot(data=avg_df, x="sensitivity", y="precision",
                      col="bin_mode", hue="binner", style="binner",
                      kind="scatter", palette=binner2cmap
                      )
-rellie.figure.savefig(
+rellie.savefig(
     os.path.join(workdir,
                  'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
     dpi=300

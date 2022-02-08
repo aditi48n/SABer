@@ -351,7 +351,7 @@ print('############################################################')
 print("RUN NC STATS")
 print('############################################################')
 cnt_df_list = []
-for level_mode in sample_metrics_df['level_mode'].unique():
+for level_mode in dataset_metrics_df['level_mode'].unique():
     print('############################################################')
     print(f"The Level tested is {level_mode}")
     print('############################################################')
@@ -387,7 +387,7 @@ for level_mode in sample_metrics_df['level_mode'].unique():
     sorted_nc_df['level_mode'] = level_mode
     cnt_df_list.append(sorted_nc_df)
     print(sorted_nc_df)
-
+flurp
 cat_cnt_df = pd.concat(cnt_df_list)
 cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                         if 'SABer' in x else x.split('_', 1)[0]

@@ -661,11 +661,15 @@ size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             ]
 avg_df = size_filter_df.groupby(['binner', 'bin_mode']
                                 )['precision', 'sensitivity'].mean().reset_index()
-scattie = sns.scatterplot(x="sensitivity", y="precision",
-                          hue="binner", col="bin_mode",
-                          palette=binner2cmap, data=avg_df
-                          )
-scattie.figure.savefig(
+# scattie = sns.scatterplot(x="sensitivity", y="precision",
+#                          hue="binner", col="bin_mode",
+#                          palette=binner2cmap, data=avg_df
+#                          )
+rellie = sns.relplot(data=avg_df, x="sensitivity", y="precision",
+                     col="bin_mode", hue="binner", style="binner",
+                     kind="scatter", palette=binner2cmap
+                     )
+rellie.figure.savefig(
     os.path.join(workdir,
                  'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
     dpi=300

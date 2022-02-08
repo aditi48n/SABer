@@ -355,7 +355,7 @@ for level_mode in dataset_metrics_df['level_mode'].unique():
     print('############################################################')
     print(f"The Level tested is {level_mode}")
     print('############################################################')
-    sub_df = sample_metrics_df.query("level_mode == @level_mode")
+    sub_df = dataset_metrics_df.query("level_mode == @level_mode")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = sci_stats.f_oneway(
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']

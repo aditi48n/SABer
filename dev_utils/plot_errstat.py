@@ -652,18 +652,18 @@ sum_binstat_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_dataset.
 bin_cat_df['bin_bp'] = bin_cat_df['TP'] + bin_cat_df['FP']
 size_filter_df = bin_cat_df.query("level == 'strain_absolute' & "
                                   "bin_bp >= 200000 & "
-                                  "bin_bp <= 8000000 & "
+                                  "bin_bp <= 6000000 & "
                                   "binner_config_level_mode in @bclm_list"
                                   )
 size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             if 'SABer' in x else x.split('_', 1)[0]
                             for x in size_filter_df['binner_config']
                             ]
-avg_df = size_filter_df.groupby(['binner']
+avg_df = size_filter_df.groupby(['binner', 'bin_mode']
                                 )['precision', 'sensitivity'].mean().reset_index()
 scattie = sns.scatterplot(x="sensitivity", y="precision",
-                          hue="binner", palette=binner2cmap,
-                          data=avg_df
+                          hue="binner", col="bin_mode",
+                          palette=binner2cmap, data=avg_df
                           )
 scattie.figure.savefig(
     os.path.join(workdir,

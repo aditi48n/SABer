@@ -654,7 +654,20 @@ size_filter_df = bin_cat_df.query("level == 'strain_absolute' & "
                                   "bin_bp >= 200000 &"
                                   "binner_config_level_mode in @bclm_list"
                                   )
+size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
+                            if 'SABer' in x else x.split('_', 1)[0]
+                            for x in size_filter_df['binner_config']
+                            ]
+scattie = sns.scatterplot(x="sensitivity", y="precision",
+                          hue="binner", palette=binner2cmap
+                          )
+scattie.savefig(os.path.join(workdir, 'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
+                dpi=300
+                )
+plt.clf()
+plt.close()
 print(size_filter_df.head())
+
 flurp
 
 ########################################################################################################################

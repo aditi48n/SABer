@@ -662,9 +662,11 @@ scattie = sns.scatterplot(x="sensitivity", y="precision",
                           hue="binner", palette=binner2cmap,
                           data=size_filter_df
                           )
-scattie.savefig(os.path.join(workdir, 'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
-                dpi=300
-                )
+scattie.figure.savefig(
+    os.path.join(workdir,
+                 'scatterplots/ALL_BINNERS.200Kbp.scatter.png'),
+    dpi=300
+)
 plt.clf()
 plt.close()
 print(size_filter_df.head())

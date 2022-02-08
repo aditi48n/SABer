@@ -351,11 +351,11 @@ print('############################################################')
 print("RUN NC STATS")
 print('############################################################')
 cnt_df_list = []
-for level_mode in dataset_metrics_df['level_mode'].unique():
+for level_mode in sample_metrics_df['level_mode'].unique():
     print('############################################################')
     print(f"The Level tested is {level_mode}")
     print('############################################################')
-    sub_df = dataset_metrics_df.query("level_mode == @level_mode")
+    sub_df = sample_metrics_df.query("level_mode == @level_mode")
     # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
     fvalue, pvalue = sci_stats.f_oneway(
         *(sub_df.loc[sub_df['binner_config'] == group, 'ext_nc_uniq']
@@ -380,6 +380,13 @@ for level_mode in dataset_metrics_df['level_mode'].unique():
         print('Same distributions (fail to reject H0)')
     else:
         print('Different distributions (reject H0)')
+    # Use Shapiro test for normality
+    for binner_config in sub_df['binner_config'].unique():
+        bc_df = sub_df.query('binner_config == @binner_config')
+        print(binner_config)
+        print(sci_stats.shapiro(bc_df['ext_nc_uniq']))
+    flurp
+
     count_nc_df = sub_df.groupby(['binner_config']
                                  )['ext_nc_uniq'].sum().reset_index()
     sorted_nc_df = count_nc_df.sort_values(by=['ext_nc_uniq'], ascending=False
@@ -387,7 +394,7 @@ for level_mode in dataset_metrics_df['level_mode'].unique():
     sorted_nc_df['level_mode'] = level_mode
     cnt_df_list.append(sorted_nc_df)
     print(sorted_nc_df)
-flurp
+
 cat_cnt_df = pd.concat(cnt_df_list)
 cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                         if 'SABer' in x else x.split('_', 1)[0]
@@ -660,7 +667,7 @@ size_filter_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                             for x in size_filter_df['binner_config']
                             ]
 indices = ['binner', 'bin_mode']
-cols = ['precision', 'sensitivity', 'F1']
+cols = ['precision', 'sensitivity', 'MCC', 'F1']
 piv_metric_df = pd.melt(size_filter_df, id_vars=indices,
                         value_vars=cols, var_name='metric',
                         value_name='value'

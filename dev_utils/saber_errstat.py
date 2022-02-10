@@ -636,6 +636,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
+    print(src2contig_df.head())
     print(clust2src_df.head())
     flurp
 

@@ -418,7 +418,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
 
     # builds the sag to cami ID mapping file
-    if 'CAMI_II' in synsrc_path:
+    if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
         cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')
         cami_genome2id_df = pd.read_csv(cami_genome2id_file, sep='\t', header=None)
         cami_genome2id_df.columns = ['CAMI_genomeID', 'src_genome']

@@ -637,7 +637,12 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                          on='contig_id', how='left'
                                          )
     print(src2contig_df.head())
+    print('BREAK')
     print(clust2src_df.head())
+    print('BREAK')
+    print(cluster_trim_df.merge(src2contig_df,
+                                on='contig_id', how='left'
+                                ))
     flurp
 
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}

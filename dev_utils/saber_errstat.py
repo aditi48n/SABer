@@ -4,7 +4,6 @@ import difflib
 import glob
 import logging
 import multiprocessing
-import os
 import subprocess
 from functools import reduce
 from os import makedirs, path, listdir
@@ -380,8 +379,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
     src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src2id_df['file']]
     src_stats_df = src2id_df.merge(src_cnt_df, on='src_id')
-    print(src_stats_df.head())
-    flurp
+
     # Map genome id and contig id to taxid for error analysis
     sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
     sag_taxmap_df['sp_taxid'] = [int(x) for x in sag_taxmap_df['@@TAXID']]
@@ -552,7 +550,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
-    # '''
+    '''
     ###################################################################################################
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
@@ -610,7 +608,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     dnadiff_df.to_csv(dnadiff_file, index=False, sep='\t')
     '''
     dnadiff_df = pd.read_csv(joinpath(err_path, 'diffdna_allrefs.tsv'), sep='\t', header=0)
-    '''
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################
@@ -625,6 +622,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
+    print(clust2src_df.head())
+    flurp
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # subset recruit dataframes

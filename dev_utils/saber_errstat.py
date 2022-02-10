@@ -617,7 +617,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    src2contig_df['sample_id'] = 0
+    src2contig_df['sample_id'] = 'S0'  # hack for MGE, remove afterwards
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],

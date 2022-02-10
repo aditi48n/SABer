@@ -438,127 +438,127 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         cami_genome2id_dict = dict(zip(cami_genome2id_df['src_genome'],
                                        cami_genome2id_df['CAMI_genomeID']
                                        ))
-    try:
-        if isfile(src2mock_file):
-            src_mock_err_df = pd.read_csv(src2mock_file, sep='\t', header=0)
-        else:
-            # list all source genomes
-            src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
-                               if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna' or
-                                    f.split('.')[-1] == 'fa') and
-                                   'Sample' not in f)
-                               ]
-            # list all mockSAGs
-            mocksag_list = [joinpath(mocksag_path, f) for f in listdir(mocksag_path)
-                            if (f.split('.')[-1] == 'fasta')
-                            ]
-            src_mock_list = src_genome_list + mocksag_list
-            # count total bp's for each src and mock fasta
-            print('Counting basepairs of trusted contigs...')
-            pool = multiprocessing.Pool(processes=nthreads)
-            arg_list = []
-            for fa_file in mocksag_list:
-                arg_list.append(fa_file)
-            results = pool.imap_unordered(cnt_total_bp, arg_list)
-            fa_bp_cnt_list = []
-            for i, output in tqdm(enumerate(results, 1)):
-                fa_file, fa_bp_cnt = output
-                f_id = fa_file.split('/')[-1].rsplit('.', 2)[0]
-                u_id = fa_file.split('/')[-1].split('.fasta')[0]
-                f_type = 'synSAG'
-                fa_bp_cnt_list.append([f_id, u_id, f_type, fa_bp_cnt])
-            logging.info('\n')
-            pool.close()
-            pool.join()
+    # try:
+    if isfile(src2mock_file):
+        src_mock_err_df = pd.read_csv(src2mock_file, sep='\t', header=0)
+    else:
+        # list all source genomes
+        src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
+                           if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna' or
+                                f.split('.')[-1] == 'fa') and
+                               'Sample' not in f)
+                           ]
+        # list all mockSAGs
+        mocksag_list = [joinpath(mocksag_path, f) for f in listdir(mocksag_path)
+                        if (f.split('.')[-1] == 'fasta')
+                        ]
+        src_mock_list = src_genome_list + mocksag_list
+        # count total bp's for each src and mock fasta
+        print('Counting basepairs of trusted contigs...')
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
+        for fa_file in mocksag_list:
+            arg_list.append(fa_file)
+        results = pool.imap_unordered(cnt_total_bp, arg_list)
+        fa_bp_cnt_list = []
+        for i, output in tqdm(enumerate(results, 1)):
+            fa_file, fa_bp_cnt = output
+            f_id = fa_file.split('/')[-1].rsplit('.', 2)[0]
+            u_id = fa_file.split('/')[-1].split('.fasta')[0]
+            f_type = 'synSAG'
+            fa_bp_cnt_list.append([f_id, u_id, f_type, fa_bp_cnt])
+        logging.info('\n')
+        pool.close()
+        pool.join()
 
-            print('Counting basepairs of source genomes...')
-            pool = multiprocessing.Pool(processes=nthreads)
-            arg_list = []
-            for fa_file in src_genome_list:
-                arg_list.append(fa_file)
-            results = pool.imap_unordered(cnt_total_bp, arg_list)
-            src_bp_cnt_list = []
-            for i, output in tqdm(enumerate(results, 1)):
-                fa_file, fa_bp_cnt = output
-                f_id = fa_file.split('/')[-1].rsplit('.', 1)[0]
-                f_type = 'src_genome'
-                src_bp_cnt_list.append([f_id, f_type, fa_bp_cnt])
-            logging.info('\n')
-            pool.close()
-            pool.join()
-            fa_bp_cnt_df = pd.DataFrame(fa_bp_cnt_list, columns=['sag_id', 'u_id', 'data_type',
-                                                                 'tot_bp_cnt'
-                                                                 ])
-            src_bp_cnt_df = pd.DataFrame(src_bp_cnt_list, columns=['sag_id', 'data_type',
-                                                                   'tot_bp_cnt'
+        print('Counting basepairs of source genomes...')
+        pool = multiprocessing.Pool(processes=nthreads)
+        arg_list = []
+        for fa_file in src_genome_list:
+            arg_list.append(fa_file)
+        results = pool.imap_unordered(cnt_total_bp, arg_list)
+        src_bp_cnt_list = []
+        for i, output in tqdm(enumerate(results, 1)):
+            fa_file, fa_bp_cnt = output
+            f_id = fa_file.split('/')[-1].rsplit('.', 1)[0]
+            f_type = 'src_genome'
+            src_bp_cnt_list.append([f_id, f_type, fa_bp_cnt])
+        logging.info('\n')
+        pool.close()
+        pool.join()
+        fa_bp_cnt_df = pd.DataFrame(fa_bp_cnt_list, columns=['sag_id', 'u_id', 'data_type',
+                                                             'tot_bp_cnt'
+                                                             ])
+        src_bp_cnt_df = pd.DataFrame(src_bp_cnt_list, columns=['sag_id', 'data_type',
+                                                               'tot_bp_cnt'
+                                                               ])
+        print(fa_bp_cnt_df.head())
+        print(src_bp_cnt_df.head())
+        merge_bp_cnt_df = fa_bp_cnt_df.merge(src_bp_cnt_df, on='sag_id', how='left')
+        unstack_cnt_df = merge_bp_cnt_df[['u_id', 'tot_bp_cnt_x', 'tot_bp_cnt_y']]
+        print(unstack_cnt_df.head())
+        unstack_cnt_df.columns = ['sag_id', 'synSAG_tot', 'src_genome_tot']
+        # calc basic stats for src and mock
+        src_mock_err_list = []
+        for ind, row in unstack_cnt_df.iterrows():
+            sag_id = row['sag_id']
+            mockSAG_tot = row['synSAG_tot']
+            src_genome_tot = row['src_genome_tot']
+            data_type_list = ['synSAG', 'src_genome']
+            for dt in data_type_list:
+                algorithm = dt
+                for level in ['domain', 'phylum', 'class', 'order',
+                              'family', 'genus', 'species', 'strain', 'exact'
+                              ]:
+                    s_m_err_list = [sag_id, algorithm, level, 0, 0, 0, 0]
+                    if dt == 'synSAG':
+                        s_m_err_list[3] += mockSAG_tot  # 'TruePos'
+                        s_m_err_list[4] += 0  # 'FalsePos'
+                        s_m_err_list[5] += src_genome_tot - mockSAG_tot  # 'FalseNeg'
+                        s_m_err_list[6] += 0  # 'TrueNeg'
+                        src_mock_err_list.append(s_m_err_list)
+        src_mock_err_df = pd.DataFrame(src_mock_err_list, columns=['sag_id', 'algorithm', 'level',
+                                                                   'TruePos', 'FalsePos',
+                                                                   'FalseNeg', 'TrueNeg'
                                                                    ])
-            print(fa_bp_cnt_df.head())
-            print(src_bp_cnt_df.head())
-            merge_bp_cnt_df = fa_bp_cnt_df.merge(src_bp_cnt_df, on='sag_id', how='left')
-            unstack_cnt_df = merge_bp_cnt_df[['u_id', 'tot_bp_cnt_x', 'tot_bp_cnt_y']]
-            print(unstack_cnt_df.head())
-            unstack_cnt_df.columns = ['sag_id', 'synSAG_tot', 'src_genome_tot']
-            # calc basic stats for src and mock
-            src_mock_err_list = []
-            for ind, row in unstack_cnt_df.iterrows():
-                sag_id = row['sag_id']
-                mockSAG_tot = row['synSAG_tot']
-                src_genome_tot = row['src_genome_tot']
-                data_type_list = ['synSAG', 'src_genome']
-                for dt in data_type_list:
-                    algorithm = dt
-                    for level in ['domain', 'phylum', 'class', 'order',
-                                  'family', 'genus', 'species', 'strain', 'exact'
-                                  ]:
-                        s_m_err_list = [sag_id, algorithm, level, 0, 0, 0, 0]
-                        if dt == 'synSAG':
-                            s_m_err_list[3] += mockSAG_tot  # 'TruePos'
-                            s_m_err_list[4] += 0  # 'FalsePos'
-                            s_m_err_list[5] += src_genome_tot - mockSAG_tot  # 'FalseNeg'
-                            s_m_err_list[6] += 0  # 'TrueNeg'
-                            src_mock_err_list.append(s_m_err_list)
-            src_mock_err_df = pd.DataFrame(src_mock_err_list, columns=['sag_id', 'algorithm', 'level',
-                                                                       'TruePos', 'FalsePos',
-                                                                       'FalseNeg', 'TrueNeg'
-                                                                       ])
-            src_mock_err_df.to_csv(src2mock_file, index=False, sep='\t')
+        src_mock_err_df.to_csv(src2mock_file, index=False, sep='\t')
 
-        if isfile(sag2cami_file):
-            sag2cami_df = pd.read_csv(sag2cami_file, sep='\t', header=0)
-        else:
-            mh_list = list(src_mock_err_df['sag_id'].unique())
-            cami_list = [str(x) for x in tax_mg_df['CAMI_genomeID'].unique()]
-            sag2cami_list = []
-            print('Mapping Sources to Synthetic SAGs...')
-            for sag_id in mh_list:
-                tmp_sag_id = sag_id
-                # special formmatting for CAMI Low Complexity data
-                if 'LC_' in tmp_sag_id[:3]:
-                    tmp_sag_id = tmp_sag_id.strip('LC_')
-                # special formatting for CAMI II data
-                if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
-                    src_id = tmp_sag_id.rsplit('.', 1)[0]
-                    match = cami_genome2id_dict[src_id]
-                    print("PASSED:", sag_id, src_id, match)
-                else:
-                    match = difflib.get_close_matches(str(tmp_sag_id), cami_list, n=1, cutoff=0)[0]
-                    m_len = len(match)
-                    sub_sag_id = tmp_sag_id[:m_len]
-                    if sub_sag_id != match:
-                        match = difflib.get_close_matches(str(sub_sag_id), cami_list, n=1, cutoff=0)[0]
-                        if match == sub_sag_id:
-                            print("PASSED:", tmp_sag_id, sub_sag_id, match)
-                        else:
-                            m1_len = len(match)
-                            sub_sag_id = tmp_sag_id[:m_len]
-                            sub_sub_id = sub_sag_id[:m1_len].split('.')[0]
-                            match = difflib.get_close_matches(str(sub_sub_id), cami_list, n=1, cutoff=0)[0]
-                            print("PASSED:", tmp_sag_id, sub_sag_id, sub_sub_id, match)
-                sag2cami_list.append([sag_id, match])
-            sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
-            sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
-    except:
-        print('Do not need mappings when no anchors...')
+    if isfile(sag2cami_file):
+        sag2cami_df = pd.read_csv(sag2cami_file, sep='\t', header=0)
+    else:
+        mh_list = list(src_mock_err_df['sag_id'].unique())
+        cami_list = [str(x) for x in tax_mg_df['CAMI_genomeID'].unique()]
+        sag2cami_list = []
+        print('Mapping Sources to Synthetic SAGs...')
+        for sag_id in mh_list:
+            tmp_sag_id = sag_id
+            # special formmatting for CAMI Low Complexity data
+            if 'LC_' in tmp_sag_id[:3]:
+                tmp_sag_id = tmp_sag_id.strip('LC_')
+            # special formatting for CAMI II data
+            if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
+                src_id = tmp_sag_id.rsplit('.', 1)[0]
+                match = cami_genome2id_dict[src_id]
+                print("PASSED:", sag_id, src_id, match)
+            else:
+                match = difflib.get_close_matches(str(tmp_sag_id), cami_list, n=1, cutoff=0)[0]
+                m_len = len(match)
+                sub_sag_id = tmp_sag_id[:m_len]
+                if sub_sag_id != match:
+                    match = difflib.get_close_matches(str(sub_sag_id), cami_list, n=1, cutoff=0)[0]
+                    if match == sub_sag_id:
+                        print("PASSED:", tmp_sag_id, sub_sag_id, match)
+                    else:
+                        m1_len = len(match)
+                        sub_sag_id = tmp_sag_id[:m_len]
+                        sub_sub_id = sub_sag_id[:m1_len].split('.')[0]
+                        match = difflib.get_close_matches(str(sub_sub_id), cami_list, n=1, cutoff=0)[0]
+                        print("PASSED:", tmp_sag_id, sub_sag_id, sub_sub_id, match)
+            sag2cami_list.append([sag_id, match])
+        sag2cami_df = pd.DataFrame(sag2cami_list, columns=['sag_id', 'CAMI_genomeID'])
+        sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
+    # except:
+    #    print('Do not need mappings when no anchors...')
     # '''
     ###################################################################################################
     # Run dnadiff on all refs, trusted contigs, and xPGs

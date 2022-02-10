@@ -550,7 +550,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
-    # '''
+    '''
     ###################################################################################################
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
@@ -609,7 +609,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     dnadiff_df.to_csv(dnadiff_file, index=False, sep='\t')
     '''
     dnadiff_df = pd.read_csv(joinpath(err_path, 'diffdna_allrefs.tsv'), sep='\t', header=0)
-    '''
+
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################
@@ -618,8 +618,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    src2contig_df['sample_id'] = 'S0'  # hack for MGE, remove afterwards
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
@@ -764,8 +763,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
-    # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    src2contig_df['sample_id'] = 'S0'  # hack for MGE, remove afterwards
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     # subset recruit dataframes
     samp_id = 'S' + str(sample_id)
@@ -867,8 +865,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
-    # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    src2contig_df['sample_id'] = 'S0'  # hack for MGE, remove afterwards
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     # subset recruit dataframes
     samp_id = 'S' + str(sample_id)
@@ -969,8 +966,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
-    # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    src2contig_df['sample_id'] = 'S0'  # hack for MGE, remove afterwards
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     # subset recruit dataframes
     samp_id = 'S' + str(sample_id)
@@ -1069,8 +1065,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
     sag2cami_df = pd.read_csv(sag2cami_file, header=0, sep='\t')
     sag2contig_df = sag2cami_df.merge(src2contig_df, on='CAMI_genomeID', how='left')
-    # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
-    src2contig_df['sample_id'] = 'S0'  # hack for MGE, remove afterwards
+    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     # subset recruit dataframes
     samp_id = 'S' + str(sample_id)

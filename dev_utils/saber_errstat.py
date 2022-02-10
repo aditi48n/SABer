@@ -418,7 +418,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
 
     # builds the sag to cami ID mapping file
-    if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
+    if 'CAMI_II' in synsrc_path:
         cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')
         cami_genome2id_df = pd.read_csv(cami_genome2id_file, sep='\t', header=None)
         cami_genome2id_df.columns = ['CAMI_genomeID', 'src_genome']
@@ -428,9 +428,16 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         cami_genome2id_dict = dict(zip(cami_genome2id_df['src_genome'],
                                        cami_genome2id_df['CAMI_genomeID']
                                        ))
-    print(cami_genome2id_dict)
-    flurp
-
+    elif 'MGE' in synsrc_path:
+        cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')
+        cami_genome2id_df = pd.read_csv(cami_genome2id_file, sep='\t', header=None)
+        cami_genome2id_df.columns = ['CAMI_genomeID', 'src_genome']
+        cami_genome2id_df['src_genome'] = [x.rsplit('/', 1)[1] for
+                                           x in cami_genome2id_df['src_genome']
+                                           ]
+        cami_genome2id_dict = dict(zip(cami_genome2id_df['src_genome'],
+                                       cami_genome2id_df['CAMI_genomeID']
+                                       ))
     # try:
     if isfile(src2mock_file):
         src_mock_err_df = pd.read_csv(src2mock_file, sep='\t', header=0)

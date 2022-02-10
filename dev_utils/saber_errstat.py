@@ -438,6 +438,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
         cami_genome2id_dict = dict(zip(cami_genome2id_df['src_genome'],
                                        cami_genome2id_df['CAMI_genomeID']
                                        ))
+    print(cami_genome2id_dict)
     # try:
     if isfile(src2mock_file):
         src_mock_err_df = pd.read_csv(src2mock_file, sep='\t', header=0)

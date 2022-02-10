@@ -416,11 +416,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     # add src total bp count
     tax_mg_df = tax_mg_df.merge(src_stats_df[['CAMI_genomeID', 'sum_len']], on='CAMI_genomeID')
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
-    print(tax_mg_df.head())
-    print(tax_mg_df.tail())
-    print(tax_mg_df['sum_len'].max())
-    print(len(tax_mg_df['CAMI_genomeID'].unique()))
-    flurp
+
     # builds the sag to cami ID mapping file
     if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
         cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')
@@ -651,6 +647,9 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                 ]
     poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
     poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
+    print(poss_bp_df.head())
+    print(poss_bp_df.tail())
+    flurp
     poss_bp_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
     poss_str_bp_df = poss_bp_df[['strain_label', 'possible_bp',
                                  'total_bp', 'asm_per_bp',

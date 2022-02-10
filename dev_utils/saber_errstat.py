@@ -379,7 +379,9 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
     src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src2id_df['file']]
     src_stats_df = src2id_df.merge(src_cnt_df, on='src_id')
-
+    print(src_stats_df.head())
+    print(src_stats_df.tail())
+    flurp
     # Map genome id and contig id to taxid for error analysis
     sag_taxmap_df = pd.read_csv(sag_tax_map, sep='\t', header=0)
     sag_taxmap_df['sp_taxid'] = [int(x) for x in sag_taxmap_df['@@TAXID']]

@@ -622,19 +622,16 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
-
+    print(src2contig_df.head())
+    print(sample_id)
+    flurp
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # subset recruit dataframes
-    if sample_id == 'N':  # hack for MGE, not a complete solution
-        samp_id = 'N'
-    else:
-        samp_id = 'S' + str(sample_id)
-    print(src2contig_df)
+    samp_id = 'S' + str(sample_id)
     src2contig_df = src2contig_df.query('sample_id == @samp_id')
     contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
-    print(src2contig_df)
-    flurp
+
     # possible bp's based on asm vs ref genome
     exact2bp_df = src2contig_df[['CAMI_genomeID', 'strain', 'sample_id', 'sum_len'
                                  ]].copy().drop_duplicates()

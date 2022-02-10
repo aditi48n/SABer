@@ -639,7 +639,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                  ]].copy().drop_duplicates()
     asm2bp_df = src2contig_df.groupby(['CAMI_genomeID', 'strain', 'sample_id']
                                       )[['bp_cnt']].sum().reset_index()
-    print(src2contig_df.head())
+    print(src2contig_df.query("CAMI_genomeID == 'Acinetobacter_soli'")
     poss_bp_df = asm2bp_df.merge(exact2bp_df, on=['CAMI_genomeID', 'strain', 'sample_id'], how='left')
     poss_bp_df.columns = ['exact_label', 'strain_label', 'sample_id', 'possible_bp', 'total_bp']
     poss_bp_df['asm_per_bp'] = [x / y for x, y in

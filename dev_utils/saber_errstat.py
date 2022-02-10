@@ -419,6 +419,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     print(tax_mg_df.head())
     print(tax_mg_df.tail())
     print(tax_mg_df['sum_len'].max())
+    print(len(tax_mg_df['CAMI_genomeID'].unique()))
     flurp
     # builds the sag to cami ID mapping file
     if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):

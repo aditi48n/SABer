@@ -639,6 +639,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                  ]].copy().drop_duplicates()
     asm2bp_df = src2contig_df.groupby(['CAMI_genomeID', 'strain', 'sample_id']
                                       )[['bp_cnt']].sum().reset_index()
+    print(exact2bp_df.head())
+    print(asm2bp_df.head())
     poss_bp_df = asm2bp_df.merge(exact2bp_df, on=['CAMI_genomeID', 'strain', 'sample_id'], how='left')
     poss_bp_df.columns = ['exact_label', 'strain_label', 'sample_id', 'possible_bp', 'total_bp']
     poss_bp_df['asm_per_bp'] = [x / y for x, y in
@@ -648,7 +650,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     poss_bp_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in poss_bp_df['asm_per_bp']]
     poss_bp_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in poss_bp_df['asm_per_bp']]
     print(poss_bp_df.head())
-    print(poss_bp_df.tail())
     flurp
     poss_bp_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
     poss_str_bp_df = poss_bp_df[['strain_label', 'possible_bp',

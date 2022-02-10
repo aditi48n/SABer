@@ -375,7 +375,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
 
     # Map src contig stats to OTU id
     src_cnt_df = pd.read_csv(src_contig_cnt, sep='\t', header=0)
-    src2id_df = pd.read_csv(src2id_map, sep='\t', header=None, names=['CAMI_genomeID', 'file'])
+    src2id_df = pd.read_csv(src2id_map, sep='\t', header=None, names=['CAMI_genomeID', 'file']).drop_duplicates()
     src_cnt_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src_cnt_df['file']]
     src2id_df['src_id'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for x in src2id_df['file']]
     src_stats_df = src2id_df.merge(src_cnt_df, on='src_id')

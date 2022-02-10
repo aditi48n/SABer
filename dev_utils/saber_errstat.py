@@ -527,7 +527,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                 if 'LC_' in tmp_sag_id[:3]:
                     tmp_sag_id = tmp_sag_id.strip('LC_')
                 # special formatting for CAMI II data
-                if 'CAMI_II' in synsrc_path:
+                if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
                     src_id = tmp_sag_id.rsplit('.', 1)[0]
                     match = cami_genome2id_dict[src_id]
                     print("PASSED:", sag_id, src_id, match)
@@ -550,7 +550,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
-    '''
+    # '''
     ###################################################################################################
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
@@ -609,7 +609,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     dnadiff_df.to_csv(dnadiff_file, index=False, sep='\t')
     '''
     dnadiff_df = pd.read_csv(joinpath(err_path, 'diffdna_allrefs.tsv'), sep='\t', header=0)
-
+    '''
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################

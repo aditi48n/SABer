@@ -4,6 +4,7 @@ import difflib
 import glob
 import logging
 import multiprocessing
+import os
 import subprocess
 from functools import reduce
 from os import makedirs, path, listdir

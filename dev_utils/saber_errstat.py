@@ -616,15 +616,14 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
+    # src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
+    src2contig_df['sample_id'] = 0
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
-    print(src2contig_df.head())
-    print(sample_id)
-    flurp
+
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # subset recruit dataframes

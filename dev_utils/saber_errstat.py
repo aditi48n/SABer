@@ -555,6 +555,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
     # list all source genomes
+    import os
     src_genome_list = [joinpath(src_genome_path, f) for f in listdir(src_genome_path)
                        if ((f.split('.')[-1] == 'fasta' or f.split('.')[-1] == 'fna' or
                             f.split('.')[-1] == 'fa') and

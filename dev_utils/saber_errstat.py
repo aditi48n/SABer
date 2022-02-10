@@ -550,7 +550,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
-    '''
+    # '''
     ###################################################################################################
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
@@ -607,9 +607,10 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                        ).reset_index()
     dnadiff_file = joinpath(err_path, 'diffdna_allrefs.tsv')
     dnadiff_df.to_csv(dnadiff_file, index=False, sep='\t')
+    flurp
     '''
     dnadiff_df = pd.read_csv(joinpath(err_path, 'diffdna_allrefs.tsv'), sep='\t', header=0)
-
+    '''
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################

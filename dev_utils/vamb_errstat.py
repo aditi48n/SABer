@@ -279,17 +279,6 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     tax_mg_df = tax_mg_df.merge(src_stats_df[['CAMI_genomeID', 'sum_len']], on='CAMI_genomeID')
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
 
-    # builds the sag to cami ID mapping file
-    if 'CAMI_II' in synsrc_path:
-        cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')
-        cami_genome2id_df = pd.read_csv(cami_genome2id_file, sep='\t', header=None)
-        cami_genome2id_df.columns = ['CAMI_genomeID', 'src_genome']
-        cami_genome2id_df['src_genome'] = [x.rsplit('/', 1)[1].rsplit('.', 1)[0] for
-                                           x in cami_genome2id_df['src_genome']
-                                           ]
-        cami_genome2id_dict = dict(zip(cami_genome2id_df['src_genome'],
-                                       cami_genome2id_df['CAMI_genomeID']
-                                       ))
     ###################################################################################################
     # De novo error analysis
     # setup mapping to CAMI ref genomes

@@ -8,6 +8,7 @@ from os.path import join as joinpath
 
 import pandas as pd
 import pyfastx
+from tqdm import tqdm
 
 # specify that all columns should be shown
 pd.set_option('max_columns', None)

@@ -16,10 +16,6 @@ denovo_file_list = glob.glob(joinpath(saberout_path, '*.denovo_clusters.tsv'))
 trusted_file_list = glob.glob(joinpath(saberout_path, '*.hdbscan_clusters.tsv'))
 ocsvm_file_list = glob.glob(joinpath(saberout_path, '*.ocsvm_clusters.tsv'))
 inter_file_list = glob.glob(joinpath(saberout_path, '*.inter_clusters.tsv'))
-print(denovo_file_list)
-print(trusted_file_list)
-print(ocsvm_file_list)
-print(inter_file_list)
 
 saber_single_file = '/home/ryan/SABer_local/benchmarking_output/errstat_inputs/SABer.single.errstat.tsv'
 unitem_single_file = '/home/ryan/SABer_local/benchmarking_output/errstat_inputs/UniteM.single.errstat.tsv'
@@ -35,6 +31,7 @@ saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                                  )
                              ]
 saber_mge_df = saber_single_df.query("sample_type == 'MGE_6'")
+saber_mge_df.rename(columns={'>20Kb': '20Kb'}, inplace=True)
 print(saber_mge_df.head())
 flurp
 unitem_single_df = pd.read_csv(unitem_single_file, header=0, sep='\t')

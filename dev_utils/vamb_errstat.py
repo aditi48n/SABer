@@ -302,8 +302,8 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     else:
         src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
-    src2contig_df = src2contig_df.query('sample_id == @samp_id').drop_duplicates()
-    contig_bp_df = contig_bp_df.query('sample_id == @samp_id').drop_duplicates()
+    src2contig_df = src2contig_df.drop_duplicates()
+    contig_bp_df = contig_bp_df.drop_duplicates()
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'

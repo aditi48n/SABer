@@ -1,5 +1,5 @@
 import glob
-import os
+from os.path import join as joinpath
 
 import pandas as pd
 
@@ -12,15 +12,14 @@ pd.set_option('max_columns', None)
 saberout_path = '/home/ryan/SABer_local/benchmarking_output/' \
                 'single_binner_bench/MGE_6/SABer_single/0/' \
                 '*/*/'
-denovo_file_list = glob.glob(os.joinpath(saberout_path, '*.denovo_clusters.tsv'))
-trusted_file_list = glob.glob(os.joinpath(saberout_path, '*.hdbscan_clusters.tsv'))
-ocsvm_file_list = glob.glob(os.joinpath(saberout_path, '*.ocsvm_clusters.tsv'))
-inter_file_list = glob.glob(os.joinpath(saberout_path, '*.inter_clusters.tsv'))
+denovo_file_list = glob.glob(joinpath(saberout_path, '*.denovo_clusters.tsv'))
+trusted_file_list = glob.glob(joinpath(saberout_path, '*.hdbscan_clusters.tsv'))
+ocsvm_file_list = glob.glob(joinpath(saberout_path, '*.ocsvm_clusters.tsv'))
+inter_file_list = glob.glob(joinpath(saberout_path, '*.inter_clusters.tsv'))
 print(denovo_file_list)
 print(trusted_file_list)
 print(ocsvm_file_list)
 print(inter_file_list)
-flurp
 
 saber_single_file = '/home/ryan/SABer_local/benchmarking_output/errstat_inputs/SABer.single.errstat.tsv'
 unitem_single_file = '/home/ryan/SABer_local/benchmarking_output/errstat_inputs/UniteM.single.errstat.tsv'

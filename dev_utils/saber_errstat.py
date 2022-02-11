@@ -416,7 +416,9 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     # add src total bp count
     tax_mg_df = tax_mg_df.merge(src_stats_df[['CAMI_genomeID', 'sum_len']], on='CAMI_genomeID')
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
-
+    print(tax_mg_df.head())
+    print(tax_mg_df.tail())
+    flurp
     # builds the sag to cami ID mapping file
     if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):
         cami_genome2id_file = joinpath(synsrc_path, 'genome_to_id.tsv')

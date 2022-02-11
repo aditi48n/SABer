@@ -1,5 +1,8 @@
 import pandas as pd
 
+# specify that all columns should be shown
+pd.set_option('max_columns', None)
+
 # Files and dirs
 # denovo_out_file = glob.glob(joinpath(saberout_path, '*.denovo_clusters.tsv'))[0]
 # trusted_out_file = glob.glob(joinpath(saberout_path, '*.hdbscan_clusters.tsv'))[0]

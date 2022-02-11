@@ -418,6 +418,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     tax_mg_df.to_csv(src2contig_file, sep='\t', index=False)
     print(tax_mg_df.head())
     print(tax_mg_df.tail())
+    print(tax_mg_df.shape)
     flurp
     # builds the sag to cami ID mapping file
     if (('CAMI_II' in synsrc_path) | ('MGE' in synsrc_path)):

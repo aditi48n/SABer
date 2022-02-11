@@ -382,6 +382,7 @@ for level_mode in sample_metrics_df['level_mode'].unique():
         print('Same distributions (fail to reject H0)')
     else:
         print('Different distributions (reject H0)')
+    '''
     # Wilcoxon signed rank test
     bc_list = sub_df['binner_config'].unique()
     for bc0 in bc_list:
@@ -397,6 +398,7 @@ for level_mode in sample_metrics_df['level_mode'].unique():
                                              )
                 print(wc_stat)
     flurp
+    '''
 
     count_nc_df = sub_df.groupby(['binner_config']
                                  )['ext_nc_uniq'].sum().reset_index()

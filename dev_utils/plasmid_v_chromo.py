@@ -32,8 +32,8 @@ saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                              ]
 saber_mge_df = saber_single_df.query("sample_type == 'MGE_6'")
 saber_mge_df.rename(columns={'>20Kb': 'over20Kb'}, inplace=True)
-saber_mg_df = saber_mge_df.query("over20Kb == 'Yes & "
-                                 "MQ_bins == 'Yes"
+saber_mg_df = saber_mge_df.query("over20Kb == 'Yes' & "
+                                 "MQ_bins == 'Yes'"
                                  )
 print(saber_mg_df.head())
 flurp

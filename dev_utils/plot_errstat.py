@@ -36,7 +36,8 @@ type2label = {'CAMI_II_Airways': 'Air',
               'CAMI_II_Gastrointestinal': 'GI',
               'CAMI_II_Oral': 'Oral',
               'CAMI_II_Skin': 'Skin',
-              'CAMI_II_Urogenital': 'Urog'
+              'CAMI_II_Urogenital': 'Urog',
+              'MGE_6': 'MGE'
               }
 algo2rank = {'denovo': 0, 'hdbscan': 1,
              'ocsvm': 2, 'intersect': 3,
@@ -46,7 +47,8 @@ type2rank = {'Air': 0,
              'GI': 1,
              'Oral': 2,
              'Skin': 3,
-             'Urog': 4
+             'Urog': 4,
+             'MGE': 5
              }
 mode2rank = {'majority_rule': 0,
              'best_cluster': 1,

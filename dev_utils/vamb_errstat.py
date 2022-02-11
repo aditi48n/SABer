@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import glob
+import logging
+import multiprocessing
 import sys
 from functools import reduce
 from os import makedirs, path
@@ -295,13 +297,19 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
-    src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
+    if 'MGE' in synsrc_path:
+        src2contig_df['sample_id'] = 'S0'
+    else:
+        src2contig_df['sample_id'] = [x.rsplit('C', 1)[0] for x in src2contig_df['contig_id']]
     contig_bp_df = src2contig_df[['contig_id', 'bp_cnt', 'sample_id']]
     clust2src_df = cluster_trim_df.merge(src2contig_df[['contig_id', 'CAMI_genomeID',
                                                         'strain', 'bp_cnt']],
                                          on='contig_id', how='left'
                                          )
-    clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
+    if 'MGE' in synsrc_path:
+        src2contig_df['sample_id'] = 'S0'
+    else:
+        clust2src_df['sample_id'] = [x.rsplit('C', 1)[0] for x in clust2src_df['contig_id']]
     src_bp_dict = {x: y for x, y in zip(src2contig_df['CAMI_genomeID'], src2contig_df['sum_len'])}
 
     # possible bp's based on asm vs ref genome
@@ -325,7 +333,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     # Add taxonomy to each cluster
     clust_tax = []
     for clust in tqdm(clust2src_df['best_label'].unique()):
-        samp_id = clust.rsplit('C', 1)[0]
+        if 'MGE' in synsrc_path:
+            samp_id = 'S0'
+        else:
+            samp_id = clust.rsplit('C', 1)[0]
         sub_clust2src_df = clust2src_df.query('sample_id == @samp_id')
         # arg_list.append([clust, sub_clust2src_df])
         clust_tax.append(cluster2taxonomy([clust, sub_clust2src_df]))
@@ -340,7 +351,10 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     arg_list = []
     for clust in tqdm(clust2contig_df['best_label'].unique()):
         # subset recruit dataframes
-        samp_id = clust.rsplit('C', 1)[0]
+        if 'MGE' in synsrc_path:
+            samp_id = 'S0'
+        else:
+            samp_id = clust.rsplit('C', 1)[0]
         sub_src2cont_df = src2contig_df.query('sample_id == @samp_id')
         sub_contig_bp_df = contig_bp_df.query('sample_id == @samp_id')
         sub_clust_df = clust2contig_df.query('best_label == @clust')

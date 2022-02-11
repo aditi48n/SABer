@@ -181,12 +181,11 @@ bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
                                                         bin_cat_df['bin_mode']
                                                         )]
 bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
-print(bin_cat_df['dataset'].unique())
-flurp
+
 ########################################################################################################################
 ##### Calc all basic metrics ###########################################################################################
 ########################################################################################################################
-
+'''
 # By dataset
 cat_list = []
 for binner in bin_cat_df['binner'].unique():
@@ -253,7 +252,7 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'mq_avg_p', 'mq_avg_r',
             'ext_nc_poss', 'str_mq_poss', 'str_nc_poss'
             ]
 dataset_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
-dataset_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t', index=False)
+dataset_metrics_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t', index=False)
 
 # By sample
 cat_list = []
@@ -326,14 +325,14 @@ cat_cols = ['binner', 'bin_mode', 'level', 'dataset', 'sample_id', 'mq_avg_p', '
             'ext_nc_poss', 'str_mq_poss', 'str_nc_poss'
             ]
 sample_metrics_df = pd.DataFrame(cat_list, columns=cat_cols)
-sample_metrics_df.to_csv(os.path.join(workdir, 'ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
+sample_metrics_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t', index=False)
 '''
 dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'tables/ALL_BINNERS.dataset.avg_metrics.tsv'), sep='\t',
                                  header=0)
 
 sample_metrics_df = pd.read_csv(os.path.join(workdir, 'tables/ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
                                 header=0)
-'''
+
 # below should be kept in the above processing in the future
 dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_df['level'],
                                                                 dataset_metrics_df['bin_mode']

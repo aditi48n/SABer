@@ -297,6 +297,9 @@ def runErrorAnalysis(bin_path, synsrc_path, src_metag_file, nthreads):
     cluster_trim_df = cluster_df.copy()  # .query('best_label != -1')
     src2contig_df = pd.read_csv(src2contig_file, header=0, sep='\t')
     src2contig_df = src2contig_df.rename(columns={'@@SEQUENCEID': 'contig_id'})
+    print(cluster_trim_df.head())
+    print(src2contig_df.head())
+    flurp
     if 'MGE' in synsrc_path:
         src2contig_df['sample_id'] = 'S0'
     else:

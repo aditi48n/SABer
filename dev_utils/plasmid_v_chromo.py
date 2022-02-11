@@ -16,8 +16,17 @@ vamb_multi_file = '/home/ryan/SABer_local/benchmarking_output/errstat_inputs/VAM
 
 # Load stats tables
 saber_single_df = pd.read_csv(saber_single_file, header=0, sep='\t')
+saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
+                             for x, y, z in
+                             zip(saber_single_df['algorithm'],
+                                 saber_single_df['mode'],
+                                 saber_single_df['param_set']
+                                 )
+                             ]
+
 unitem_single_df = pd.read_csv(unitem_single_file, header=0, sep='\t')
 vamb_multi_df = pd.read_csv(vamb_multi_file, header=0, sep='\t')
+vamb_multi_df['binner'] = 'VAMB'
 
 bin_cat_df = pd.concat([saber_single_df, unitem_single_df,
                         vamb_multi_df

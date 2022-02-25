@@ -151,7 +151,7 @@ cols = 'subunit'
 vals = 'percent'
 bar_piv_df = pd.pivot_table(values=vals, index=index_list,
                             columns=cols, data=bar_trim_df,
-                            aggfunc=sum
+                            # aggfunc=sum # this will leave only perfect single sets of subunits
                             ).reset_index().fillna(0)
 bar_piv_df.rename(columns={"16S": "rRNA_16S",
                            "23S": "rRNA_23S",

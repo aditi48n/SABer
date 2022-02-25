@@ -166,15 +166,42 @@ bar_hq_df.to_csv(os.path.join(cwd_dir, 'barrnap_HQ_output.tsv'),
                  )
 
 # Merge them all together
-print(len(trna_hq_df['sag_id'].unique()))
-print(len(bar_hq_df['sag_id'].unique()))
 bar_trna_df = pd.merge(bar_hq_df, trna_hq_df,
                        on=index_list,
                        how='inner'
                        )
-bar_trna_df.to_csv(os.path.join(cwd_dir, 'Final_HQ_output.tsv'),
+bar_trna_df.to_csv(os.path.join(cwd_dir, 'barrnap_trnascan_HQ_output.tsv'),
                    sep='\t', index=False
                    )
-print(bar_trna_df.head())
-print(bar_trna_df.shape)
-print(len(bar_trna_df['sag_id'].unique()))
+print("TRNASCAN: ", len(trna_hq_df['sag_id'].unique()))
+print("BARRNAP: ", len(bar_hq_df['sag_id'].unique()))
+print("BOTH: ", len(bar_trna_df['sag_id'].unique()))
+
+# Now Merge with the CheckM stats
+checkm_file = os.path.join(cwd_dir, 'HQ_checkm.tsv')
+checkm_df = pd.read_csv(checkm_file, sep='\t', header=0)
+
+checkm_df['sample_id'] = [x + '_' + y for x, y in
+                          zip(checkm_df['sample'],
+                              checkm_df['depth']
+                              )]
+checkm_df.rename(columns={'SAG_ID': 'sag_id'}, inplace=True)
+check_bar_trna_df = pd.merge(bar_trna_df, checkm_df,
+                             on=index_list,
+                             how='left'
+                             )
+check_bar_trna_df.to_csv(os.path.join(cwd_dir, 'barrnap_trnascan_checkm_HQ_output.tsv'),
+                         sep='\t', index=False
+                         )
+
+# Lastly, add the assembly stats from seqkit
+sk_file = os.path.join(cwd_dir, 'HQ_seqkit_stats.tsv')
+sk_df = pd.read_csv(sk_file, sep='\t', header=0)
+
+check_bar_trna_sk_df = pd.merge(check_bar_trna_df, sk_df,
+                                on=index_list,
+                                how='left'
+                                )
+check_bar_trna_sk_df.to_csv(os.path.join(cwd_dir, 'Final_HQ_output.tsv'),
+                            sep='\t', index=False
+                            )

@@ -151,16 +151,16 @@ cols = 'subunit'
 vals = 'percent'
 bar_piv_df = pd.pivot_table(values=vals, index=index_list,
                             columns=cols, data=bar_trim_df,
-                            # aggfunc=sum # this will leave only perfect single sets of subunits
+                            aggfunc=sum
                             ).reset_index().fillna(0)
 bar_piv_df.rename(columns={"16S": "rRNA_16S",
                            "23S": "rRNA_23S",
                            "5S": "rRNA_5S"
                            }, inplace=True)
 
-bar_hq_df = bar_piv_df.query("rRNA_16S == 100 &"
-                             "rRNA_23S == 100 &"
-                             "rRNA_5S == 100"
+bar_hq_df = bar_piv_df.query("rRNA_16S >= 100 &"
+                             "rRNA_23S >= 100 &"
+                             "rRNA_5S >= 100"
                              )
 bar_hq_df.to_csv(os.path.join(cwd_dir, 'barrnap_HQ_output.tsv'),
                  sep='\t', index=False

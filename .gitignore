@@ -1,6 +1,8 @@
 .idea
 tests/test-data
 src/saber/__pycache__
+src/saber/__pycache__/*
+*/__pycache__/*
 build
 dist
 dist/SABer-0.0.1.tar.gz
@@ -21,4 +23,3 @@ dev_utils/renyi_entropy/SABer_CV/*
 !dev_utils/renyi_entropy/SABer_CV/MQ_agg_stats.tsv
 !dev_utils/renyi_entropy/SABer_CV/NC_agg_params.tsv
 !dev_utils/renyi_entropy/SABer_CV/NC_agg_stats.tsv
-

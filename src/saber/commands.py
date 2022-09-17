@@ -1,17 +1,22 @@
 __author__ = 'Ryan J McLaughlin'
 
+import logging
+import os
 
 from pip._internal.operations import freeze
-import logging
-import saber
-import saber.args as s_args
-import saber.classy as s_class
-import saber.logger as s_log
-import saber.utilities as s_utils
-import saber.minhash_recruiter as mhr
-import saber.abundance_recruiter as abr
-import saber.tetranuc_recruiter as tra
-import saber.compile_recruits as com
+
+# import saber
+import abundance_recruiter as abr
+import classy as s_class
+import clusterer as clst
+import compile_recruits as com
+import logger as s_log
+import minhash_recruiter as mhr
+import s_args
+import tetranuc_recruiter as tra
+import utilities as s_utils
+from __init__ import version
+
 
 def info(sys_args):
     """
@@ -27,20 +32,19 @@ def info(sys_args):
     s_log.prep_logging()
     info_s = s_class.SABerBase("info")
 
-    logging.info("SABer version " + saber.version + ".\n")
+    logging.info("SABer version " + version + ".\n")
 
     # Write the version of all python deps
-    py_deps = {x.split('==')[0]:x.split('==')[1] for x in freeze.freeze()}
-
+    py_deps = {x.split('==')[0]: x.split('==')[1] for x in freeze.freeze()}
 
     logging.info("Python package dependency versions:\n\t" +
                  "\n\t".join([k + ": " + v for k, v in py_deps.items()]) + "\n")
 
     # Write the version of executable deps
     info_s.furnish_with_arguments(args)
-    logging.info(s_utils.executable_dependency_versions(info_s.executables)) # TODO: needs updating for SABer exe
+    logging.info(s_utils.executable_dependency_versions(info_s.executables))  # TODO: needs updating for SABer exe
 
-    if args.verbose: # TODO: look at TS to determine what this is for.
+    if args.verbose:  # TODO: look at TS to determine what this is for.
         pass
         # logging.info(summary_str)
 
@@ -53,68 +57,97 @@ def recruit(sys_args):
     :param sys_args: List of arguments parsed from the command-line.
     :return: None
     """
-    parser = s_args.SABerArgumentParser(description="Recruit environmental reads to reference SAG(s).")
+    parser = s_args.SABerArgumentParser(description="Recruit environmental reads to reference contigs.")
     parser.add_recruit_args()
     args = parser.parse_args(sys_args)
 
-    s_log.prep_logging("SABer_log.txt", args.verbose)
     recruit_s = s_class.SABerBase("recruit")
-    recruit_s.sag_path = args.sag_path
+    recruit_s.trust_path = args.trust_path
     recruit_s.mg_file = args.mg_file
     recruit_s.mg_raw_file_list = args.mg_raw_file_list
     recruit_s.save_path = args.save_path
     recruit_s.max_contig_len = int(args.max_contig_len)
     recruit_s.overlap_len = int(args.overlap_len)
-    recruit_s.jacc_thresh = float(args.jacc_thresh)
-    recruit_s.abund_per_pass = float(args.abund_per_pass)
-    recruit_s.gmm_per_pass = float(args.gmm_per_pass)
-    recruit_s.mh_per_pass = float(args.mh_per_pass)
     recruit_s.nthreads = int(args.nthreads)
-    # Build save dir structure
-    save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path)
-    # Find the SAGs!
-    sag_list = s_utils.get_SAGs(recruit_s.sag_path)
+    recruit_s.force = args.force
+    # Collect args for clustering
+    recruit_s.denovo_min_clust, recruit_s.denovo_min_samp = args.denovo_min_clust, args.denovo_min_samp
+    recruit_s.anchor_min_clust, recruit_s.anchor_min_samp = args.anchor_min_clust, args.anchor_min_samp
+    recruit_s.nu, recruit_s.gamma = args.nu, args.gamma
+    recruit_s.vr, recruit_s.r = args.vr_params, args.r_params
+    recruit_s.s, recruit_s.vs = args.s_params, args.vs_params
+    recruit_s.a = args.auto_params
 
-    # Build subcontiges for SAGs and MG
-    logging.info('[SABer]: Loading/Building subcontigs\n') # TODO: add logging to track this
-    sag_sub_files = s_utils.build_subcontigs(sag_list,
-                                               save_dirs_dict['subcontigs'],
-                                               recruit_s.max_contig_len,
-                                               recruit_s.overlap_len
-                                               )
-    mg_sub_file = s_utils.build_subcontigs([recruit_s.mg_file],
-                                             save_dirs_dict['subcontigs'],
-                                             recruit_s.max_contig_len,
-                                             recruit_s.overlap_len
-                                            )[0]
-    # Run MinHash recruiting algorithm
-    logging.info('[SABer]: Starting Kmer Recruitment Step\n')
-    minhash_df = mhr.run_minhash_recruiter(save_dirs_dict['signatures'],
-    									   save_dirs_dict['minhash_recruits'],
-                                           sag_sub_files, mg_sub_file,
-                                           recruit_s.jacc_thresh, recruit_s.mh_per_pass,
-                                           recruit_s.nthreads
+    # Quick check to see which mode was selected
+    mode_list = [recruit_s.vr, recruit_s.r, recruit_s.s, recruit_s.vs]
+    for m in mode_list:  # TODO: this needs to break if more than one mode is selected
+        if m:
+            recruit_s.mode = m
+    # Build save dir structure and start logging file
+    save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a, recruit_s.mode)
+    s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
+
+    # TODO: should check for prebuilt files before anything else to avoid rebuilding things
+    # TODO: think about setting a default upper and lower bp size for bins to filter bad ones
+
+    # Build subcontigs for MG
+    mg_file = tuple([recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0],
+                     recruit_s.mg_file])  # TODO: needs to support multiple MetaGs
+    mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
+                                           recruit_s.save_path,
+                                           recruit_s.max_contig_len,
+                                           recruit_s.overlap_len
                                            )
-    # Abundance Recruit Module
-    logging.info('[SABer]: Starting Abundance Recruitment Step\n')
-    abund_df = abr.run_abund_recruiter(save_dirs_dict['subcontigs'],
-    								   save_dirs_dict['abund_recruits'], mg_sub_file,
-                                       recruit_s.mg_raw_file_list, minhash_df,
-                                       recruit_s.abund_per_pass, recruit_s.nthreads
-                                       )
-    # Tetranucleotide Hz Recruit Module
-    logging.info('[SABer]: Starting Tetranucleotide Recruitment Step\n')
-    tetra_df_dict = tra.run_tetra_recruiter(save_dirs_dict['tetra_recruits'],
-    										sag_sub_files, mg_sub_file, abund_df,
-                                       		recruit_s.gmm_per_pass
-                                       		)
-    # Collect and join all recruits
-    logging.info('[SABer]: Combining All Recruits\n')
-    com.run_combine_recruits(save_dirs_dict['final_recruits'], save_dirs_dict['extend_SAGs'],
-                             save_dirs_dict['re_assembled'], save_dirs_dict['checkM'],
-                             recruit_s.mg_file, tetra_df_dict, minhash_df, sag_list
-                             )
-    # Re-assemble SAG with MG recruits
 
+    # Build minhash signatures if there are trusted contigs
+    if recruit_s.trust_path:
+        # Find the Trusted Contigs (TCs)
+        tc_list = s_utils.get_SAGs(
+            recruit_s.trust_path)  # TODO: needs to support a single multi-FASTA and multiple FASTAs
+        trust_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in tc_list])
+        # Run MinHash recruiting algorithm
+        minhash_df_dict = mhr.run_minhash_recruiter(recruit_s.save_path,  # TODO: expose some params for users
+                                                    recruit_s.save_path,
+                                                    trust_files, mg_file,
+                                                    recruit_s.nthreads
+                                                    )
+    else:
+        minhash_df_dict = False
+
+    # Build abundance tables
+    abund_scale_file, abund_raw_file = abr.runAbundRecruiter(recruit_s.save_path,
+                                                             recruit_s.save_path, mg_sub_file,
+                                                             recruit_s.mg_raw_file_list,
+                                                             recruit_s.nthreads
+                                                             )
+    # Build tetra hz tables
+    tetra_file = tra.run_tetra_recruiter(recruit_s.save_path,
+                                         mg_sub_file
+                                         )
+    # Run HDBSCAN Cluster and Trusted Cluster Cleaning
+    recruit_s.params_dict = s_utils.set_clust_params(recruit_s.denovo_min_clust, recruit_s.denovo_min_samp,
+                                                     recruit_s.anchor_min_clust, recruit_s.anchor_min_samp,
+                                                     recruit_s.nu, recruit_s.gamma, recruit_s.vr, recruit_s.r,
+                                                     recruit_s.s, recruit_s.vs, recruit_s.a, abund_raw_file,
+                                                     recruit_s.save_path
+                                                     )
+
+    mg_id = mg_sub_file[0]
+    clusters = clst.runClusterer(mg_id, save_dirs_dict[recruit_s.mode], save_dirs_dict[recruit_s.mode],
+                                 abund_scale_file, tetra_file,
+                                 minhash_df_dict,
+                                 recruit_s.params_dict['d_min_clust'],
+                                 recruit_s.params_dict['d_min_samp'],
+                                 recruit_s.params_dict['a_min_clust'],
+                                 recruit_s.params_dict['a_min_samp'],
+                                 recruit_s.params_dict['nu'],
+                                 recruit_s.params_dict['gamma'],
+                                 recruit_s.nthreads
+                                 )
+    # Collect and join all recruits
+    com.run_combine_recruits(save_dirs_dict, recruit_s.mg_file,
+                             clusters, trust_files, recruit_s.mode,
+                             recruit_s.nthreads
+                             )
 
     return

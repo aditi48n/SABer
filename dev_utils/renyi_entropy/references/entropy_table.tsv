@@ -1,0 +1,457 @@
+sample_id	sample_type	sample_rep	alpha	Renyi_Entropy	alpha_int	x_labels
+Medium_Complexity_S001	Medium_Complexity	1	0.0	16.035293128201676	0.0	Richness (a=0)
+Medium_Complexity_S001	Medium_Complexity	1	1.0	14.601205475415998	1.0	Shannon (a=1)
+Medium_Complexity_S001	Medium_Complexity	1	2.0	13.704883364122956	2.0	Simpson (a=2)
+Medium_Complexity_S001	Medium_Complexity	1	4.0	12.875797249440035	3.0	4
+Medium_Complexity_S001	Medium_Complexity	1	8.0	12.051045824822888	4.0	8
+Medium_Complexity_S001	Medium_Complexity	1	16.0	11.40553076200979	5.0	16
+Medium_Complexity_S001	Medium_Complexity	1	32.0	11.051707365659796	6.0	32
+Medium_Complexity_S001	Medium_Complexity	1	inf	10.706538551971315	7.0	Berger–Parker (a=inf)
+Gastrointestinal_11	Gastrointestinal	11	0.0	14.619130977384264	0.0	Richness (a=0)
+Gastrointestinal_11	Gastrointestinal	11	1.0	13.362922060974052	1.0	Shannon (a=1)
+Gastrointestinal_11	Gastrointestinal	11	2.0	12.504266289009728	2.0	Simpson (a=2)
+Gastrointestinal_11	Gastrointestinal	11	4.0	11.981358170304961	3.0	4
+Gastrointestinal_11	Gastrointestinal	11	8.0	11.71778024559061	4.0	8
+Gastrointestinal_11	Gastrointestinal	11	16.0	11.563022080615648	5.0	16
+Gastrointestinal_11	Gastrointestinal	11	32.0	11.438039533975532	6.0	32
+Gastrointestinal_11	Gastrointestinal	11	inf	11.121897021643528	7.0	Berger–Parker (a=inf)
+Skin_20	Skin	20	0.0	15.388992658826103	0.0	Richness (a=0)
+Skin_20	Skin	20	1.0	14.611908425802008	1.0	Shannon (a=1)
+Skin_20	Skin	20	2.0	13.989043560882426	2.0	Simpson (a=2)
+Skin_20	Skin	20	4.0	13.323601775802686	3.0	4
+Skin_20	Skin	20	8.0	12.507224213305864	4.0	8
+Skin_20	Skin	20	16.0	11.816419612624797	5.0	16
+Skin_20	Skin	20	32.0	11.480911510767127	6.0	32
+Skin_20	Skin	20	inf	11.14246810612097	7.0	Berger–Parker (a=inf)
+Skin_17	Skin	17	0.0	15.025139562278508	0.0	Richness (a=0)
+Skin_17	Skin	17	1.0	14.270585896482556	1.0	Shannon (a=1)
+Skin_17	Skin	17	2.0	13.73360065673519	2.0	Simpson (a=2)
+Skin_17	Skin	17	4.0	13.213542662523306	3.0	4
+Skin_17	Skin	17	8.0	12.51494704823352	4.0	8
+Skin_17	Skin	17	16.0	11.804590043140534	5.0	16
+Skin_17	Skin	17	32.0	11.439274804139778	6.0	32
+Skin_17	Skin	17	inf	11.083214067903993	7.0	Berger–Parker (a=inf)
+Skin_13	Skin	13	0.0	14.026609890974768	0.0	Richness (a=0)
+Skin_13	Skin	13	1.0	13.35229382828387	1.0	Shannon (a=1)
+Skin_13	Skin	13	2.0	12.637757780549913	2.0	Simpson (a=2)
+Skin_13	Skin	13	4.0	11.627483467964092	3.0	4
+Skin_13	Skin	13	8.0	11.027740252302074	4.0	8
+Skin_13	Skin	13	16.0	10.706665065505074	5.0	16
+Skin_13	Skin	13	32.0	10.504864994159691	6.0	32
+Skin_13	Skin	13	inf	10.216547542154306	7.0	Berger–Parker (a=inf)
+Urogenital_6	Urogenital	6	0.0	12.658211482751796	0.0	Richness (a=0)
+Urogenital_6	Urogenital	6	1.0	11.923443809577577	1.0	Shannon (a=1)
+Urogenital_6	Urogenital	6	2.0	11.637287758232645	2.0	Simpson (a=2)
+Urogenital_6	Urogenital	6	4.0	11.433342268178635	3.0	4
+Urogenital_6	Urogenital	6	8.0	11.229340475024873	4.0	8
+Urogenital_6	Urogenital	6	16.0	10.94699237160332	5.0	16
+Urogenital_6	Urogenital	6	32.0	10.639916593800544	6.0	32
+Urogenital_6	Urogenital	6	inf	10.307864757807875	7.0	Berger–Parker (a=inf)
+Urogenital_24	Urogenital	24	0.0	13.679370133802363	0.0	Richness (a=0)
+Urogenital_24	Urogenital	24	1.0	12.560340498668868	1.0	Shannon (a=1)
+Urogenital_24	Urogenital	24	2.0	11.872536720231968	2.0	Simpson (a=2)
+Urogenital_24	Urogenital	24	4.0	11.357004408011365	3.0	4
+Urogenital_24	Urogenital	24	8.0	11.068454803593497	4.0	8
+Urogenital_24	Urogenital	24	16.0	10.909041877793166	5.0	16
+Urogenital_24	Urogenital	24	32.0	10.746363634006453	6.0	32
+Urogenital_24	Urogenital	24	inf	10.455176013979765	7.0	Berger–Parker (a=inf)
+Oral_6	Oral	6	0.0	14.25716682468519	0.0	Richness (a=0)
+Oral_6	Oral	6	1.0	12.79409366186	1.0	Shannon (a=1)
+Oral_6	Oral	6	2.0	11.58489851666198	2.0	Simpson (a=2)
+Oral_6	Oral	6	4.0	10.957006419425236	3.0	4
+Oral_6	Oral	6	8.0	10.689472253386414	4.0	8
+Oral_6	Oral	6	16.0	10.50556096221369	5.0	16
+Oral_6	Oral	6	32.0	10.335513453851883	6.0	32
+Oral_6	Oral	6	inf	10.097315292791741	7.0	Berger–Parker (a=inf)
+Skin_18	Skin	18	0.0	13.81658370778757	0.0	Richness (a=0)
+Skin_18	Skin	18	1.0	12.549234634551889	1.0	Shannon (a=1)
+Skin_18	Skin	18	2.0	11.483814792846543	2.0	Simpson (a=2)
+Skin_18	Skin	18	4.0	10.705356624392047	3.0	4
+Skin_18	Skin	18	8.0	10.375599666006611	4.0	8
+Skin_18	Skin	18	16.0	10.233444285969941	5.0	16
+Skin_18	Skin	18	32.0	10.117171198940381	6.0	32
+Skin_18	Skin	18	inf	9.816224911476537	7.0	Berger–Parker (a=inf)
+Skin_16	Skin	16	0.0	13.625708843064466	0.0	Richness (a=0)
+Skin_16	Skin	16	1.0	13.325204693147828	1.0	Shannon (a=1)
+Skin_16	Skin	16	2.0	13.049889308456041	2.0	Simpson (a=2)
+Skin_16	Skin	16	4.0	12.546665277651684	3.0	4
+Skin_16	Skin	16	8.0	11.37888091165236	4.0	8
+Skin_16	Skin	16	16.0	10.642846259671416	5.0	16
+Skin_16	Skin	16	32.0	10.30020879349264	6.0	32
+Skin_16	Skin	16	inf	9.97832900317173	7.0	Berger–Parker (a=inf)
+Gastrointestinal_5	Gastrointestinal	5	0.0	13.55098721452152	0.0	Richness (a=0)
+Gastrointestinal_5	Gastrointestinal	5	1.0	12.876170993095045	1.0	Shannon (a=1)
+Gastrointestinal_5	Gastrointestinal	5	2.0	12.483796647585526	2.0	Simpson (a=2)
+Gastrointestinal_5	Gastrointestinal	5	4.0	12.082939811276002	3.0	4
+Gastrointestinal_5	Gastrointestinal	5	8.0	11.75086493929239	4.0	8
+Gastrointestinal_5	Gastrointestinal	5	16.0	11.521948436560356	5.0	16
+Gastrointestinal_5	Gastrointestinal	5	32.0	11.319368915708877	6.0	32
+Gastrointestinal_5	Gastrointestinal	5	inf	11.010857814368894	7.0	Berger–Parker (a=inf)
+Oral_17	Oral	17	0.0	14.968036736393465	0.0	Richness (a=0)
+Oral_17	Oral	17	1.0	14.05941066418126	1.0	Shannon (a=1)
+Oral_17	Oral	17	2.0	13.16219390225347	2.0	Simpson (a=2)
+Oral_17	Oral	17	4.0	12.37883088155075	3.0	4
+Oral_17	Oral	17	8.0	11.841393243017091	4.0	8
+Oral_17	Oral	17	16.0	11.415132775451532	5.0	16
+Oral_17	Oral	17	32.0	11.160112359975747	6.0	32
+Oral_17	Oral	17	inf	10.875035596215318	7.0	Berger–Parker (a=inf)
+Urogenital_0	Urogenital	0	0.0	14.083894790269454	0.0	Richness (a=0)
+Urogenital_0	Urogenital	0	1.0	12.91677184725052	1.0	Shannon (a=1)
+Urogenital_0	Urogenital	0	2.0	12.05731943947307	2.0	Simpson (a=2)
+Urogenital_0	Urogenital	0	4.0	11.41445853430405	3.0	4
+Urogenital_0	Urogenital	0	8.0	11.130012243418157	4.0	8
+Urogenital_0	Urogenital	0	16.0	11.001991242159205	5.0	16
+Urogenital_0	Urogenital	0	32.0	10.907824972886061	6.0	32
+Urogenital_0	Urogenital	0	inf	10.60577979706152	7.0	Berger–Parker (a=inf)
+Oral_15	Oral	15	0.0	15.027905996569885	0.0	Richness (a=0)
+Oral_15	Oral	15	1.0	13.495730979108915	1.0	Shannon (a=1)
+Oral_15	Oral	15	2.0	11.919670066433886	2.0	Simpson (a=2)
+Oral_15	Oral	15	4.0	10.87540594822282	3.0	4
+Oral_15	Oral	15	8.0	10.425638155426	4.0	8
+Oral_15	Oral	15	16.0	10.186317108114684	5.0	16
+Oral_15	Oral	15	32.0	10.02872682696195	6.0	32
+Oral_15	Oral	15	inf	9.800533915802296	7.0	Berger–Parker (a=inf)
+Oral_7	Oral	7	0.0	14.47503673690146	0.0	Richness (a=0)
+Oral_7	Oral	7	1.0	12.918580735656237	1.0	Shannon (a=1)
+Oral_7	Oral	7	2.0	12.074133154614398	2.0	Simpson (a=2)
+Oral_7	Oral	7	4.0	11.596740088370995	3.0	4
+Oral_7	Oral	7	8.0	11.213641969917916	4.0	8
+Oral_7	Oral	7	16.0	10.821530448608037	5.0	16
+Oral_7	Oral	7	32.0	10.585687336534274	6.0	32
+Oral_7	Oral	7	inf	10.33010996443206	7.0	Berger–Parker (a=inf)
+Airways_4	Airways	4	0.0	15.21560883327827	0.0	Richness (a=0)
+Airways_4	Airways	4	1.0	13.742445199944665	1.0	Shannon (a=1)
+Airways_4	Airways	4	2.0	12.130202894079023	2.0	Simpson (a=2)
+Airways_4	Airways	4	4.0	11.14250695113693	3.0	4
+Airways_4	Airways	4	8.0	10.793130049291657	4.0	8
+Airways_4	Airways	4	16.0	10.647633575950476	5.0	16
+Airways_4	Airways	4	32.0	10.555872829381796	6.0	32
+Airways_4	Airways	4	inf	10.265219416626923	7.0	Berger–Parker (a=inf)
+Airways_23	Airways	23	0.0	14.099265612582991	0.0	Richness (a=0)
+Airways_23	Airways	23	1.0	13.236682504504074	1.0	Shannon (a=1)
+Airways_23	Airways	23	2.0	12.696644751306179	2.0	Simpson (a=2)
+Airways_23	Airways	23	4.0	12.192822941098235	3.0	4
+Airways_23	Airways	23	8.0	11.704141062973045	4.0	8
+Airways_23	Airways	23	16.0	11.118067693249339	5.0	16
+Airways_23	Airways	23	32.0	10.80791351379877	6.0	32
+Airways_23	Airways	23	inf	10.49691794154387	7.0	Berger–Parker (a=inf)
+Oral_14	Oral	14	0.0	15.073221083109878	0.0	Richness (a=0)
+Oral_14	Oral	14	1.0	13.586516846280112	1.0	Shannon (a=1)
+Oral_14	Oral	14	2.0	12.219804469108027	2.0	Simpson (a=2)
+Oral_14	Oral	14	4.0	11.320046639666561	3.0	4
+Oral_14	Oral	14	8.0	10.79178469276295	4.0	8
+Oral_14	Oral	14	16.0	10.397127324138976	5.0	16
+Oral_14	Oral	14	32.0	10.179417363030796	6.0	32
+Oral_14	Oral	14	inf	9.944776683698551	7.0	Berger–Parker (a=inf)
+Airways_11	Airways	11	0.0	14.614249727689401	0.0	Richness (a=0)
+Airways_11	Airways	11	1.0	13.964543300569655	1.0	Shannon (a=1)
+Airways_11	Airways	11	2.0	13.464842789965576	2.0	Simpson (a=2)
+Airways_11	Airways	11	4.0	12.977968380128555	3.0	4
+Airways_11	Airways	11	8.0	12.49586104772041	4.0	8
+Airways_11	Airways	11	16.0	11.954898720199854	5.0	16
+Airways_11	Airways	11	32.0	11.64831520354991	6.0	32
+Airways_11	Airways	11	inf	11.324883316324035	7.0	Berger–Parker (a=inf)
+Skin_15	Skin	15	0.0	14.501401823301933	0.0	Richness (a=0)
+Skin_15	Skin	15	1.0	13.870581993570315	1.0	Shannon (a=1)
+Skin_15	Skin	15	2.0	13.53386869864669	2.0	Simpson (a=2)
+Skin_15	Skin	15	4.0	13.213599309396715	3.0	4
+Skin_15	Skin	15	8.0	12.679311215950289	4.0	8
+Skin_15	Skin	15	16.0	12.002096773873914	5.0	16
+Skin_15	Skin	15	32.0	11.631078515883534	6.0	32
+Skin_15	Skin	15	inf	11.268217065752001	7.0	Berger–Parker (a=inf)
+Skin_19	Skin	19	0.0	16.361309851754235	0.0	Richness (a=0)
+Skin_19	Skin	19	1.0	16.053132416888904	1.0	Shannon (a=1)
+Skin_19	Skin	19	2.0	15.721664368331895	2.0	Simpson (a=2)
+Skin_19	Skin	19	4.0	15.188921862300312	3.0	4
+Skin_19	Skin	19	8.0	14.308472615899856	4.0	8
+Skin_19	Skin	19	16.0	13.43999110687415	5.0	16
+Skin_19	Skin	19	32.0	13.01875007914639	6.0	32
+Skin_19	Skin	19	inf	12.61294682506601	7.0	Berger–Parker (a=inf)
+Gastrointestinal_9	Gastrointestinal	9	0.0	14.617926556798752	0.0	Richness (a=0)
+Gastrointestinal_9	Gastrointestinal	9	1.0	14.051834040025405	1.0	Shannon (a=1)
+Gastrointestinal_9	Gastrointestinal	9	2.0	13.598913410387341	2.0	Simpson (a=2)
+Gastrointestinal_9	Gastrointestinal	9	4.0	13.09043271307934	3.0	4
+Gastrointestinal_9	Gastrointestinal	9	8.0	12.644110909823874	4.0	8
+Gastrointestinal_9	Gastrointestinal	9	16.0	12.34879938345494	5.0	16
+Gastrointestinal_9	Gastrointestinal	9	32.0	12.128108046157534	6.0	32
+Gastrointestinal_9	Gastrointestinal	9	inf	11.779974457400964	7.0	Berger–Parker (a=inf)
+High_Complexity_RH002	High_Complexity	2	0.0	18.337164541724032	0.0	Richness (a=0)
+High_Complexity_RH002	High_Complexity	2	1.0	17.92331956592776	1.0	Shannon (a=1)
+High_Complexity_RH002	High_Complexity	2	2.0	17.485025329091513	2.0	Simpson (a=2)
+High_Complexity_RH002	High_Complexity	2	4.0	16.5801377933782	3.0	4
+High_Complexity_RH002	High_Complexity	2	8.0	15.27310994962915	4.0	8
+High_Complexity_RH002	High_Complexity	2	16.0	14.471875997861602	5.0	16
+High_Complexity_RH002	High_Complexity	2	32.0	14.072476785536931	6.0	32
+High_Complexity_RH002	High_Complexity	2	inf	13.66638414657104	7.0	Berger–Parker (a=inf)
+Medium_Complexity_S002	Medium_Complexity	2	0.0	16.03761129727522	0.0	Richness (a=0)
+Medium_Complexity_S002	Medium_Complexity	2	1.0	14.35975133190937	1.0	Shannon (a=1)
+Medium_Complexity_S002	Medium_Complexity	2	2.0	13.21305894763294	2.0	Simpson (a=2)
+Medium_Complexity_S002	Medium_Complexity	2	4.0	11.324742704786889	3.0	4
+Medium_Complexity_S002	Medium_Complexity	2	8.0	9.745411387154798	4.0	8
+Medium_Complexity_S002	Medium_Complexity	2	16.0	9.095729152072723	5.0	16
+Medium_Complexity_S002	Medium_Complexity	2	32.0	8.802318534436273	6.0	32
+Medium_Complexity_S002	Medium_Complexity	2	inf	8.52724608023514	7.0	Berger–Parker (a=inf)
+Oral_18	Oral	18	0.0	15.237135254230866	0.0	Richness (a=0)
+Oral_18	Oral	18	1.0	14.539593690688122	1.0	Shannon (a=1)
+Oral_18	Oral	18	2.0	13.819441488105351	2.0	Simpson (a=2)
+Oral_18	Oral	18	4.0	13.13279496228961	3.0	4
+Oral_18	Oral	18	8.0	12.701138772458156	4.0	8
+Oral_18	Oral	18	16.0	12.339856176911388	5.0	16
+Oral_18	Oral	18	32.0	12.063626440786969	6.0	32
+Oral_18	Oral	18	inf	11.736501908083662	7.0	Berger–Parker (a=inf)
+Gastrointestinal_12	Gastrointestinal	12	0.0	14.007990844782777	0.0	Richness (a=0)
+Gastrointestinal_12	Gastrointestinal	12	1.0	13.251781463103212	1.0	Shannon (a=1)
+Gastrointestinal_12	Gastrointestinal	12	2.0	12.548293982976263	2.0	Simpson (a=2)
+Gastrointestinal_12	Gastrointestinal	12	4.0	11.781980718281353	3.0	4
+Gastrointestinal_12	Gastrointestinal	12	8.0	11.348288217830051	4.0	8
+Gastrointestinal_12	Gastrointestinal	12	16.0	11.131183566899148	5.0	16
+Gastrointestinal_12	Gastrointestinal	12	32.0	10.943640382503729	6.0	32
+Gastrointestinal_12	Gastrointestinal	12	inf	10.654190175679911	7.0	Berger–Parker (a=inf)
+Oral_13	Oral	13	0.0	15.052228393347402	0.0	Richness (a=0)
+Oral_13	Oral	13	1.0	13.803682035276548	1.0	Shannon (a=1)
+Oral_13	Oral	13	2.0	12.692335262246106	2.0	Simpson (a=2)
+Oral_13	Oral	13	4.0	11.859647654299863	3.0	4
+Oral_13	Oral	13	8.0	11.204797169207039	4.0	8
+Oral_13	Oral	13	16.0	10.56488334919076	5.0	16
+Oral_13	Oral	13	32.0	10.225778062145048	6.0	32
+Oral_13	Oral	13	inf	9.906223940542342	7.0	Berger–Parker (a=inf)
+Skin_1	Skin	1	0.0	15.155845979401207	0.0	Richness (a=0)
+Skin_1	Skin	1	1.0	13.9784480607542	1.0	Shannon (a=1)
+Skin_1	Skin	1	2.0	13.23235209240734	2.0	Simpson (a=2)
+Skin_1	Skin	1	4.0	12.567482462813313	3.0	4
+Skin_1	Skin	1	8.0	11.996635083179248	4.0	8
+Skin_1	Skin	1	16.0	11.406600962501495	5.0	16
+Skin_1	Skin	1	32.0	11.046139022399576	6.0	32
+Skin_1	Skin	1	inf	10.701084109726578	7.0	Berger–Parker (a=inf)
+Low_Complexity_0	Low_Complexity	0	0.0	14.197677446307418	0.0	Richness (a=0)
+Low_Complexity_0	Low_Complexity	0	1.0	13.13541473146493	1.0	Shannon (a=1)
+Low_Complexity_0	Low_Complexity	0	2.0	12.256596571782763	2.0	Simpson (a=2)
+Low_Complexity_0	Low_Complexity	0	4.0	10.030176023704843	3.0	4
+Low_Complexity_0	Low_Complexity	0	8.0	8.60955168982916	4.0	8
+Low_Complexity_0	Low_Complexity	0	16.0	8.0355820500464	5.0	16
+Low_Complexity_0	Low_Complexity	0	32.0	7.7763697258513576	6.0	32
+Low_Complexity_0	Low_Complexity	0	inf	7.533358171918503	7.0	Berger–Parker (a=inf)
+Airways_8	Airways	8	0.0	14.409788683245186	0.0	Richness (a=0)
+Airways_8	Airways	8	1.0	13.588335624921694	1.0	Shannon (a=1)
+Airways_8	Airways	8	2.0	13.013817827703416	2.0	Simpson (a=2)
+Airways_8	Airways	8	4.0	12.451021365594238	3.0	4
+Airways_8	Airways	8	8.0	12.079721191257018	4.0	8
+Airways_8	Airways	8	16.0	11.655982049060576	5.0	16
+Airways_8	Airways	8	32.0	11.291565285812812	6.0	32
+Airways_8	Airways	8	inf	10.938824088170591	7.0	Berger–Parker (a=inf)
+Urogenital_3	Urogenital	3	0.0	14.616606274763289	0.0	Richness (a=0)
+Urogenital_3	Urogenital	3	1.0	12.03047847185059	1.0	Shannon (a=1)
+Urogenital_3	Urogenital	3	2.0	10.265400565481137	2.0	Simpson (a=2)
+Urogenital_3	Urogenital	3	4.0	9.716935233848968	3.0	4
+Urogenital_3	Urogenital	3	8.0	9.548458081267592	4.0	8
+Urogenital_3	Urogenital	3	16.0	9.47618063559092	5.0	16
+Urogenital_3	Urogenital	3	32.0	9.410095484266748	6.0	32
+Urogenital_3	Urogenital	3	inf	9.145446625937218	7.0	Berger–Parker (a=inf)
+Gastrointestinal_4	Gastrointestinal	4	0.0	14.22866840193479	0.0	Richness (a=0)
+Gastrointestinal_4	Gastrointestinal	4	1.0	13.216425822097325	1.0	Shannon (a=1)
+Gastrointestinal_4	Gastrointestinal	4	2.0	12.432508905964463	2.0	Simpson (a=2)
+Gastrointestinal_4	Gastrointestinal	4	4.0	11.831204082654455	3.0	4
+Gastrointestinal_4	Gastrointestinal	4	8.0	11.492586353983613	4.0	8
+Gastrointestinal_4	Gastrointestinal	4	16.0	11.289925844600845	5.0	16
+Gastrointestinal_4	Gastrointestinal	4	32.0	11.107683565190461	6.0	32
+Gastrointestinal_4	Gastrointestinal	4	inf	10.799149050629175	7.0	Berger–Parker (a=inf)
+Urogenital_21	Urogenital	21	0.0	14.191521938128146	0.0	Richness (a=0)
+Urogenital_21	Urogenital	21	1.0	12.945256930565094	1.0	Shannon (a=1)
+Urogenital_21	Urogenital	21	2.0	12.342898776421896	2.0	Simpson (a=2)
+Urogenital_21	Urogenital	21	4.0	11.920283167317052	3.0	4
+Urogenital_21	Urogenital	21	8.0	11.631077895851467	4.0	8
+Urogenital_21	Urogenital	21	16.0	11.438140289296438	5.0	16
+Urogenital_21	Urogenital	21	32.0	11.295867384541799	6.0	32
+Urogenital_21	Urogenital	21	inf	11.06393304531809	7.0	Berger–Parker (a=inf)
+Gastrointestinal_10	Gastrointestinal	10	0.0	14.636284749709091	0.0	Richness (a=0)
+Gastrointestinal_10	Gastrointestinal	10	1.0	13.889832950729492	1.0	Shannon (a=1)
+Gastrointestinal_10	Gastrointestinal	10	2.0	13.105588893312413	2.0	Simpson (a=2)
+Gastrointestinal_10	Gastrointestinal	10	4.0	12.310737635149055	3.0	4
+Gastrointestinal_10	Gastrointestinal	10	8.0	11.852664848617778	4.0	8
+Gastrointestinal_10	Gastrointestinal	10	16.0	11.607708149009484	5.0	16
+Gastrointestinal_10	Gastrointestinal	10	32.0	11.437453615857693	6.0	32
+Gastrointestinal_10	Gastrointestinal	10	inf	11.097291231841073	7.0	Berger–Parker (a=inf)
+Oral_19	Oral	19	0.0	15.071001390759177	0.0	Richness (a=0)
+Oral_19	Oral	19	1.0	13.619878530634447	1.0	Shannon (a=1)
+Oral_19	Oral	19	2.0	12.332210451367503	2.0	Simpson (a=2)
+Oral_19	Oral	19	4.0	11.567756222620668	3.0	4
+Oral_19	Oral	19	8.0	11.054514389574152	4.0	8
+Oral_19	Oral	19	16.0	10.620008165849445	5.0	16
+Oral_19	Oral	19	32.0	10.386818066817028	6.0	32
+Oral_19	Oral	19	inf	10.146782277251148	7.0	Berger–Parker (a=inf)
+Oral_8	Oral	8	0.0	14.844999921827757	0.0	Richness (a=0)
+Oral_8	Oral	8	1.0	13.372363277489049	1.0	Shannon (a=1)
+Oral_8	Oral	8	2.0	12.278861452334171	2.0	Simpson (a=2)
+Oral_8	Oral	8	4.0	11.61989642847097	3.0	4
+Oral_8	Oral	8	8.0	11.26817596936468	4.0	8
+Oral_8	Oral	8	16.0	11.0679652484068	5.0	16
+Oral_8	Oral	8	32.0	10.93281060607775	6.0	32
+Oral_8	Oral	8	inf	10.631700705231301	7.0	Berger–Parker (a=inf)
+Airways_27	Airways	27	0.0	16.04925297457192	0.0	Richness (a=0)
+Airways_27	Airways	27	1.0	15.4821980009404	1.0	Shannon (a=1)
+Airways_27	Airways	27	2.0	14.82421742073139	2.0	Simpson (a=2)
+Airways_27	Airways	27	4.0	13.972732491355519	3.0	4
+Airways_27	Airways	27	8.0	13.410843075236002	4.0	8
+Airways_27	Airways	27	16.0	13.116407541985481	5.0	16
+Airways_27	Airways	27	32.0	12.931393970359965	6.0	32
+Airways_27	Airways	27	inf	12.562590117911597	7.0	Berger–Parker (a=inf)
+Airways_12	Airways	12	0.0	13.7324854450719	0.0	Richness (a=0)
+Airways_12	Airways	12	1.0	11.60306102137028	1.0	Shannon (a=1)
+Airways_12	Airways	12	2.0	10.34342204239509	2.0	Simpson (a=2)
+Airways_12	Airways	12	4.0	9.842336096660176	3.0	4
+Airways_12	Airways	12	8.0	9.67222404462994	4.0	8
+Airways_12	Airways	12	16.0	9.588313981058354	5.0	16
+Airways_12	Airways	12	32.0	9.46877901220068	6.0	32
+Airways_12	Airways	12	inf	9.18150692630621	7.0	Berger–Parker (a=inf)
+Gastrointestinal_3	Gastrointestinal	3	0.0	14.355557574259416	0.0	Richness (a=0)
+Gastrointestinal_3	Gastrointestinal	3	1.0	13.698373541560573	1.0	Shannon (a=1)
+Gastrointestinal_3	Gastrointestinal	3	2.0	13.251067389508234	2.0	Simpson (a=2)
+Gastrointestinal_3	Gastrointestinal	3	4.0	12.881443627980971	3.0	4
+Gastrointestinal_3	Gastrointestinal	3	8.0	12.66034468259941	4.0	8
+Gastrointestinal_3	Gastrointestinal	3	16.0	12.312029041011249	5.0	16
+Gastrointestinal_3	Gastrointestinal	3	32.0	11.928441547015154	6.0	32
+Gastrointestinal_3	Gastrointestinal	3	inf	11.55571388889786	7.0	Berger–Parker (a=inf)
+High_Complexity_RH005	High_Complexity	5	0.0	18.337177611172603	0.0	Richness (a=0)
+High_Complexity_RH005	High_Complexity	5	1.0	18.083505175981347	1.0	Shannon (a=1)
+High_Complexity_RH005	High_Complexity	5	2.0	17.782824070143157	2.0	Simpson (a=2)
+High_Complexity_RH005	High_Complexity	5	4.0	16.959439761509113	3.0	4
+High_Complexity_RH005	High_Complexity	5	8.0	15.437382716017073	4.0	8
+High_Complexity_RH005	High_Complexity	5	16.0	14.471793159736514	5.0	16
+High_Complexity_RH005	High_Complexity	5	32.0	14.012909101368155	6.0	32
+High_Complexity_RH005	High_Complexity	5	inf	13.575383309262934	7.0	Berger–Parker (a=inf)
+Airways_7	Airways	7	0.0	14.70859895452498	0.0	Richness (a=0)
+Airways_7	Airways	7	1.0	13.647381714666501	1.0	Shannon (a=1)
+Airways_7	Airways	7	2.0	12.582478372894956	2.0	Simpson (a=2)
+Airways_7	Airways	7	4.0	11.626152976443233	3.0	4
+Airways_7	Airways	7	8.0	11.212435384460793	4.0	8
+Airways_7	Airways	7	16.0	11.035764959552298	5.0	16
+Airways_7	Airways	7	32.0	10.911643045952268	6.0	32
+Airways_7	Airways	7	inf	10.591977707457087	7.0	Berger–Parker (a=inf)
+Gastrointestinal_2	Gastrointestinal	2	0.0	14.529613563728953	0.0	Richness (a=0)
+Gastrointestinal_2	Gastrointestinal	2	1.0	13.881093390328774	1.0	Shannon (a=1)
+Gastrointestinal_2	Gastrointestinal	2	2.0	13.359878003865685	2.0	Simpson (a=2)
+Gastrointestinal_2	Gastrointestinal	2	4.0	12.737255487587847	3.0	4
+Gastrointestinal_2	Gastrointestinal	2	8.0	12.343081354000713	4.0	8
+Gastrointestinal_2	Gastrointestinal	2	16.0	12.159172223077416	5.0	16
+Gastrointestinal_2	Gastrointestinal	2	32.0	12.051796643567727	6.0	32
+Gastrointestinal_2	Gastrointestinal	2	inf	11.717552061627265	7.0	Berger–Parker (a=inf)
+Airways_26	Airways	26	0.0	14.688687423222536	0.0	Richness (a=0)
+Airways_26	Airways	26	1.0	13.801493077975508	1.0	Shannon (a=1)
+Airways_26	Airways	26	2.0	12.810279941088007	2.0	Simpson (a=2)
+Airways_26	Airways	26	4.0	11.869519333248395	3.0	4
+Airways_26	Airways	26	8.0	11.434700078621225	4.0	8
+Airways_26	Airways	26	16.0	11.24330562836305	5.0	16
+Airways_26	Airways	26	32.0	11.141156513730445	6.0	32
+Airways_26	Airways	26	inf	10.86923810357554	7.0	Berger–Parker (a=inf)
+Oral_16	Oral	16	0.0	15.194256686791888	0.0	Richness (a=0)
+Oral_16	Oral	16	1.0	14.44593882523684	1.0	Shannon (a=1)
+Oral_16	Oral	16	2.0	13.362475785994445	2.0	Simpson (a=2)
+Oral_16	Oral	16	4.0	12.170852689469754	3.0	4
+Oral_16	Oral	16	8.0	11.52426182689143	4.0	8
+Oral_16	Oral	16	16.0	11.090800929383308	5.0	16
+Oral_16	Oral	16	32.0	10.858619945688904	6.0	32
+Oral_16	Oral	16	inf	10.604797796274816	7.0	Berger–Parker (a=inf)
+Airways_9	Airways	9	0.0	14.285329966700425	0.0	Richness (a=0)
+Airways_9	Airways	9	1.0	13.053514292485247	1.0	Shannon (a=1)
+Airways_9	Airways	9	2.0	12.066237397616124	2.0	Simpson (a=2)
+Airways_9	Airways	9	4.0	11.238638833067636	3.0	4
+Airways_9	Airways	9	8.0	10.866132455787886	4.0	8
+Airways_9	Airways	9	16.0	10.684397457515393	5.0	16
+Airways_9	Airways	9	32.0	10.497459546977167	6.0	32
+Airways_9	Airways	9	inf	10.174000247185065	7.0	Berger–Parker (a=inf)
+Gastrointestinal_0	Gastrointestinal	0	0.0	15.035013837995203	0.0	Richness (a=0)
+Gastrointestinal_0	Gastrointestinal	0	1.0	14.415967513402869	1.0	Shannon (a=1)
+Gastrointestinal_0	Gastrointestinal	0	2.0	13.823767562259711	2.0	Simpson (a=2)
+Gastrointestinal_0	Gastrointestinal	0	4.0	13.151056991215178	3.0	4
+Gastrointestinal_0	Gastrointestinal	0	8.0	12.754345721914186	4.0	8
+Gastrointestinal_0	Gastrointestinal	0	16.0	12.544849213552386	5.0	16
+Gastrointestinal_0	Gastrointestinal	0	32.0	12.425237204640462	6.0	32
+Gastrointestinal_0	Gastrointestinal	0	inf	12.104366699057229	7.0	Berger–Parker (a=inf)
+High_Complexity_RH004	High_Complexity	4	0.0	18.337177611172603	0.0	Richness (a=0)
+High_Complexity_RH004	High_Complexity	4	1.0	18.032624721029645	1.0	Shannon (a=1)
+High_Complexity_RH004	High_Complexity	4	2.0	17.673647739377063	2.0	Simpson (a=2)
+High_Complexity_RH004	High_Complexity	4	4.0	16.62174945087022	3.0	4
+High_Complexity_RH004	High_Complexity	4	8.0	14.52002666190871	4.0	8
+High_Complexity_RH004	High_Complexity	4	16.0	13.552734372539653	5.0	16
+High_Complexity_RH004	High_Complexity	4	32.0	13.115549824389369	6.0	32
+High_Complexity_RH004	High_Complexity	4	inf	12.705688892377827	7.0	Berger–Parker (a=inf)
+Airways_10	Airways	10	0.0	14.672370090643879	0.0	Richness (a=0)
+Airways_10	Airways	10	1.0	13.737017955220114	1.0	Shannon (a=1)
+Airways_10	Airways	10	2.0	12.736233287045726	2.0	Simpson (a=2)
+Airways_10	Airways	10	4.0	11.848334965906535	3.0	4
+Airways_10	Airways	10	8.0	11.433536876369253	4.0	8
+Airways_10	Airways	10	16.0	11.24705487485495	5.0	16
+Airways_10	Airways	10	32.0	11.141444469632479	6.0	32
+Airways_10	Airways	10	inf	10.84758821538809	7.0	Berger–Parker (a=inf)
+Urogenital_22	Urogenital	22	0.0	12.897845456005511	0.0	Richness (a=0)
+Urogenital_22	Urogenital	22	1.0	11.672920254768147	1.0	Shannon (a=1)
+Urogenital_22	Urogenital	22	2.0	10.701864558120583	2.0	Simpson (a=2)
+Urogenital_22	Urogenital	22	4.0	9.974909392432817	3.0	4
+Urogenital_22	Urogenital	22	8.0	9.678963482448035	4.0	8
+Urogenital_22	Urogenital	22	16.0	9.541883451206145	5.0	16
+Urogenital_22	Urogenital	22	32.0	9.41807633526442	6.0	32
+Urogenital_22	Urogenital	22	inf	9.17210752175092	7.0	Berger–Parker (a=inf)
+Gastrointestinal_1	Gastrointestinal	1	0.0	15.099306712078496	0.0	Richness (a=0)
+Gastrointestinal_1	Gastrointestinal	1	1.0	14.261132891411815	1.0	Shannon (a=1)
+Gastrointestinal_1	Gastrointestinal	1	2.0	13.36557908842728	2.0	Simpson (a=2)
+Gastrointestinal_1	Gastrointestinal	1	4.0	12.547391594814416	3.0	4
+Gastrointestinal_1	Gastrointestinal	1	8.0	12.13605020686588	4.0	8
+Gastrointestinal_1	Gastrointestinal	1	16.0	11.947976812458673	5.0	16
+Gastrointestinal_1	Gastrointestinal	1	32.0	11.83603066778051	6.0	32
+Gastrointestinal_1	Gastrointestinal	1	inf	11.50616976335957	7.0	Berger–Parker (a=inf)
+Skin_28	Skin	28	0.0	13.069114061773938	0.0	Richness (a=0)
+Skin_28	Skin	28	1.0	12.989420212176595	1.0	Shannon (a=1)
+Skin_28	Skin	28	2.0	12.934897498122593	2.0	Simpson (a=2)
+Skin_28	Skin	28	4.0	12.813192035650086	3.0	4
+Skin_28	Skin	28	8.0	12.353551384454908	4.0	8
+Skin_28	Skin	28	16.0	11.701384703417082	5.0	16
+Skin_28	Skin	28	32.0	11.369381723968921	6.0	32
+Skin_28	Skin	28	inf	11.026220888656084	7.0	Berger–Parker (a=inf)
+Urogenital_2	Urogenital	2	0.0	13.638549044360332	0.0	Richness (a=0)
+Urogenital_2	Urogenital	2	1.0	12.531724410959876	1.0	Shannon (a=1)
+Urogenital_2	Urogenital	2	2.0	11.510978671753664	2.0	Simpson (a=2)
+Urogenital_2	Urogenital	2	4.0	10.635362431032032	3.0	4
+Urogenital_2	Urogenital	2	8.0	10.246253124104252	4.0	8
+Urogenital_2	Urogenital	2	16.0	10.065016693954831	5.0	16
+Urogenital_2	Urogenital	2	32.0	9.906827249050458	6.0	32
+Urogenital_2	Urogenital	2	inf	9.634157818307868	7.0	Berger–Parker (a=inf)
+High_Complexity_RH003	High_Complexity	3	0.0	18.337151472157068	0.0	Richness (a=0)
+High_Complexity_RH003	High_Complexity	3	1.0	18.046415180581587	1.0	Shannon (a=1)
+High_Complexity_RH003	High_Complexity	3	2.0	17.705358801712716	2.0	Simpson (a=2)
+High_Complexity_RH003	High_Complexity	3	4.0	16.79715683461779	3.0	4
+High_Complexity_RH003	High_Complexity	3	8.0	15.163567266442957	4.0	8
+High_Complexity_RH003	High_Complexity	3	16.0	14.258518681658112	5.0	16
+High_Complexity_RH003	High_Complexity	3	32.0	13.833527941692955	6.0	32
+High_Complexity_RH003	High_Complexity	3	inf	13.424128510896184	7.0	Berger–Parker (a=inf)
+Urogenital_5	Urogenital	5	0.0	13.728452010164396	0.0	Richness (a=0)
+Urogenital_5	Urogenital	5	1.0	12.869630652702568	1.0	Shannon (a=1)
+Urogenital_5	Urogenital	5	2.0	12.083724712586887	2.0	Simpson (a=2)
+Urogenital_5	Urogenital	5	4.0	11.229071732937534	3.0	4
+Urogenital_5	Urogenital	5	8.0	10.642976626049448	4.0	8
+Urogenital_5	Urogenital	5	16.0	10.275173044918137	5.0	16
+Urogenital_5	Urogenital	5	32.0	10.062732345872691	6.0	32
+Urogenital_5	Urogenital	5	inf	9.802274022508875	7.0	Berger–Parker (a=inf)
+High_Complexity_RH001	High_Complexity	1	0.0	18.337138402471698	0.0	Richness (a=0)
+High_Complexity_RH001	High_Complexity	1	1.0	17.707030465077906	1.0	Shannon (a=1)
+High_Complexity_RH001	High_Complexity	1	2.0	17.094657109939448	2.0	Simpson (a=2)
+High_Complexity_RH001	High_Complexity	1	4.0	16.02455980133773	3.0	4
+High_Complexity_RH001	High_Complexity	1	8.0	14.517574814316722	4.0	8
+High_Complexity_RH001	High_Complexity	1	16.0	13.681521306602292	5.0	16
+High_Complexity_RH001	High_Complexity	1	32.0	13.276862776398664	6.0	32
+High_Complexity_RH001	High_Complexity	1	inf	12.873005801666737	7.0	Berger–Parker (a=inf)
+Skin_14	Skin	14	0.0	14.199749016642558	0.0	Richness (a=0)
+Skin_14	Skin	14	1.0	13.755302197877008	1.0	Shannon (a=1)
+Skin_14	Skin	14	2.0	13.405030597945169	2.0	Simpson (a=2)
+Skin_14	Skin	14	4.0	12.866675942198803	3.0	4
+Skin_14	Skin	14	8.0	11.80546220025683	4.0	8
+Skin_14	Skin	14	16.0	11.092134186225774	5.0	16
+Skin_14	Skin	14	32.0	10.747619979529404	6.0	32
+Skin_14	Skin	14	inf	10.412593397508262	7.0	Berger–Parker (a=inf)
+Urogenital_25	Urogenital	25	0.0	14.910080531966354	0.0	Richness (a=0)
+Urogenital_25	Urogenital	25	1.0	13.947135167436674	1.0	Shannon (a=1)
+Urogenital_25	Urogenital	25	2.0	13.027428677469153	2.0	Simpson (a=2)
+Urogenital_25	Urogenital	25	4.0	12.299620961475856	3.0	4
+Urogenital_25	Urogenital	25	8.0	11.930485749916294	4.0	8
+Urogenital_25	Urogenital	25	16.0	11.694200757592437	5.0	16
+Urogenital_25	Urogenital	25	32.0	11.488921804484637	6.0	32
+Urogenital_25	Urogenital	25	inf	11.16746528120627	7.0	Berger–Parker (a=inf)

@@ -3,11 +3,11 @@ __author__ = 'Ryan J McLaughlin'
 """
 SABer command line.
 """
-import sys
 import argparse
 import logging
+import sys
 
-from saber.commands import (info, recruit)
+from commands import (info, recruit)
 
 usage = """
 saber <command> [<args>]

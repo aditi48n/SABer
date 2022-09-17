@@ -1,4 +1,4 @@
-name: saber_3.7
+name: saber_cenv
 channels:
   - ursky
   - bioconda

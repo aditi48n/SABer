@@ -4,7 +4,7 @@ from subprocess import Popen
 
 import pandas as pd
 
-import utilities as s_utils
+import saber.utilities as s_utils
 
 
 def run_combine_recruits(save_dirs_dict, mg_file, clusters,

@@ -14,7 +14,7 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.decomposition import PCA
 from tqdm import tqdm
 
-import utilities as s_utils
+import saber.utilities as s_utils
 
 warnings.simplefilter("error", category=UserWarning)
 warnings.filterwarnings('ignore', '.*sparsity.*', )

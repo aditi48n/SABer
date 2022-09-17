@@ -6,16 +6,16 @@ import os
 from pip._internal.operations import freeze
 
 # import saber
-import abundance_recruiter as abr
-import classy as s_class
-import clusterer as clst
-import compile_recruits as com
-import logger as s_log
-import minhash_recruiter as mhr
-import s_args
-import tetranuc_recruiter as tra
-import utilities as s_utils
-from __init__ import version
+import saber.abundance_recruiter as abr
+import saber.classy as s_class
+import saber.clusterer as clst
+import saber.compile_recruits as com
+import saber.logger as s_log
+import saber.minhash_recruiter as mhr
+import saber.s_args as s_args
+import saber.tetranuc_recruiter as tra
+import saber.utilities as s_utils
+from saber.__init__ import version
 
 
 def info(sys_args):

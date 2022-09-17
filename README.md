@@ -14,31 +14,16 @@ This will require the installation of [Anaconda](https://www.anaconda.com/distri
 Once Anaconda is installed, you can follow the directions below to install all dependencies  
 and SABer within a conda environment.
 ```sh
-git clone --recurse-submodules git@github.com:hallamlab/SABer.git  
+git clone git@github.com:hallamlab/SABer.git  
 cd SABer  
 ```
 ### Create conda env
 ```sh
-conda create -n saber_env python=3.8  
+conda env create -f environment.yml 
 conda activate saber_env  
 ```
-### Install BWA
-```sh
-conda install -c bioconda bwa
-```
-### Install python dependencies
-```sh
-pip install -r requirements.txt  
-```
-### Special install for SamSum for now
-```sh
-cd samsum  
-python3 setup.py sdist  
-pip install dist/samsum*tar.gz  
-cd ..  
-```  
 ### Install SABer
 ```sh
-python3 setup.py sdist bdist_wheel  
-pip install dist/SABerML-0.0.1-py3-none-any.whl  
+python setup.py sdist
+pip install .
 ```

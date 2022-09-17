@@ -7,7 +7,7 @@ import argparse
 import logging
 import sys
 
-from commands import (info, recruit)
+from saber.commands import (info, recruit)
 
 usage = """
 saber <command> [<args>]

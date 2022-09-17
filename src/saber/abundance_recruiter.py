@@ -9,7 +9,7 @@ pd.set_option('display.max_columns', None)
 pd.options.mode.chained_assignment = None
 from sklearn.preprocessing import StandardScaler
 import sys
-import utilities as s_utils
+import saber.utilities as s_utils
 
 
 def runAbundRecruiter(subcontig_path, abr_path, mg_sub_file, mg_raw_file_list,

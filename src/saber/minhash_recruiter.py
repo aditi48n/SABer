@@ -8,7 +8,7 @@ import pandas as pd
 import sourmash
 from sourmash.sbtmh import SigLeaf
 
-import utilities as s_utils
+import saber.utilities as s_utils
 
 pd.set_option('display.max_columns', None)
 

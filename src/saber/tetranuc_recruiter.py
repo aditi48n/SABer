@@ -3,7 +3,7 @@ import warnings
 from os.path import isfile
 from os.path import join as o_join
 
-import utilities as s_utils
+import saber.utilities as s_utils
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 

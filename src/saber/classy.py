@@ -1,6 +1,6 @@
 __author__ = 'Ryan J McLaughlin'
 
-import utilities as s_utils
+import saber.utilities as s_utils
 
 
 class SABerBase:

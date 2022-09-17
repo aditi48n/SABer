@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("README.md", "r") as readme:
     LONG_DESCRIPTION = readme.read()
@@ -14,6 +14,7 @@ CLASSIFIERS = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
+pks = ['saber']
 
 SETUP_METADATA = \
     {
@@ -26,11 +27,11 @@ SETUP_METADATA = \
         "author_email": "mclaughlinr2@gmail.com",
         "url": "https://github.com/hallamlab/SABer",
         "license": "GPL-3.0",
-        "packages": find_packages('src', exclude=["tests"]),
         "include_package_data": True,
-        "package_dir": {'saber': 'src/saber'},  # Necessary for proper importing
-        #"package_data": {'tests': ["tests/test-data/*.sam"]},
-        #"py_modules": [splitext(basename(path))[0] for path in glob('src/*.py')],
+        "package_dir": {'': 'src'},  # Necessary for proper importing
+        "packages": pks,
+        "package_data": {
+            'saber': ['configs/*']},
         "entry_points": {'console_scripts': ['saber = saber.__main__:main']},
         "classifiers": CLASSIFIERS,
         "install_requires": ["numpy", "pytest"]

@@ -604,7 +604,7 @@ def calc_entropy(working_dir, mba_cov_list):
     else:
         logging.info('Loading Reference Renyi Entropy profiles\n')
         ent_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
-                                'configs/entropy_table.tsv'
+                                'saber/configs/entropy_table.tsv'
                                 )
         ent_df = pd.read_csv(ent_file, sep='\t', header=0)
         ent_results = entropy_cluster(ent_df)
@@ -633,7 +633,7 @@ def calc_entropy(working_dir, mba_cov_list):
 #####################################################################################################################################################################################################################
 def best_match_params(real_dir):
     clust_all_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
-                                  'configs/CV_clust_table.tsv'
+                                  'saber/configs/CV_clust_table.tsv'
                                   )
     clust_all_df = pd.read_csv(clust_all_file, sep='\t', header=0)
     real_df = pd.read_csv(os.path.join(real_dir, 'cluster_clean.tsv'), sep='\t', header=0)
@@ -703,11 +703,11 @@ def best_match_params(real_dir):
 
 def best_cluster_params(real_dir, real_df):
     nc_agg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
-                               'configs/NC_agg_params.tsv'
+                               'saber/configs/NC_agg_params.tsv'
                                )
     nc_agg_df = pd.read_csv(nc_agg_file, sep='\t', header=0)
     mq_agg_file = os.path.join(os.path.dirname(os.path.realpath(__file__)).rsplit('/', 1)[0],
-                               'configs/MQ_agg_params.tsv'
+                               'saber/configs/MQ_agg_params.tsv'
                                )
     mq_agg_df = pd.read_csv(mq_agg_file, sep='\t', header=0)
     nc_clust_df = nc_agg_df.query("grouping == 'best_cluster'")

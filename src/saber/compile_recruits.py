@@ -59,6 +59,27 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
+        # Combine final recruits and reference trusted contigs
+        trust_dict = {t[0]: t[1] for t in trusted_list}
+        for t_id in set(inter_clust_df['best_label']):
+            t_file = trust_dict[t_id]
+            concat_file = o_join(xpg_sv_path, t_id + '.hdbscan.concat.fasta')
+            with open(concat_file, 'w') as cat_out:
+                data = []
+                with open(t_file, 'r') as t_in:
+                    data.extend(t_in.readlines())
+                with open(final_rec, 'r') as r_file:
+                    data.extend(r_file.readlines())
+                join_data = '\n'.join(data).replace('\n\n', '\n')
+                cat_out.write(join_data)
+
+            # Use BBTools dedupe.sh to deduplicate the extend SAG file
+            dedupe_fa = o_join(xpg_sv_path, t_id + '.hdbscan.xPG.fasta')
+            dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
+                          'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
+            logging.info('Running BBtools dedup on %s\n' % t_id)
+            run_mem = Popen(dedupe_cmd)
+            run_mem.communicate()
     # OC-SVM Bins
     for best_label in set(ocsvm_clust_df['best_label']):
         sub_merge_df = ocsvm_clust_df[['best_label', 'contig_id']
@@ -76,6 +97,27 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
+        # Combine final recruits and reference trusted contigs
+        trust_dict = {t[0]: t[1] for t in trusted_list}
+        for t_id in set(inter_clust_df['best_label']):
+            t_file = trust_dict[t_id]
+            concat_file = o_join(xpg_sv_path, t_id + '.ocsvm.concat.fasta')
+            with open(concat_file, 'w') as cat_out:
+                data = []
+                with open(t_file, 'r') as t_in:
+                    data.extend(t_in.readlines())
+                with open(final_rec, 'r') as r_file:
+                    data.extend(r_file.readlines())
+                join_data = '\n'.join(data).replace('\n\n', '\n')
+                cat_out.write(join_data)
+
+            # Use BBTools dedupe.sh to deduplicate the extend SAG file
+            dedupe_fa = o_join(xpg_sv_path, t_id + '.ocsvm.xPG.fasta')
+            dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
+                          'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
+            logging.info('Running BBtools dedup on %s\n' % t_id)
+            run_mem = Popen(dedupe_cmd)
+            run_mem.communicate()   
     # Combined Bins
     if isinstance(inter_clust_df, pd.DataFrame):
         for best_label in set(inter_clust_df['best_label']):
@@ -97,7 +139,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
         trust_dict = {t[0]: t[1] for t in trusted_list}
         for t_id in set(inter_clust_df['best_label']):
             t_file = trust_dict[t_id]
-            concat_file = o_join(xpg_sv_path, t_id + '.concat.fasta')
+            concat_file = o_join(xpg_sv_path, t_id + '.intersect.concat.fasta')
             with open(concat_file, 'w') as cat_out:
                 data = []
                 with open(t_file, 'r') as t_in:
@@ -109,16 +151,16 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
                 cat_out.write(join_data)
 
             # Use BBTools dedupe.sh to deduplicate the extend SAG file
-            dedupe_fa = o_join(xpg_sv_path, t_id + '.xPG.fasta')
+            dedupe_fa = o_join(xpg_sv_path, t_id + '.intersect.xPG.fasta')
             dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
                           'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
             logging.info('Running BBtools dedup on %s\n' % t_id)
             run_mem = Popen(dedupe_cmd)
             run_mem.communicate()
     # Clean up the directory
-    logging.info('Cleaning up intermediate files...\n')
-    s_utils.runCleaner(mode_path, "denovo")
-    s_utils.runCleaner(mode_path, "hdbscan")
-    s_utils.runCleaner(mode_path, "ocsvm")
-    s_utils.runCleaner(mode_path, "intersect")
-    s_utils.runCleaner(xpg_sv_path, "*.concat.fasta")
+    #logging.info('Cleaning up intermediate files...\n')
+    #s_utils.runCleaner(mode_path, "denovo")
+    #s_utils.runCleaner(mode_path, "hdbscan")
+    #s_utils.runCleaner(mode_path, "ocsvm")
+    #s_utils.runCleaner(mode_path, "intersect")
+    #s_utils.runCleaner(xpg_sv_path, "*.concat.fasta")

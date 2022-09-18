@@ -526,7 +526,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         print('Denoising Clusters...')
         mh_trusted_df = minhash_dict[201]
         mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        mh_trusted_df = mh_trusted_df.query('jacc_sim == 1.0')
+        #mh_trusted_df = mh_trusted_df.query('jacc_sim == 1.0')
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
         for contig in tqdm(list(cluster_df['contig_id'].unique())):
@@ -617,7 +617,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         print('Running OC-SVM algorithm...')
         mh_trusted_df = minhash_dict[201]
         mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        mh_trusted_df = mh_trusted_df.query('jacc_sim == 1.0')
+        #mh_trusted_df = mh_trusted_df.query('jacc_sim >= 0.1')
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
         oc_sag_list = list(mh_trusted_df['sag_id'].unique())

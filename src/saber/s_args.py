@@ -55,9 +55,9 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                default=False, help="Path to reference FASTA file or directory "
                                                    "containing only FASTA files."
                                )
-        self.optopt.add_argument("--autoopt", dest="auto_params", default='majority_rule',
+        self.optopt.add_argument("--autoopt", dest="auto_params", default='algo_defaults',
                                  help="select which automatic optimization algorithm parameter set to use,\n"
-                                      "majority_rule [DEFAULT], best_cluster, best_match."
+                                      "[algorithm default], majority_rule, best_cluster, best_match."
                                  )
         self.optopt.add_argument("--very_relaxed", action='store_const', const="very_relaxed",
                                  dest="vr_params",
@@ -69,7 +69,7 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                  )
         self.optopt.add_argument("--strict", action='store_const', const="strict",
                                  dest="s_params",
-                                 help="parameter-set that maximizes precision at approximately strain-level [DEFAULT]."
+                                 help="parameter-set that maximizes precision at approximately strain-level."
                                  )
         self.optopt.add_argument("--very_strict", action='store_const', const="very_strict",
                                  dest="vs_params",

@@ -345,6 +345,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     sag2cami_file = joinpath(err_path, 'sag2cami_map.tsv')
     src2contig_file = joinpath(err_path, 'src2contig_map.tsv')
     src2mock_file = joinpath(err_path, 'src_mock_df.tsv')
+    #mhr_out_files = glob.glob(joinpath(mhrout_path, '*.mhr_recruits.tsv'))
     denovo_out_file = glob.glob(joinpath(saberout_path, '*.denovo_clusters.tsv'))[0]
     denovo_errstat_file = joinpath(err_path, 'denovo.errstat.tsv')
     denovo_mean_file = joinpath(err_path, 'denovo.errstat.mean.tsv')
@@ -549,7 +550,7 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             sag2cami_df.to_csv(sag2cami_file, index=False, sep='\t')
     except:
         print('Do not need mappings when no anchors...')
-    # '''
+    
     ###################################################################################################
     # Run dnadiff on all refs, trusted contigs, and xPGs
     ###################################################################################################
@@ -567,7 +568,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
     # Pair SRCs, SAGs, xPGs
     simi_dict = {}
     for xpg in xpg_file_list:
-        xpg_id = os.path.basename(xpg).rsplit('.', 2)[0]
+        xpg_id = os.path.basename(xpg).rsplit('.', 3)[0]
+        algo = os.path.basename(xpg).rsplit('.', 3)[1]
         for sag in mocksag_list:
             sag_id = os.path.basename(sag).rsplit('.', 1)[0]
             if xpg_id == sag_id:
@@ -575,19 +577,20 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                 for src in src_genome_list:
                     src_id = os.path.basename(src).rsplit('.', 1)[0]
                     if xpg_base_id == src_id:
-                        simi_dict[src_id] = [xpg, sag, src]
+                        simi_dict[(src_id, algo)] = [xpg, sag, src]
     # Run dnadiff on all pairs
     arg_list = []
     for p_key in tqdm(list(simi_dict.keys())):
+        p_id = p_key[0] + '.' + p_key[1]
         xpg_fasta = simi_dict[p_key][0]
         sag_fasta = simi_dict[p_key][1]
         src_fasta = simi_dict[p_key][2]
-        sag_prefix = os.path.join(dnadiff_path, p_key + '.SAG')
-        xpg_prefix = os.path.join(dnadiff_path, p_key + '.xPG')
-        arg_list.append([p_key, sag_prefix, src_fasta, sag_fasta,
+        sag_prefix = os.path.join(dnadiff_path, p_id + '.SAG')
+        xpg_prefix = os.path.join(dnadiff_path, p_id + '.xPG')
+        arg_list.append([p_id, sag_prefix, src_fasta, sag_fasta,
                          'SAG']
                         )
-        arg_list.append([p_key, xpg_prefix, src_fasta, xpg_fasta,
+        arg_list.append([p_id, xpg_prefix, src_fasta, xpg_fasta,
                          'xPG']
                         )
     pool = multiprocessing.Pool(processes=nthreads)
@@ -604,11 +607,16 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                        index=['ref_id', 'tag'],
                                        columns='stat'
                                        ).reset_index()
+    
     dnadiff_file = joinpath(err_path, 'diffdna_allrefs.tsv')
     dnadiff_df.to_csv(dnadiff_file, index=False, sep='\t')
-    '''
+    
     dnadiff_df = pd.read_csv(joinpath(err_path, 'diffdna_allrefs.tsv'), sep='\t', header=0)
-    '''
+    dnadiff_df['algo'] = [x.rsplit('.', 1)[1] for x in dnadiff_df['ref_id']]
+    dnadiff_df['ref_id'] = [x.rsplit('.', 1)[0] for x in dnadiff_df['ref_id']]
+    dnadiff_df = dnadiff_df[dnadiff_df['algo'] == 'intersect']
+    del dnadiff_df['algo']
+    
     ###################################################################################################
     # De novo error analysis
     ###################################################################################################
@@ -809,9 +817,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                  'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                  on='CAMI_genomeID', how='left'
-                                  )
+    cami2strain_df = src2contig_df[['CAMI_genomeID', 'strain']].drop_duplicates()
+    score_tax_df = score_df.merge(cami2strain_df, on='CAMI_genomeID', how='left')
     score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"}, inplace=True)
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'
@@ -899,7 +906,6 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
                              src2strain_list, 'ocsvm', src_id, strain_id, src_bp_dict
                              ])
-
     results = pool.imap_unordered(EArecruit, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
@@ -913,9 +919,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                  'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                  on='CAMI_genomeID', how='left'
-                                  )
+    cami2strain_df = src2contig_df[['CAMI_genomeID', 'strain']].drop_duplicates()
+    score_tax_df = score_df.merge(cami2strain_df, on='CAMI_genomeID', how='left')
     score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"}, inplace=True)
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'
@@ -1017,9 +1022,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                  'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                  on='CAMI_genomeID', how='left'
-                                  )
+    cami2strain_df = src2contig_df[['CAMI_genomeID', 'strain']].drop_duplicates()
+    score_tax_df = score_df.merge(cami2strain_df, on='CAMI_genomeID', how='left')
     score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"}, inplace=True)
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'
@@ -1107,7 +1111,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
             arg_list.append(['best_label', clust, dedup_clust_df, contig_bp_df, src2contig_list,
                              src2strain_list, 'xPG', src_id, strain_id, src_bp_dict, sub_diff_df
                              ])
-
+    for a in arg_list:
+        EAxpg(a)
     results = pool.imap_unordered(EAxpg, arg_list)
     score_list = []
     for i, output in tqdm(enumerate(results, 1)):
@@ -1121,9 +1126,8 @@ def runErrorAnalysis(saberout_path, synsrc_path, src_metag_file, mocksag_path, s
                                                  'possible_bp', 'total_bp'
                                                  ])
     score_df = score_df.merge(sag2cami_df, left_on='best_label', right_on='sag_id', how='left')
-    score_tax_df = score_df.merge(clust2src_df[['CAMI_genomeID', 'strain']].drop_duplicates(),
-                                  on='CAMI_genomeID', how='left'
-                                  )
+    cami2strain_df = src2contig_df[['CAMI_genomeID', 'strain']].drop_duplicates()
+    score_tax_df = score_df.merge(cami2strain_df, on='CAMI_genomeID', how='left')
     score_tax_df.rename(columns={"CAMI_genomeID": "exact_label", "strain": "strain_label"}, inplace=True)
     score_tax_df['size_bp'] = score_tax_df['TP'] + score_tax_df['FP']
     score_tax_df['>20Kb'] = 'No'

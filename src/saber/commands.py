@@ -80,6 +80,7 @@ def recruit(sys_args):
 
     # Quick check to see which mode was selected
     mode_list = [recruit_s.vr, recruit_s.r, recruit_s.s, recruit_s.vs]
+    recruit_s.mode = 'algo_defaults'
     for m in mode_list:  # TODO: this needs to break if more than one mode is selected
         if m:
             recruit_s.mode = m
@@ -91,7 +92,7 @@ def recruit(sys_args):
     # TODO: think about setting a default upper and lower bp size for bins to filter bad ones
 
     # Build subcontigs for MG
-    mg_file = tuple([recruit_s.mg_file.rsplit('/', 1)[1].rsplit('.', 1)[0],
+    mg_file = tuple([os.path.splitext(os.path.basename(recruit_s.mg_file))[0],
                      recruit_s.mg_file])  # TODO: needs to support multiple MetaGs
     mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
                                            recruit_s.save_path,
@@ -104,7 +105,7 @@ def recruit(sys_args):
         # Find the Trusted Contigs (TCs)
         tc_list = s_utils.get_SAGs(
             recruit_s.trust_path)  # TODO: needs to support a single multi-FASTA and multiple FASTAs
-        trust_files = tuple([(x.rsplit('/', 1)[1].rsplit('.', 1)[0], x) for x in tc_list])
+        trust_files = tuple([(os.path.splitext(os.path.basename(x))[0], x) for x in tc_list])
         # Run MinHash recruiting algorithm
         minhash_df_dict = mhr.run_minhash_recruiter(recruit_s.save_path,  # TODO: expose some params for users
                                                     recruit_s.save_path,

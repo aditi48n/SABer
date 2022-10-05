@@ -850,9 +850,14 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
     majority_rule_df = majority_rule_params(real_dir, nc_agg_df, mq_agg_df, real_df)
     opt_param_dict = {'majority_rule': majority_rule_df,
                       'best_cluster': best_cluster_df,
-                      'best_match': best_match_df
+                      'best_match': best_match_df,
+                      'algo_defaults': None
                       }
-    opt_df = opt_param_dict[autoopt_setting]
+    if autoopt_setting != 'algo_defaults':
+        opt_df = opt_param_dict[autoopt_setting]
+    else: # if a mode is selected but no param optimization, use majority_rule
+        opt_df = opt_param_dict['majority_rule']
+
     if vr:  # TODO: this can be refactored, and should be at some point
         d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
                                 "& mq_nc == 'mq' & level == 'strain'"
@@ -900,30 +905,27 @@ def run_param_match(real_dir, autoopt_setting, vr, r, s, vs):
                               )
         setting = 'Very Strict'
 
-    else:  # else use strict settings
-        d_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'denovo'"
-                                "& mq_nc == 'nc' & level == 'strain'"
-                                )
-        a_hdb_df = opt_df.query("cv_algo == 'hdbscan' & algo == 'hdbscan'"
-                                "& mq_nc == 'nc' & level == 'strain'"
-                                )
-        ocs_df = opt_df.query("cv_algo == 'ocsvm' & algo == 'ocsvm'"
-                              "& mq_nc == 'nc' & level == 'strain'"
-                              )
-        setting = 'Default (strict)'
+    else:  # else use algo defaults
+        setting = 'Default'
+        params_dict = {'d_min_clust': 5, 'd_min_samp': None,
+                       'a_min_clust': 5, 'a_min_samp': None,
+                       'nu': 0.5, 'gamma': 'scale', 'setting': setting
+                       }
 
-    opt_d_min_clust = int(d_hdb_df['cv_val1'].values[0])
-    opt_d_min_samp = int(d_hdb_df['cv_val2'].values[0])
-    opt_a_min_clust = int(a_hdb_df['cv_val1'].values[0])
-    opt_a_min_samp = int(a_hdb_df['cv_val2'].values[0])
-    opt_nu = float(ocs_df['cv_val1'].values[0])
-    if ocs_df['cv_val2'].values[0] == 'scale':
-        opt_gamma = ocs_df['cv_val2'].values[0]
-    else:
-        opt_gamma = float(ocs_df['cv_val2'].values[0])
+    if setting != 'Default':
+        opt_d_min_clust = int(d_hdb_df['cv_val1'].values[0])
+        opt_d_min_samp = int(d_hdb_df['cv_val2'].values[0])
+        opt_a_min_clust = int(a_hdb_df['cv_val1'].values[0])
+        opt_a_min_samp = int(a_hdb_df['cv_val2'].values[0])
+        opt_nu = float(ocs_df['cv_val1'].values[0])
+        if ocs_df['cv_val2'].values[0] == 'scale':
+            opt_gamma = ocs_df['cv_val2'].values[0]
+        else:
+            opt_gamma = float(ocs_df['cv_val2'].values[0])
 
-    params_dict = {'d_min_clust': opt_d_min_clust, 'd_min_samp': opt_d_min_samp,
-                   'a_min_clust': opt_a_min_clust, 'a_min_samp': opt_a_min_samp,
-                   'nu': opt_nu, 'gamma': opt_gamma, 'setting': setting
-                   }
+        params_dict = {'d_min_clust': opt_d_min_clust, 'd_min_samp': opt_d_min_samp,
+                       'a_min_clust': opt_a_min_clust, 'a_min_samp': opt_a_min_samp,
+                       'nu': opt_nu, 'gamma': opt_gamma, 'setting': setting
+                       }
+    
     return params_dict

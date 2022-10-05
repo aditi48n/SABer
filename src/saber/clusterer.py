@@ -110,6 +110,10 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                  denovo_min_clust, denovo_min_samp, anchor_min_clust, anchor_min_samp,
                  nu, gamma, nthreads
                  ):  # TODO: need to add multithreading where ever possible
+    # Get the MinHash recruits
+    mh_trusted_df = minhash_dict[201]
+    mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
+    mh_best_df = mh_trusted_df.query('jacc_sim == 1.0')
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
     merged_emb = Path(o_join(tmp_path, mg_id + '.merged_emb.tsv'))
@@ -117,41 +121,49 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         cov_emb = Path(o_join(tmp_path, mg_id + '.covm_emb.tsv'))
         print('Building embedding for Coverage...')
         cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='subcontig_id')
-        n_neighbors = 10
+        cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df.index]
+        #mh_contig_list = list(mh_trusted_df['contig_id'].unique())
+        mh_cov_df = cov_df.copy() #.query('contig_id == @mh_contig_list')
+        del mh_cov_df['contig_id']
+        n_neighbors = 20
         # COV sometimes crashes when init='spectral', trying higher NN value for 2-stage DR
         try:
-            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                              n_components=len(cov_df.columns),
-                                              random_state=42, metric='manhattan', init=set_init
-                                              ).fit_transform(cov_df)
+            clusterable_embedding = umap.UMAP(random_state=42).fit_transform(mh_cov_df)
+                                              #n_neighbors=n_neighbors, min_dist=0.1,
+                                              #n_components=len(mh_cov_df.columns),
+                                              #random_state=42, metric='manhattan', init=set_init
+                                              #).fit_transform(mh_cov_df)
         except:
             try:
                 print('Spectral Initialization Failed!')
                 print('Running 2-stage DR to provide Initial Embedding...')
                 tmp_nn = 50
-                tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                          n_components=len(cov_df.columns),
-                                          random_state=42, metric='manhattan',
-                                          init=set_init
-                                          ).fit_transform(cov_df)
+                tmp_embedding = umap.UMAP(random_state=42).fit_transform(mh_cov_df)
+                                          #n_neighbors=tmp_nn, min_dist=0.1,
+                                          #n_components=len(mh_cov_df.columns),
+                                          #random_state=42, metric='manhattan',
+                                          #init=set_init
+                                          #).fit_transform(mh_cov_df)
                 print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                  n_components=len(cov_df.columns),
-                                                  random_state=42, metric='manhattan',
-                                                  init=tmp_embedding
-                                                  ).fit_transform(cov_df)
+                clusterable_embedding = umap.UMAP(random_state=42).fit_transform(mh_cov_df)
+                                                  #n_neighbors=n_neighbors, min_dist=0.1,
+                                                  #n_components=len(mh_cov_df.columns),
+                                                  #random_state=42, metric='manhattan',
+                                                  #init=tmp_embedding
+                                                  #).fit_transform(mh_cov_df)
             except:
                 print('2-Stage Initialization Failed!')
                 print('Running PCA to provide Initial Embedding...')
-                pca = PCA(n_components=len(cov_df.columns))
-                pca_emb = pca.fit_transform(cov_df)
+                pca = PCA(n_components=len(mh_cov_df.columns))
+                pca_emb = pca.fit_transform(mh_cov_df)
                 print('Fitting Coverage Data with Anchors...')
-                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                  n_components=len(cov_df.columns),
-                                                  random_state=42, metric='manhattan',
-                                                  init=pca_emb
-                                                  ).fit_transform(cov_df)
-        umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
+                clusterable_embedding = umap.UMAP(random_state=42).fit_transform(mh_cov_df)
+                                                  #n_neighbors=n_neighbors, min_dist=0.1,
+                                                  #n_components=len(mh_cov_df.columns),
+                                                  #random_state=42, metric='manhattan',
+                                                  #init=pca_emb
+                                                  #).fit_transform(mh_cov_df)
+        umap_feat_df = pd.DataFrame(clusterable_embedding, index=mh_cov_df.index.values)
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
@@ -160,39 +172,47 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         tetra_emb = Path(o_join(tmp_path, mg_id + '.tetra_emb.tsv'))
         print('Building embedding for Tetra Hz...')
         tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
-        n_neighbors = 10
+        tetra_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_df.index]
+        #mh_contig_list = list(mh_trusted_df['contig_id'].unique())
+        mh_tetra_df = tetra_df.copy() #.query('contig_id == @mh_contig_list')
+        del mh_tetra_df['contig_id']
+        #n_neighbors = 10
         try:
-            clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=40,
-                                              random_state=42, metric='manhattan', init=set_init
-                                              ).fit_transform(tetra_df)
+            clusterable_embedding = umap.UMAP(random_state=42).fit_transform(mh_tetra_df)
+                                              #n_neighbors=n_neighbors, min_dist=0.1, n_components=3,
+                                              #random_state=42, metric='manhattan', init=set_init
+                                              #).fit_transform(mh_tetra_df)
         except:
             try:
                 print('Spectral Initialization Failed!')
                 print('Running 2-stage DR to provide Initial Embedding...')
                 tmp_nn = 50
-                tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                          n_components=40,
-                                          random_state=42, metric='manhattan',
-                                          init=set_init
-                                          ).fit_transform(tetra_df)
+                tmp_embedding = umap.UMAP(random_state=42).fit_transform(mh_tetra_df)
+                                          #n_neighbors=tmp_nn, min_dist=0.1,
+                                          #n_components=3,
+                                          ##random_state=42, metric='manhattan',
+                                          #init=set_init
+                                          #).fit_transform(mh_tetra_df)
                 print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                  n_components=40,
-                                                  random_state=42, metric='manhattan',
-                                                  init=tmp_embedding
-                                                  ).fit_transform(tetra_df)
+                clusterable_embedding = umap.UMAP(random_state=42).fit_transform(mh_tetra_df)
+                                                  #n_neighbors=n_neighbors, min_dist=0.1,
+                                                  #n_components=3,
+                                                  #random_state=42, metric='manhattan',
+                                                  #init=tmp_embedding
+                                                  #).fit_transform(mh_tetra_df)
             except:
                 print('2-Stage Initialization Failed!')
                 print('Running PCA to provide Initial Embedding...')
-                pca = PCA(n_components=40)
-                pca_emb = pca.fit_transform(tetra_df)
+                pca = PCA(n_components=3)
+                pca_emb = pca.fit_transform(mh_tetra_df)
                 print('Fitting Coverage Data with Anchors...')
-                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                  n_components=40,
-                                                  random_state=42, metric='manhattan',
-                                                  init=pca_emb
-                                                  ).fit_transform(tetra_df)
-        umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
+                clusterable_embedding = umap.UMAP(random_state=42).fit_transform(mh_tetra_df)
+                                                  #n_neighbors=n_neighbors, min_dist=0.1,
+                                                  #n_components=3,
+                                                  #random_state=42, metric='manhattan',
+                                                  #init=pca_emb
+                                                  #).fit_transform(mh_tetra_df)
+        umap_feat_df = pd.DataFrame(clusterable_embedding, index=mh_tetra_df.index.values)
         umap_feat_df.reset_index(inplace=True)
         umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
         umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
@@ -214,12 +234,11 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         cov_feat_df.drop(columns=['contig_id_cov'], inplace=True)
         merge_df.to_csv(merged_emb, sep='\t')
 
-    hdbscan_out_file = Path(o_join(clst_path, mg_id + '.denovo_hdbscan.tsv'))
-    if not hdbscan_out_file.is_file():
+    denovo_out_file = Path(o_join(clst_path, mg_id + '.denovo_hdbscan.tsv'))
+    if not denovo_out_file.is_file():
         print('Performing De Novo Clustering...')
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=denovo_min_clust, cluster_selection_method='eom',
-                                    prediction_data=True, cluster_selection_epsilon=0,
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=denovo_min_clust, prediction_data=True,
                                     min_samples=denovo_min_samp, core_dist_n_jobs=nthreads
                                     ).fit(merge_df.values)
 
@@ -233,10 +252,10 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                                            'outlier_score']
                                   )
         cluster_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cluster_df['subcontig_id']]
-        cluster_df.to_csv(hdbscan_out_file, sep='\t', index=False)
+        cluster_df.to_csv(denovo_out_file, sep='\t', index=False)
     else:
         print('Loading De Novo Clusters...')
-        cluster_df = pd.read_csv(hdbscan_out_file, header=0, sep='\t')
+        cluster_df = pd.read_csv(denovo_out_file, header=0, sep='\t')
     denovo_out_file = Path(o_join(clst_path, mg_id + '.denovo_clusters.tsv'))
     noise_out_file = Path(o_join(clst_path, mg_id + '.denovo_noise.tsv'))
     if not denovo_out_file.is_file():
@@ -269,240 +288,9 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
     trust_anchors_file = Path(o_join(clst_path, mg_id + '.hdbscan_anchors.tsv'))
     if minhash_dict and not trust_anchors_file.is_file():
         print('Anchored Binning Starting with Trusted Contigs...')
-        '''
-        # Form groupings from mh recruits
-        mh_trusted_df = minhash_dict[201]
-        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        mh_trusted_df = mh_trusted_df.query('jacc_sim == 1.0')
-        # Convert CovM to UMAP feature table
-        set_init = 'spectral'
-        anchor_emb = Path(o_join(tmp_path, mg_id + '.anchored.merged_emb.tsv'))
-        if not anchor_emb.is_file():
-            cov_emb = Path(o_join(tmp_path, mg_id + '.anchored.covm_emb.tsv'))
-            print('Building Anchored embedding for Coverage...')
-            cov_df = pd.read_csv(cov_file, header=0, sep='\t', index_col='contigName')
-            cov_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_df.index.values]
-            anchor_cov_list = []
-            sag2contigs = {}
-            print('Mapping Trusted Contig Anchors...')
-            i = 0
-            sag_list = list(mh_trusted_df['sag_id'].unique())
-            for sag_id in tqdm(sag_list):
-                sub_mh_df = mh_trusted_df.query('sag_id == @sag_id')
-                sag_contigs = list(sub_mh_df['contig_id'])
-                sag2contigs[sag_id] = sag_contigs, i
-                sub_cov_df = cov_df.query('contig_id in @sag_contigs')
-                sub_cov_df['label'] = i
-                anchor_cov_list.append(sub_cov_df)
-                i += 1
-            cat_cov_df = pd.concat(anchor_cov_list)
-            cov_labels = list(cat_cov_df['label'])
-            cat_cov_df.drop(columns=['label', 'contig_id'], inplace=True)
-            cov_df.drop(columns=['contig_id'], inplace=True)
-            n_neighbors = 10
-            try:
-                print('Fitting Coverage Data with Anchors...')
-                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                  n_components=len(cov_df.columns),
-                                                  random_state=42, metric='manhattan', init=set_init
-                                                  ).fit_transform(cov_df)
-            except:
-                try:
-                    print('Spectral Initialization Failed!')
-                    print('Running 2-stage DR to provide Initial Embedding...')
-                    tmp_nn = 50
-                    tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                              n_components=len(cov_df.columns),
-                                              random_state=42, metric='manhattan',
-                                              init=set_init
-                                              ).fit_transform(cov_df)
-                    print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-                    clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                      n_components=len(cov_df.columns),
-                                                      random_state=42, metric='manhattan',
-                                                      init=tmp_embedding
-                                                      ).fit_transform(cov_df)
-                except:
-                    print('2-Stage Initialization Failed!')
-                    print('Running PCA to provide Initial Embedding...')
-                    pca = PCA(n_components=len(cov_df.columns))
-                    pca_emb = pca.fit_transform(cov_df)
-                    print('Fitting Coverage Data with Anchors...')
-                    clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                      n_components=len(cov_df.columns),
-                                                      random_state=42, metric='manhattan',
-                                                      init=pca_emb
-                                                      ).fit_transform(cov_df)
-        '''
-        '''
-            try:
-                print('Fitting Coverage Data with Anchors...')
-                mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                   n_components=len(cov_df.columns),
-                                   random_state=42, metric='manhattan',
-                                   init=set_init
-                                   ).fit(cat_cov_df, cov_labels)
-                print('Transforming Coverage Data with Anchors...')
-                clusterable_embedding = mapper.transform(cov_df)
-            except:
-                try:
-                    print('Spectral Initialization Failed!')
-                    print('Running 2-stage DR to provide Initial Embedding...')
-                    tmp_nn = 50
-                    tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                              n_components=len(cov_df.columns),
-                                              random_state=42, metric='manhattan',
-                                              init=set_init
-                                              ).fit_transform(cat_cov_df, cov_labels)
-                    print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-                    mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                       n_components=len(cov_df.columns),
-                                       random_state=42, metric='manhattan',
-                                       init=tmp_embedding
-                                       ).fit(cat_cov_df, cov_labels)
-                    print('Transforming Coverage Data with Anchors...')
-                    clusterable_embedding = mapper.transform(cov_df)
-                except:
-                    print('2-Stage Initialization Failed!')
-                    print('Running PCA to provide Initial Embedding...')
-                    pca = PCA(n_components=len(cov_df.columns))
-                    pca_emb = pca.fit_transform(cat_cov_df)
-                    print('Fitting Coverage Data with Anchors...')
-                    mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                       n_components=len(cov_df.columns),
-                                       random_state=42, metric='manhattan',
-                                       init=pca_emb
-                                       ).fit(cat_cov_df, cov_labels)
-                    print('Transforming Coverage Data with Anchors...')
-                    clusterable_embedding = mapper.transform(cov_df)
-        '''
-        '''
-            umap_feat_df = pd.DataFrame(clusterable_embedding, index=cov_df.index.values)
-            umap_feat_df.reset_index(inplace=True)
-            umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
-            umap_feat_df.to_csv(cov_emb, sep='\t', index=False)
-
-            # Convert Tetra to UMAP feature table
-            tetra_emb = Path(o_join(tmp_path, mg_id + '.anchored.tetra_emb.tsv'))
-            print('Building Anchored embedding for Tetra Hz...')
-            tetra_df = pd.read_csv(tetra_file, header=0, sep='\t', index_col='contig_id')
-            tetra_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_df.index.values]
-            anchor_tetra_list = []
-            for sag_id in sag_list:
-                sag_contigs, i = sag2contigs[sag_id]
-                sub_tetra_df = tetra_df.query('contig_id in @sag_contigs')
-                sub_tetra_df['label'] = i
-                anchor_tetra_list.append(sub_tetra_df)
-            cat_tetra_df = pd.concat(anchor_tetra_list)
-            tetra_labels = list(cat_tetra_df['label'])
-            cat_tetra_df.drop(columns=['contig_id', 'label'], inplace=True)
-            tetra_df.drop(columns=['contig_id'], inplace=True)
-            n_neighbors = 10
-            try:
-                print('Fitting TetraHz Data with Anchors...')
-                clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=40,
-                                                  random_state=42, metric='manhattan', init=set_init
-                                                  ).fit_transform(tetra_df)
-            except:
-                try:
-                    print('Spectral Initialization Failed!')
-                    print('Running 2-stage DR to provide Initial Embedding...')
-                    tmp_nn = 50
-                    tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                              n_components=40,
-                                              random_state=42, metric='manhattan',
-                                              init=set_init
-                                              ).fit_transform(tetra_df)
-                    print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-                    clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                      n_components=40,
-                                                      random_state=42, metric='manhattan',
-                                                      init=tmp_embedding
-                                                      ).fit_transform(tetra_df)
-                except:
-                    print('2-Stage Initialization Failed!')
-                    print('Running PCA to provide Initial Embedding...')
-                    pca = PCA(n_components=40)
-                    pca_emb = pca.fit_transform(tetra_df)
-                    print('Fitting Coverage Data with Anchors...')
-                    clusterable_embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                                      n_components=40,
-                                                      random_state=42, metric='manhattan',
-                                                      init=pca_emb
-                                                      ).fit_transform(tetra_df)
-        '''
-        '''
-            try:
-                print('Fitting TetraHz Data with Anchors...')
-                mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                   n_components=40, random_state=42,
-                                   metric='manhattan', init=set_init
-                                   ).fit_transform(cat_tetra_df, tetra_labels)
-
-                print('Transforming TetraHz Data with Anchors...')
-                clusterable_embedding = mapper.transform(tetra_df)
-            except:
-                try:
-                    print('Spectral Initialization Failed!')
-                    print('Running 2-stage DR to provide Initial Embedding...')
-                    tmp_nn = 50
-                    tmp_embedding = umap.UMAP(n_neighbors=tmp_nn, min_dist=0.1,
-                                              n_components=40,
-                                              random_state=42, metric='manhattan',
-                                              init=set_init
-                                              ).fit_transform(cat_tetra_df, tetra_labels)
-                    print('Initialization worked with n_neighbors=50, moving to Stage 2...')
-                    mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                       n_components=40,
-                                       random_state=42, metric='manhattan',
-                                       init=tmp_embedding
-                                       ).fit(cat_tetra_df, tetra_labels)
-                    print('Transforming TetraHz Data with Anchors...')
-                    clusterable_embedding = mapper.transform(tetra_df)
-                except:
-                    print('2-Stage Initialization Failed!')
-                    print('Running PCA to provide Initial Embedding...')
-                    pca = PCA(n_components=40)
-                    pca_emb = pca.fit_transform(cat_tetra_df)
-                    print('Fitting Coverage Data with Anchors...')
-                    mapper = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1,
-                                       n_components=40,
-                                       random_state=42, metric='manhattan',
-                                       init=pca_emb
-                                       ).fit(cat_tetra_df, tetra_labels)
-                    print('Transforming TetraHz Data with Anchors...')
-                    clusterable_embedding = mapper.transform(tetra_df)
-        '''
-        '''
-            umap_feat_df = pd.DataFrame(clusterable_embedding, index=tetra_df.index.values)
-            umap_feat_df.reset_index(inplace=True)
-            umap_feat_df.rename(columns={'index': 'subcontig_id'}, inplace=True)
-            umap_feat_df.to_csv(tetra_emb, sep='\t', index=False)
-
-            # Merge Coverage and Tetra Embeddings
-            print('Merging Tetra and Coverage Embeddings...')
-            tetra_feat_df = pd.read_csv(tetra_emb, sep='\t', header=0, index_col='subcontig_id')
-            tetra_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in tetra_feat_df.index.values]
-            tetra_feat_df.columns = [str(x) + '_tetra' for x in tetra_feat_df.columns]
-            # load covm file
-            cov_feat_df = pd.read_csv(cov_emb, sep='\t', header=0)
-            cov_feat_df.rename(columns={'contigName': 'subcontig_id'}, inplace=True)
-            cov_feat_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cov_feat_df['subcontig_id']]
-            cov_feat_df.set_index('subcontig_id', inplace=True)
-            cov_feat_df.columns = [str(x) + '_cov' for x in cov_feat_df.columns]
-            anchor_df = tetra_feat_df.join(cov_feat_df)
-            anchor_df.drop(columns=['contig_id_tetra', 'contig_id_cov'], inplace=True)
-            tetra_feat_df.drop(columns=['contig_id_tetra'], inplace=True)
-            cov_feat_df.drop(columns=['contig_id_cov'], inplace=True)
-            anchor_df.to_csv(anchor_emb, sep='\t')
-        else:
-            print('Loading Anchored Embedding...')
-            anchor_df = pd.read_csv(anchor_emb, sep='\t', header=0, index_col='subcontig_id')
-        '''
         print('Clustering with HDBSCAN and Anchored Settings...')
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=anchor_min_clust, cluster_selection_method='eom',
-                                    prediction_data=True, cluster_selection_epsilon=0,
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=anchor_min_clust, prediction_data=True,
                                     min_samples=anchor_min_samp, core_dist_n_jobs=nthreads
                                     ).fit(merge_df.values)
 
@@ -524,9 +312,6 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
     noise_out_file = Path(o_join(clst_path, mg_id + '.hdbscan_noise.tsv'))
     if minhash_dict and not hdbscan_out_file.is_file():
         print('Denoising Clusters...')
-        mh_trusted_df = minhash_dict[201]
-        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        #mh_trusted_df = mh_trusted_df.query('jacc_sim == 1.0')
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
         for contig in tqdm(list(cluster_df['contig_id'].unique())):
@@ -542,15 +327,16 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
         no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
         noise_df = cluster_ns_df.query('best_label == -1')  # 'best_prob < 0.51')
-        if no_noise_df.empty:
-            #  TODO: fix this or print a warning message to user :)
-            no_noise_df = noise_df.copy()
+        #if no_noise_df.empty:
+        #    #  TODO: fix this or print a warning message to user :)
+        #    no_noise_df = noise_df.copy()
+        
         # Group clustered and noise contigs by trusted contigs
         print('Re-grouping with Trusted Contigs...')
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
-        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
-            sub_mh_df = mh_trusted_df.query('sag_id == @sag_id')
+        for sag_id in tqdm(mh_best_df['sag_id'].unique()):
+            sub_mh_df = mh_best_df.query('sag_id == @sag_id')
             arg_list.append([sub_mh_df, no_noise_df, noise_df, sag_id])
         label_max_list = []
         contig_max_list = []
@@ -581,12 +367,15 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                                                   'best_label == @best_label'
                                                   )
             hdbscan_label_dict[sag_id] = sub_sag_label_df
+
         print('Building HDBSCAN Anchored Clusters...')
         trust_recruit_list = []
-        for sag_id in tqdm(mh_trusted_df['sag_id'].unique()):
+        count = 0
+        for sag_id in tqdm(mh_best_df['sag_id'].unique()):
             trust_cols = ['sag_id', 'contig_id']
-            sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id')[trust_cols]
+            sub_trusted_df = mh_best_df.query('sag_id == @sag_id')[trust_cols]
             subs_list = [sub_trusted_df]
+            #subs_list = []
             if sag_id in hdbscan_label_dict.keys():
                 sub_label_df = hdbscan_label_dict[sag_id][trust_cols]
                 subs_list.append(sub_label_df)
@@ -615,14 +404,11 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         print('Performing Anchored Recruitment with OC-SVM...')
         merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
         print('Running OC-SVM algorithm...')
-        mh_trusted_df = minhash_dict[201]
-        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-        #mh_trusted_df = mh_trusted_df.query('jacc_sim >= 0.1')
         pool = multiprocessing.Pool(processes=nthreads)
         arg_list = []
-        oc_sag_list = list(mh_trusted_df['sag_id'].unique())
+        oc_sag_list = list(mh_best_df['sag_id'].unique())
         for sag_id in tqdm(oc_sag_list):
-            sub_mh_df = mh_trusted_df.query('sag_id == @sag_id')
+            sub_mh_df = mh_best_df.query('sag_id == @sag_id')
             arg_list.append([merge_df, sub_mh_df, sag_id, nu, gamma])
         ocsvm_recruit_list = []
         ocsvm_recruit_dict = {}
@@ -650,7 +436,7 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         ocsvm_clust_list = []
         for sag_id in tqdm(oc_sag_list):
             trust_cols = ['sag_id', 'contig_id']
-            sub_trusted_df = mh_trusted_df.query('sag_id == @sag_id')[trust_cols]
+            sub_trusted_df = mh_best_df.query('sag_id == @sag_id')[trust_cols]
             if sag_id in ocsvm_contig_dict.keys():
                 sub_ocsvm_df = ocsvm_contig_dict[sag_id][trust_cols]
                 ocsvm_cat_df = pd.concat([sub_trusted_df, sub_ocsvm_df]).drop_duplicates()
@@ -672,14 +458,23 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
     if minhash_dict and not inter_out_file.is_file():
         print('Combining Recruits from HDBSCAN and OC-SVM...')
         inter_clust_list = []
-        trust_labels = list(trust_recruit_df['best_label'].unique())
+        #trust_labels = list(trust_recruit_df['best_label'].unique())
+        trust_labels = list(mh_best_df['sag_id'].unique())
         for best_label in tqdm(trust_labels):
+            sub_mh_best_df = mh_best_df.query('sag_id == @best_label')[['sag_id', 'contig_id']]
+            sub_mh_best_df.columns = ['best_label', 'contig_id']
+            sub_minhash_df = mh_trusted_df.query('sag_id == @best_label')[['sag_id', 'contig_id']]
             sub_scan_df = trust_recruit_df.query('best_label == @best_label')
             sub_svm_df = ocsvm_clust_df.query('best_label == @best_label')
-            intersect = set(sub_scan_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
+            mh_hdb_inter = set(sub_minhash_df['contig_id']).intersection(set(sub_scan_df['contig_id']))
+            mh_svm_inter = set(sub_minhash_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
+            hdb_svm_inter = set(sub_scan_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
+            inter_list = [mh_hdb_inter, mh_svm_inter, hdb_svm_inter]
+            intersect = list(set().union(*inter_list))
             best_inter_list = [(best_label, x) for x in intersect]
             best_inter_df = pd.DataFrame(best_inter_list, columns=['best_label', 'contig_id'])
-            inter_clust_list.append(best_inter_df)
+            best_concat_df = pd.concat([best_inter_df, sub_mh_best_df]).drop_duplicates()
+            inter_clust_list.append(best_concat_df)
         inter_clust_df = pd.concat(inter_clust_list)
         inter_clust_df.to_csv(inter_out_file, sep='\t', index=False)
     elif inter_out_file.is_file():
@@ -733,17 +528,15 @@ def trust_clust(p):
     # Subset trusted contigs by SAG
     trusted_contigs_list = sub_trusted_df['contig_id'].unique()
     # Gather trusted contigs subset from cluster and noise DFs
-    sub_denovo_df = no_noise_df.query('contig_id in @trusted_contigs_list and '
-                                      'probabilities >= 1.0'
-                                      )
-    if sub_denovo_df.shape[0] != 0:
+    sub_nonise_df = no_noise_df.query('contig_id in @trusted_contigs_list')
+    if sub_nonise_df.shape[0] != 0:
         # Gather all contigs associated with trusted clusters
-        trust_clust_list = list(sub_denovo_df['best_label'].unique())
+        trust_clust_list = list(sub_nonise_df['best_label'].unique())
         sub_label_df = no_noise_df.query('best_label in @trust_clust_list')
         lab2anch = {}
         for label in sub_label_df['best_label'].unique():
-            label_denovo_df = sub_denovo_df.query('best_label == @label')
-            anch_cnt = label_denovo_df.shape[0]
+            label_nonise_df = sub_nonise_df.query('best_label == @label')
+            anch_cnt = label_nonise_df.shape[0]
             if anch_cnt != '':
                 lab2anch[label] = anch_cnt
         sub_label_df['sag_id'] = sag_id
@@ -766,7 +559,8 @@ def denoise_clust(p):
     noise_cnt = sub_df.query('label == -1').shape[0]
     signal_cnt = sub_df.query('label != -1').shape[0]
     ns_ratio = (noise_cnt / (noise_cnt + signal_cnt)) * 100
-    if ns_ratio < 51:
+    #if ns_ratio < 51:
+    if signal_cnt != 0:
         prob_df = sub_df.groupby(['label'])[['probabilities']].max().reset_index()
         best_ind = prob_df['probabilities'].argmax()
         best_label = prob_df['label'].iloc[best_ind]

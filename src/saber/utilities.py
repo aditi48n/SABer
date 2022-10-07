@@ -129,7 +129,10 @@ def check_out_dirs(save_path, autoopt, mode):
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    mode_path = os.path.join(autoopt, mode)
+    if autoopt == 'algo_defaults':
+        mode_path = autoopt
+    else:
+        mode_path = os.path.join(autoopt, mode)
     denovo_path = os.path.join(mode_path, 'denovo')
     hdbscan_path = os.path.join(mode_path, 'hdbscan')
     ocsvm_path = os.path.join(mode_path, 'ocsvm')

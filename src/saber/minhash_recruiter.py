@@ -67,9 +67,9 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             logging.info('MinHash already done\n')
         mh_recruit_df = pd.read_csv(mh_recruit_file, header=0, sep='\t')
         mh_kmer_recruits_dict[kmer] = mh_recruit_df
-    #logging.info('Cleaning up intermediate files...\n')
-    #for s in ["*.sig", "*.mhr_recruits.tsv", "*.sbt.zip"]:
-    #    s_utils.runCleaner(mhr_path, s)
+    logging.info('Cleaning up intermediate files...\n')
+    for s in ["*.sig", "*.mhr_recruits.tsv", "*.sbt.zip"]:
+        s_utils.runCleaner(mhr_path, s)
 
     logging.info('MinHash Recruitment Algorithm Complete\n')
     return mh_kmer_recruits_dict

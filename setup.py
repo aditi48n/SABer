@@ -34,7 +34,8 @@ SETUP_METADATA = \
             'saber': ['configs/*']},
         "entry_points": {'console_scripts': ['saber = saber.__main__:main']},
         "classifiers": CLASSIFIERS,
-        "install_requires":
+        "install_requires": []
+            '''
             ['attrs==22.1.0', 'backcall==0.2.0', 'boltons==21.0.0',
              'bz2file==0.98', 'CacheControl==0.12.10',
              'cachetools==4.2.4', 'certifi==2021.10.8',
@@ -68,6 +69,7 @@ SETUP_METADATA = \
              'urllib3==1.26.7', 'wcwidth==0.2.5', 'wrapt==1.13.3',
              'zipp==3.6.0'
              ]
+             '''
     }
 
 setup(**SETUP_METADATA)

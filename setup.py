@@ -34,8 +34,7 @@ SETUP_METADATA = \
             'saber': ['configs/*']},
         "entry_points": {'console_scripts': ['saber = saber.__main__:main']},
         "classifiers": CLASSIFIERS,
-        "install_requires": []
-            '''
+        "install_requires":
             ['attrs==22.1.0', 'backcall==0.2.0', 'boltons==21.0.0',
              'bz2file==0.98', 'CacheControl==0.12.10',
              'cachetools==4.2.4', 'certifi==2021.10.8',
@@ -51,7 +50,7 @@ SETUP_METADATA = \
              'lockfile==0.12.2', 'matplotlib==3.5.0',
              'matplotlib-inline==0.1.3', 'msgpack==1.0.2',
              'natsort==8.0.0', 'networkx==2.6.3',
-             'numba==0.54.1', 'numpy==1.20.3', 'packaging==21.3',
+             'numba==0.54.1', 'packaging==21.3',
              'pandas==1.3.4', 'parso==0.8.2', 'pbr==5.8.0',
              'pexpect==4.8.0', 'pickleshare==0.7.5',
              'Pillow==8.4.0', 'pluggy==1.0.0', 'prettytable==2.4.0',
@@ -69,7 +68,6 @@ SETUP_METADATA = \
              'urllib3==1.26.7', 'wcwidth==0.2.5', 'wrapt==1.13.3',
              'zipp==3.6.0'
              ]
-             '''
     }
 
 setup(**SETUP_METADATA)

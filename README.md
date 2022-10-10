@@ -6,24 +6,31 @@ SAG Anchored Binner for recruiting metagenomic reads using single-cell amplified
 
 Check out the [wiki](https://github.com/hallamlab/SABer/wiki) for tutorials and more information on SABer!!
 
-## WARNING: SABer has only been tested on Linux and Python 3.5 or greater
-## Also, SABer is under HEAVY development right now, so the code and documentation is very dynamic
-## Here are the install instructions for SABer (until its on PyPI)
+### Install SABer and Dependencies
 Currently the easiest way to install SABer is to use a conda virtual environment.  
 This will require the installation of [Anaconda](https://www.anaconda.com/distribution/).  
-Once Anaconda is installed, you can follow the directions below to install all dependencies  
-and SABer within a conda environment.
+Once Anaconda is installed, you can follow the directions below to install all dependencies and SABer within a conda environment.
 ```sh
-git clone git@github.com:hallamlab/SABer.git  
-cd SABer  
+git clone https://github.com/hallamlab/SABer.git
+cd SABer
 ```
-### Create conda env
+## Now use `make` to create the conda env, activate it, and install SABer via pip.
+## 
 ```sh
-conda env create -f environment.yml 
-conda activate saber_env  
+make install-saberenv
 ```
-### Install SABer
+
+### Docker and Singularity containers
+## If you would like to use a docker or singularity container of SABer they are available:
+[Docker](not_available_yet)
+[Singularity](not_available_yet)
+
+## They can also be build from scratch using the following commands:
+## Docker:
 ```sh
-python setup.py sdist
-pip install .
+make docker-build
 ```
+## Singularity:
+```sh
+make singularity-local-build
+``` 

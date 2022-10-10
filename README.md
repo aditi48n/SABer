@@ -14,23 +14,25 @@ Once Anaconda is installed, you can follow the directions below to install all d
 git clone https://github.com/hallamlab/SABer.git
 cd SABer
 ```
-## Now use `make` to create the conda env, activate it, and install SABer via pip.
-## 
+ Now use `make` to create the conda env, activate it, and install SABer via pip.
 ```sh
 make install-saberenv
+conda activate saber_cenv
+make install-saber
 ```
 
 ### Docker and Singularity containers
-## If you would like to use a docker or singularity container of SABer they are available:
+If you would like to use a docker or singularity container of SABer they are available:
 [Docker](not_available_yet)
+
 [Singularity](not_available_yet)
 
-## They can also be build from scratch using the following commands:
-## Docker:
+They can also be build from scratch using the following commands:
+Docker:
 ```sh
 make docker-build
 ```
-## Singularity:
+Singularity:
 ```sh
 make singularity-local-build
 ``` 

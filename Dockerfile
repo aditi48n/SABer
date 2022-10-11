@@ -34,7 +34,6 @@ RUN conda env create -f /opt/environment.yml
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "saber_cenv", "/bin/bash", "-c"]
 # Install SABer and Dependencies:
-RUN pip3 install scikit-bio==0.5.6 # hack for skbio
 RUN pip3 install git+https://github.com/hallamlab/SABer.git@${git_branch}#egg=SABerML
 
 # Set SABer conda env to default on startup
@@ -48,5 +47,5 @@ RUN old_umask=`umask` && \
     umask $old_umask
 
 ## Make things work for Singularity by relaxing the permissions:
-#RUN chmod -R 755 /opt
+RUN chmod -R 755 /opt
 

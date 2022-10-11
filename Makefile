@@ -48,7 +48,7 @@ docker-build: #pre-docker-builds
 		|| git_branch=$$(git describe --tags)
 	sudo docker build --network=host \
 			--build-arg git_branch=$$git_branch \
-			-t quay.io/hallamlab/saber:$$git_branch ./containers/.
+			-t quay.io/hallamlab/saber:$$git_branch .
 
 docker-run:
 	git_branch=$$(git symbolic-ref --short -q HEAD) \

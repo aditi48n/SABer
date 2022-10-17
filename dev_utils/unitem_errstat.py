@@ -193,7 +193,7 @@ def cnt_total_bp(fasta_file):
 
 
 def get_seqs(fasta_file):
-    fasta = pyfastx.Fasta(fasta_file)
+    fasta = pyfastx.Fasta(fasta_file, build_index=False)
     return fasta
 
 

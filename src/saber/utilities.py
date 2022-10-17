@@ -282,7 +282,7 @@ def slidingWindow(sequence, winSize, step):
 
 
 def get_seqs(fasta_file):
-    fasta = pyfastx.Fasta(fasta_file)
+    fasta = pyfastx.Fasta(fasta_file, build_index=False)
 
     return fasta
 

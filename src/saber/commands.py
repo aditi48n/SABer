@@ -68,6 +68,7 @@ def recruit(sys_args):
     recruit_s.save_path = args.save_path
     recruit_s.max_contig_len = int(args.max_contig_len)
     recruit_s.overlap_len = int(args.overlap_len)
+    recruit_s.min_len = int(args.min_len)
     recruit_s.nthreads = int(args.nthreads)
     recruit_s.force = args.force
     # Collect args for clustering
@@ -97,7 +98,8 @@ def recruit(sys_args):
     mg_sub_file = s_utils.build_subcontigs('Metagenomes', [recruit_s.mg_file],
                                            recruit_s.save_path,
                                            recruit_s.max_contig_len,
-                                           recruit_s.overlap_len
+                                           recruit_s.overlap_len,
+                                           recruit_s.min_len
                                            )
 
     # Build minhash signatures if there are trusted contigs
@@ -110,10 +112,12 @@ def recruit(sys_args):
         minhash_df_dict = mhr.run_minhash_recruiter(recruit_s.save_path,  # TODO: expose some params for users
                                                     recruit_s.save_path,
                                                     trust_files, mg_file,
-                                                    recruit_s.nthreads
+                                                    recruit_s.nthreads,
+                                                    recruit_s.min_len
                                                     )
     else:
         minhash_df_dict = False
+        trust_files = tuple()
 
     # Build abundance tables
     abund_scale_file, abund_raw_file = abr.runAbundRecruiter(recruit_s.save_path,

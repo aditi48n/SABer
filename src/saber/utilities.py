@@ -177,7 +177,7 @@ def get_SAGs(sag_path):
     return sag_list
 
 
-def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, overlap_len):
+def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, overlap_len, min_len):
     sub_list = []
     for i, in_fasta in enumerate(in_fasta_list):
         basename = os.path.basename(in_fasta)
@@ -188,7 +188,7 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
             # get contigs from fasta file
             contigs = get_seqs(in_fasta)
             headers, subs = kmer_slide(contigs, int(max_contig_len),
-                                       int(overlap_len)
+                                       int(overlap_len), int(min_len)
                                        )
             if len(subs) != 0:
                 with open(sub_file, 'w') as sub_out:
@@ -211,7 +211,7 @@ def build_subcontigs(seq_type, in_fasta_list, subcontig_path, max_contig_len, ov
         return sub_list
 
 
-def kmer_slide(scd_db, n, o_lap):
+def kmer_slide(scd_db, n, o_lap, m_len):
     all_sub_seqs = []
     all_sub_headers = []
     for k in scd_db:
@@ -225,7 +225,7 @@ def kmer_slide(scd_db, n, o_lap):
                            ]
             all_sub_seqs.extend(sub_list)
             all_sub_headers.extend(sub_headers)
-        else:
+        elif len(str(seq)) >= int(m_len):
             all_sub_seqs.extend([seq])
             all_sub_headers.extend([header + '_0'])
     return tuple(all_sub_headers), tuple(all_sub_seqs)

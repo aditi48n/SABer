@@ -101,6 +101,10 @@ class SABerArgumentParser(argparse.ArgumentParser):
                                  dest="overlap_len",
                                  help="subcontig overlap in basepairs [2000]."
                                  )
+        self.optopt.add_argument("--min_len", required=False, default=2000,
+                                 dest="min_len",
+                                 help="minimum length of contigs to include in basepairs [2000]."
+                                 )
         self.miscellany.add_argument("-t", "--num_threads", required=False, default=1,
                                      dest="nthreads",
                                      help="Number of threads [1]."

@@ -11,15 +11,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
                          trusted_list, mode, threads
                          ):
     denovo_clust_df = clusters[0]
-    trusted_clust_df = clusters[1]
-    ocsvm_clust_df = clusters[2]
-    inter_clust_df = clusters[3]
-    
     denovo_sv_path = save_dirs_dict['denovo']
-    hdbscan_sv_path = save_dirs_dict['hdbscan']
-    ocsvm_sv_path = save_dirs_dict['ocsvm']
-    inter_sv_path = save_dirs_dict['intersect']
-    xpg_sv_path = save_dirs_dict['xpgs']
     mode_path = save_dirs_dict[mode]
 
     logging.info('Combining All Recruits\n')
@@ -46,93 +38,31 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
                                      )
                                  ]
             final_out.write('\n'.join(final_mgsubs_list))
-    # HDBSCAN Bins
-    hdbscan_set = list(set(trusted_clust_df['best_label']))
-    print(len(hdbscan_set))
-    for best_label in hdbscan_set:
-        sub_merge_df = trusted_clust_df[['best_label', 'contig_id']
-        ].query('best_label == @best_label').drop_duplicates()
-        logging.info('Recruited %s contigs from HDBSCAN anchored analysis for %s\n' %
-                     (sub_merge_df.shape[0], best_label)
-                     )
-        final_rec = o_join(hdbscan_sv_path, str(best_label) + '.hdbscan.fasta')
-        with open(final_rec, 'w') as final_out:
-            contig_list = list(set(sub_merge_df['contig_id']))
-            mg_sub_filter_df = mg_contigs_df.query('contig_id in @contig_list')
-            final_mgsubs_list = ['\n'.join(['>' + x[0], x[1]]) for x in
-                                 zip(mg_sub_filter_df['contig_id'],
-                                     mg_sub_filter_df['seq']
-                                     )
-                                 ]
-            final_out.write('\n'.join(final_mgsubs_list))
-    # Combine final recruits and reference trusted contigs
-    print(len(hdbscan_set))
-    logging.info('Running BBtools dedup on HDBSCAN bins\n')
-    for t_id in tqdm(hdbscan_set):
-        t_file = trust_dict[t_id]
-        concat_file = o_join(xpg_sv_path, t_id + '.hdbscan.concat.fasta')
-        with open(concat_file, 'w') as cat_out:
-            data = []
-            with open(t_file, 'r') as t_in:
-                data.extend(t_in.readlines())
-            hdbscan_bin = o_join(hdbscan_sv_path, t_id + '.hdbscan.fasta')
-            with open(hdbscan_bin, 'r') as r_file:
-                data.extend(r_file.readlines())
-            join_data = '\n'.join(data).replace('\n\n', '\n')
-            cat_out.write(join_data)
 
-        # Use BBTools dedupe.sh to deduplicate the extend SAG file
-        dedupe_fa = o_join(xpg_sv_path, t_id + '.hdbscan.xPG.fasta')
-        dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
-                      'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
-        subprocess.run(dedupe_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # OC-SVM Bins
-    ocsvm_set = list(set(ocsvm_clust_df['best_label']))
-    for best_label in ocsvm_set:
-        sub_merge_df = ocsvm_clust_df[['best_label', 'contig_id']
-        ].query('best_label == @best_label').drop_duplicates()
-        logging.info('Recruited %s contigs from OC-SVM anchored analysis for %s\n' %
-                     (sub_merge_df.shape[0], best_label)
-                     )
-        final_rec = o_join(ocsvm_sv_path, str(best_label) + '.ocsvm.fasta')
-        with open(final_rec, 'w') as final_out:
-            contig_list = list(set(sub_merge_df['contig_id']))
-            mg_sub_filter_df = mg_contigs_df.query('contig_id in @contig_list')
-            final_mgsubs_list = ['\n'.join(['>' + x[0], x[1]]) for x in
-                                 zip(mg_sub_filter_df['contig_id'],
-                                     mg_sub_filter_df['seq']
-                                     )
-                                 ]
-            final_out.write('\n'.join(final_mgsubs_list))
-    # Combine final recruits and reference trusted contigs
-    logging.info('Running BBtools dedup on OC-SVM bins\n')
-    for t_id in tqdm(ocsvm_set):
-        t_file = trust_dict[t_id]
-        concat_file = o_join(xpg_sv_path, t_id + '.ocsvm.concat.fasta')
-        with open(concat_file, 'w') as cat_out:
-            data = []
-            with open(t_file, 'r') as t_in:
-                data.extend(t_in.readlines())
-            ocsvm_bin = o_join(ocsvm_sv_path, t_id + '.ocsvm.fasta')
-            with open(ocsvm_bin, 'r') as r_file:
-                data.extend(r_file.readlines())
-            join_data = '\n'.join(data).replace('\n\n', '\n')
-            cat_out.write(join_data)
+    ######################################
+    ########## ANCHORED BINNING ##########
+    ######################################
 
-        # Use BBTools dedupe.sh to deduplicate the extend SAG file
-        dedupe_fa = o_join(xpg_sv_path, t_id + '.ocsvm.xPG.fasta')
-        dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
-                      'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
-        subprocess.run(dedupe_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
-    # Combined Bins
-    inter_set = list(set(inter_clust_df['best_label']))
+    trusted_clust_df = clusters[1]
+    ocsvm_clust_df = clusters[2]
+    inter_clust_df = clusters[3]
+
+    hdbscan_sv_path = save_dirs_dict['hdbscan']
+    ocsvm_sv_path = save_dirs_dict['ocsvm']
+    inter_sv_path = save_dirs_dict['intersect']
+    xpg_sv_path = save_dirs_dict['xpgs']
+
     if isinstance(inter_clust_df, pd.DataFrame):
-        for best_label in inter_set:
-            sub_merge_df = inter_clust_df.query('best_label == @best_label')
-            logging.info('Recruited %s contigs from intersection of anchored analysis for %s\n' %
+        # HDBSCAN Bins
+        hdbscan_set = list(set(trusted_clust_df['best_label']))
+        print(len(hdbscan_set))
+        for best_label in hdbscan_set:
+            sub_merge_df = trusted_clust_df[['best_label', 'contig_id']
+            ].query('best_label == @best_label').drop_duplicates()
+            logging.info('Recruited %s contigs from HDBSCAN anchored analysis for %s\n' %
                          (sub_merge_df.shape[0], best_label)
                          )
-            final_rec = o_join(inter_sv_path, str(best_label) + '.intersect.fasta')
+            final_rec = o_join(hdbscan_sv_path, str(best_label) + '.hdbscan.fasta')
             with open(final_rec, 'w') as final_out:
                 contig_list = list(set(sub_merge_df['contig_id']))
                 mg_sub_filter_df = mg_contigs_df.query('contig_id in @contig_list')
@@ -143,30 +73,107 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
                                      ]
                 final_out.write('\n'.join(final_mgsubs_list))
         # Combine final recruits and reference trusted contigs
-        logging.info('Running BBtools dedup on intersection bins\n')
-        for t_id in tqdm(inter_set):
+        print(len(hdbscan_set))
+        logging.info('Running BBtools dedup on HDBSCAN bins\n')
+        for t_id in tqdm(hdbscan_set):
             t_file = trust_dict[t_id]
-            concat_file = o_join(xpg_sv_path, t_id + '.intersect.concat.fasta')
+            concat_file = o_join(xpg_sv_path, t_id + '.hdbscan.concat.fasta')
             with open(concat_file, 'w') as cat_out:
                 data = []
                 with open(t_file, 'r') as t_in:
                     data.extend(t_in.readlines())
-                recruit_bin = o_join(inter_sv_path, t_id + '.intersect.fasta')
-                with open(recruit_bin, 'r') as r_file:
+                hdbscan_bin = o_join(hdbscan_sv_path, t_id + '.hdbscan.fasta')
+                with open(hdbscan_bin, 'r') as r_file:
                     data.extend(r_file.readlines())
                 join_data = '\n'.join(data).replace('\n\n', '\n')
                 cat_out.write(join_data)
 
             # Use BBTools dedupe.sh to deduplicate the extend SAG file
-            dedupe_fa = o_join(xpg_sv_path, t_id + '.intersect.xPG.fasta')
+            dedupe_fa = o_join(xpg_sv_path, t_id + '.hdbscan.xPG.fasta')
             dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
                           'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
             subprocess.run(dedupe_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # OC-SVM Bins
+        ocsvm_set = list(set(ocsvm_clust_df['best_label']))
+        for best_label in ocsvm_set:
+            sub_merge_df = ocsvm_clust_df[['best_label', 'contig_id']
+            ].query('best_label == @best_label').drop_duplicates()
+            logging.info('Recruited %s contigs from OC-SVM anchored analysis for %s\n' %
+                         (sub_merge_df.shape[0], best_label)
+                         )
+            final_rec = o_join(ocsvm_sv_path, str(best_label) + '.ocsvm.fasta')
+            with open(final_rec, 'w') as final_out:
+                contig_list = list(set(sub_merge_df['contig_id']))
+                mg_sub_filter_df = mg_contigs_df.query('contig_id in @contig_list')
+                final_mgsubs_list = ['\n'.join(['>' + x[0], x[1]]) for x in
+                                     zip(mg_sub_filter_df['contig_id'],
+                                         mg_sub_filter_df['seq']
+                                         )
+                                     ]
+                final_out.write('\n'.join(final_mgsubs_list))
+        # Combine final recruits and reference trusted contigs
+        logging.info('Running BBtools dedup on OC-SVM bins\n')
+        for t_id in tqdm(ocsvm_set):
+            t_file = trust_dict[t_id]
+            concat_file = o_join(xpg_sv_path, t_id + '.ocsvm.concat.fasta')
+            with open(concat_file, 'w') as cat_out:
+                data = []
+                with open(t_file, 'r') as t_in:
+                    data.extend(t_in.readlines())
+                ocsvm_bin = o_join(ocsvm_sv_path, t_id + '.ocsvm.fasta')
+                with open(ocsvm_bin, 'r') as r_file:
+                    data.extend(r_file.readlines())
+                join_data = '\n'.join(data).replace('\n\n', '\n')
+                cat_out.write(join_data)
+
+            # Use BBTools dedupe.sh to deduplicate the extend SAG file
+            dedupe_fa = o_join(xpg_sv_path, t_id + '.ocsvm.xPG.fasta')
+            dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
+                          'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
+            subprocess.run(dedupe_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)    
+        # Combined Bins
+        inter_set = list(set(inter_clust_df['best_label']))
+        if isinstance(inter_clust_df, pd.DataFrame):
+            for best_label in inter_set:
+                sub_merge_df = inter_clust_df.query('best_label == @best_label')
+                logging.info('Recruited %s contigs from intersection of anchored analysis for %s\n' %
+                             (sub_merge_df.shape[0], best_label)
+                             )
+                final_rec = o_join(inter_sv_path, str(best_label) + '.intersect.fasta')
+                with open(final_rec, 'w') as final_out:
+                    contig_list = list(set(sub_merge_df['contig_id']))
+                    mg_sub_filter_df = mg_contigs_df.query('contig_id in @contig_list')
+                    final_mgsubs_list = ['\n'.join(['>' + x[0], x[1]]) for x in
+                                         zip(mg_sub_filter_df['contig_id'],
+                                             mg_sub_filter_df['seq']
+                                             )
+                                         ]
+                    final_out.write('\n'.join(final_mgsubs_list))
+            # Combine final recruits and reference trusted contigs
+            logging.info('Running BBtools dedup on intersection bins\n')
+            for t_id in tqdm(inter_set):
+                t_file = trust_dict[t_id]
+                concat_file = o_join(xpg_sv_path, t_id + '.intersect.concat.fasta')
+                with open(concat_file, 'w') as cat_out:
+                    data = []
+                    with open(t_file, 'r') as t_in:
+                        data.extend(t_in.readlines())
+                    recruit_bin = o_join(inter_sv_path, t_id + '.intersect.fasta')
+                    with open(recruit_bin, 'r') as r_file:
+                        data.extend(r_file.readlines())
+                    join_data = '\n'.join(data).replace('\n\n', '\n')
+                    cat_out.write(join_data)
+
+                # Use BBTools dedupe.sh to deduplicate the extend SAG file
+                dedupe_fa = o_join(xpg_sv_path, t_id + '.intersect.xPG.fasta')
+                dedupe_cmd = ['dedupe.sh', 'in=' + concat_file, 'out=' + dedupe_fa,
+                              'threads=' + str(threads), 'minidentity=97', 'overwrite=true']
+                subprocess.run(dedupe_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Clean up the directory
     logging.info('Cleaning up intermediate files...\n')
-    s_utils.runCleaner(mode_path, "denovo")
-    s_utils.runCleaner(mode_path, "hdbscan")
-    s_utils.runCleaner(mode_path, "ocsvm")
-    s_utils.runCleaner(mode_path, "intersect")
+    #s_utils.runCleaner(mode_path, "denovo")
+    #s_utils.runCleaner(mode_path, "hdbscan")
+    #s_utils.runCleaner(mode_path, "ocsvm")
+    #s_utils.runCleaner(mode_path, "intersect")
     s_utils.runCleaner(xpg_sv_path, "*.concat.fasta")

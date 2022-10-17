@@ -13,7 +13,7 @@ import saber.utilities as s_utils
 pd.set_option('display.max_columns', None)
 
 
-def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthreads):
+def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthreads, min_len):
     logging.info('Starting MinHash Recruitment\n')
     # Calculate/Load MinHash Signatures with SourMash for MG subseqs
     mg_id = mg_sub_file[0]
@@ -25,7 +25,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
             build_list, minhash_pass_list = sag_recruit_checker(mhr_path, sag_sub_files, kmer)
             if len(build_list) != 0:
                 sag_sig_dict = build_sag_sig_dict(build_list, nthreads, sig_path, kmer)
-                build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=True)  # make sure SBT exists first
+                build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, min_len, checkonly=True)  # make sure SBT exists first
                 pool = multiprocessing.Pool(processes=nthreads)
                 sbt_args = mg_id, mg_sub_file, sig_path, nthreads
                 chunk_list = [list(x) for x in np.array_split(np.array(list(sag_sig_dict.keys())),
@@ -35,7 +35,7 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                 arg_list = []
                 for i, sag_id_list in enumerate(chunk_list):
                     sub_sag_sig_dict = {k: sag_sig_dict[k] for k in sag_id_list}
-                    arg_list.append([sbt_args, mhr_path, sag_id_list, sub_sag_sig_dict, kmer])
+                    arg_list.append([sbt_args, mhr_path, sag_id_list, sub_sag_sig_dict, kmer, min_len])
                 results = pool.imap_unordered(compare_sag_sbt, arg_list)
                 logging.info('Querying {} Signature Blocks against SBT\n'.format(len(chunk_list)))
                 logging.info('WARNING: This can be VERY time consuming, '
@@ -95,9 +95,9 @@ def build_sag_sig_dict(build_list, nthreads, sig_path, kmer):
 
 
 def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
-    sbt_args, mhr_path, sag_id_list, sag_sig_dict, kmer = p
+    sbt_args, mhr_path, sag_id_list, sag_sig_dict, kmer, min_len = p
     mg_id, mg_sub_file, sig_path, nthreads = sbt_args
-    mg_sbt = build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer)
+    mg_sbt = build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, min_len)
     search_df_list = []
     for i, sag_id in enumerate(sag_id_list):
         sag_sig_list = sag_sig_dict[sag_id]
@@ -123,7 +123,7 @@ def compare_sag_sbt(p):  # TODO: needs stdout for user monitoring
     return search_df_list
 
 
-def build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=False):
+def build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, min_len, checkonly=False):
     mg_sbt_file = o_join(sig_path, mg_id + '.' + str(kmer) + '.sbt.zip')
     if isfile(mg_sbt_file):
         if checkonly is True:
@@ -133,7 +133,7 @@ def build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, checkonly=False):
             mg_sbt_tree = sourmash.load_sbt_index(mg_sbt_file)
     else:
         logging.info('Building %s Sequence Bloom Tree\n' % mg_id)  # TODO: perhaps multiple smaller SBTs would be better
-        mg_sig_list = load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer)
+        mg_sig_list = load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer, min_len)
         mg_sbt_tree = sourmash.create_sbt_index()
         pool = multiprocessing.Pool(processes=nthreads)
         results = pool.imap_unordered(build_leaf, mg_sig_list)
@@ -160,7 +160,7 @@ def build_leaf(sig):
     return leaf
 
 
-def load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer):
+def load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer, min_len):
     if isfile(o_join(sig_path, mg_id + '.' + str(kmer) + '.metaG.sig')):
         logging.info('Loading %s Signatures\n' % mg_id)
         mg_sig_list = tuple(sourmash.signature.load_signatures(o_join(sig_path, mg_id + \
@@ -169,7 +169,7 @@ def load_mg_sigs(mg_id, mg_sub_file, nthreads, sig_path, kmer):
     else:
         logging.info('Loading subcontigs for %s\n' % mg_id)
         mg_subcontigs = s_utils.get_seqs(mg_sub_file[1])
-        mg_sig_list = build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer)
+        mg_sig_list = build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer, min_len)
     return mg_sig_list
 
 
@@ -197,11 +197,12 @@ def build_sag_sigs(sag_file, sag_id, sig_path, kmer):
     return sag_sig_list
 
 
-def build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer):
+def build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer, min_len):
     mg_headers = mg_subcontigs.keys()
     arg_list = []
     for i, mg_head in enumerate(mg_headers):
-        arg_list.append([mg_head, str(mg_subcontigs[mg_head].seq), kmer])
+        if len(str(mg_subcontigs[mg_head].seq)) >= min_len:
+            arg_list.append([mg_head, str(mg_subcontigs[mg_head].seq), kmer])
     pool = multiprocessing.Pool(processes=nthreads)
     results = pool.imap_unordered(build_signature, arg_list)
     mg_sig_list = []

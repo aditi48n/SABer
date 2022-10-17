@@ -111,9 +111,10 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
                  nu, gamma, nthreads
                  ):  # TODO: need to add multithreading where ever possible
     # Get the MinHash recruits
-    mh_trusted_df = minhash_dict[201]
-    mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
-    mh_best_df = mh_trusted_df.query('jacc_sim == 1.0')
+    if minhash_dict:
+        mh_trusted_df = minhash_dict[201]
+        mh_trusted_df.rename(columns={'q_contig_id': 'contig_id'}, inplace=True)
+        mh_best_df = mh_trusted_df.query('jacc_sim == 1.0')
     # Convert CovM to UMAP feature table
     set_init = 'spectral'
     merged_emb = Path(o_join(tmp_path, mg_id + '.merged_emb.tsv'))
@@ -285,201 +286,208 @@ def runClusterer(mg_id, tmp_path, clst_path, cov_file, tetra_file, minhash_dict,
         denovo_clusters_df = pd.read_csv(denovo_out_file, header=0, sep='\t')
         noise_df = pd.read_csv(noise_out_file, header=0, sep='\t')
 
-    trust_anchors_file = Path(o_join(clst_path, mg_id + '.hdbscan_anchors.tsv'))
-    if minhash_dict and not trust_anchors_file.is_file():
-        print('Anchored Binning Starting with Trusted Contigs...')
-        print('Clustering with HDBSCAN and Anchored Settings...')
-        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=anchor_min_clust, prediction_data=True,
-                                    min_samples=anchor_min_samp, core_dist_n_jobs=nthreads
-                                    ).fit(merge_df.values)
+    ######################################
+    ########## ANCHORED BINNING ##########
+    ######################################
+    if minhash_dict:
+        # Run HDSCAN ANCHORED
+        trust_anchors_file = Path(o_join(clst_path, mg_id + '.hdbscan_anchors.tsv'))
+        if not trust_anchors_file.is_file():
+            print('Anchored Binning Starting with Trusted Contigs...')
+            print('Clustering with HDBSCAN and Anchored Settings...')
+            merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
+            clusterer = hdbscan.HDBSCAN(min_cluster_size=anchor_min_clust, prediction_data=True,
+                                        min_samples=anchor_min_samp, core_dist_n_jobs=nthreads
+                                        ).fit(merge_df.values)
 
-        cluster_labels = clusterer.labels_
-        cluster_probs = clusterer.probabilities_
-        cluster_outlier = clusterer.outlier_scores_
+            cluster_labels = clusterer.labels_
+            cluster_probs = clusterer.probabilities_
+            cluster_outlier = clusterer.outlier_scores_
 
-        cluster_df = pd.DataFrame(zip(merge_df.index.values, cluster_labels, cluster_probs,
-                                      cluster_outlier),
-                                  columns=['subcontig_id', 'label', 'probabilities',
-                                           'outlier_score']
-                                  )
-        cluster_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cluster_df['subcontig_id']]
-        cluster_df.to_csv(trust_anchors_file, sep='\t', index=False)
-    else:
-        print('Loading HDBSCAN Anchored Clusters...')
-        cluster_df = pd.read_csv(trust_anchors_file, header=0, sep='\t')
-    hdbscan_out_file = Path(o_join(clst_path, mg_id + '.hdbscan_clusters.tsv'))
-    noise_out_file = Path(o_join(clst_path, mg_id + '.hdbscan_noise.tsv'))
-    if minhash_dict and not hdbscan_out_file.is_file():
-        print('Denoising Clusters...')
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for contig in tqdm(list(cluster_df['contig_id'].unique())):
-            sub_df = cluster_df.query('contig_id == @contig')
-            arg_list.append([sub_df, contig])
-        ns_ratio_list = []
-        results = pool.imap_unordered(denoise_clust, arg_list)
-        for i, output in tqdm(enumerate(results, 1)):
-            ns_ratio_list.append(output)
-        pool.close()
-        pool.join()
-        ns_ratio_df = pd.DataFrame(ns_ratio_list, columns=['contig_id', 'best_label'])
-        cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
-        no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
-        noise_df = cluster_ns_df.query('best_label == -1')  # 'best_prob < 0.51')
-        #if no_noise_df.empty:
-        #    #  TODO: fix this or print a warning message to user :)
-        #    no_noise_df = noise_df.copy()
-        
-        # Group clustered and noise contigs by trusted contigs
-        print('Re-grouping with Trusted Contigs...')
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        for sag_id in tqdm(mh_best_df['sag_id'].unique()):
-            sub_mh_df = mh_best_df.query('sag_id == @sag_id')
-            arg_list.append([sub_mh_df, no_noise_df, noise_df, sag_id])
-        label_max_list = []
-        contig_max_list = []
-        results = pool.imap_unordered(trust_clust, arg_list)
-        for i, output in tqdm(enumerate(results, 1)):
-            if isinstance(output[0], pd.DataFrame):
-                label_max_list.append(output[0])
-            if isinstance(output[1], pd.DataFrame):
-                contig_max_list.append(output[1])
-        pool.close()
-        pool.join()
-        if label_max_list:
-            sag_label_df = pd.concat(label_max_list)
+            cluster_df = pd.DataFrame(zip(merge_df.index.values, cluster_labels, cluster_probs,
+                                          cluster_outlier),
+                                      columns=['subcontig_id', 'label', 'probabilities',
+                                               'outlier_score']
+                                      )
+            cluster_df['contig_id'] = [x.rsplit('_', 1)[0] for x in cluster_df['subcontig_id']]
+            cluster_df.to_csv(trust_anchors_file, sep='\t', index=False)
         else:
-            sag_label_df = pd.DataFrame(columns=['sag_id', 'contig_id', 'anch_cnt'])
-        if contig_max_list:
-            sag_contig_df = pd.concat(contig_max_list)
-        else:
-            sag_contig_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
-        sag_label_best_df = sag_label_df.sort_values(by='anch_cnt', ascending=False
-                                                     ).drop_duplicates(subset='best_label')
-        print('Extracting Best Clusters...')
-        hdbscan_label_dict = {}
-        for index, row in tqdm(sag_label_best_df.iterrows()):
-            sag_id = row['sag_id']
-            best_label = row['best_label']
-            sub_sag_label_df = sag_label_df.query('sag_id == @sag_id and '
-                                                  'best_label == @best_label'
-                                                  )
-            hdbscan_label_dict[sag_id] = sub_sag_label_df
-
-        print('Building HDBSCAN Anchored Clusters...')
-        trust_recruit_list = []
-        count = 0
-        for sag_id in tqdm(mh_best_df['sag_id'].unique()):
-            trust_cols = ['sag_id', 'contig_id']
-            sub_trusted_df = mh_best_df.query('sag_id == @sag_id')[trust_cols]
-            subs_list = [sub_trusted_df]
-            #subs_list = []
-            if sag_id in hdbscan_label_dict.keys():
-                sub_label_df = hdbscan_label_dict[sag_id][trust_cols]
-                subs_list.append(sub_label_df)
-            if sag_id in sag_contig_df['sag_id']:
-                sub_contig_df = sag_contig_df.query('sag_id == @sag_id')[trust_cols]
-                subs_list.append(sub_contig_df)
-            if len(subs_list) > 1:
-                hdbscan_cat_df = pd.concat(subs_list).drop_duplicates()
+            print('Loading HDBSCAN Anchored Clusters...')
+            cluster_df = pd.read_csv(trust_anchors_file, header=0, sep='\t')
+        hdbscan_out_file = Path(o_join(clst_path, mg_id + '.hdbscan_clusters.tsv'))
+        noise_out_file = Path(o_join(clst_path, mg_id + '.hdbscan_noise.tsv'))
+        if not hdbscan_out_file.is_file():
+            print('Denoising Clusters...')
+            pool = multiprocessing.Pool(processes=nthreads)
+            arg_list = []
+            for contig in tqdm(list(cluster_df['contig_id'].unique())):
+                sub_df = cluster_df.query('contig_id == @contig')
+                arg_list.append([sub_df, contig])
+            ns_ratio_list = []
+            results = pool.imap_unordered(denoise_clust, arg_list)
+            for i, output in tqdm(enumerate(results, 1)):
+                ns_ratio_list.append(output)
+            pool.close()
+            pool.join()
+            ns_ratio_df = pd.DataFrame(ns_ratio_list, columns=['contig_id', 'best_label'])
+            cluster_ns_df = cluster_df.merge(ns_ratio_df, on='contig_id', how='left')
+            no_noise_df = cluster_ns_df.query('best_label != -1')  # 'best_prob >= 0.51')
+            noise_df = cluster_ns_df.query('best_label == -1')  # 'best_prob < 0.51')
+            #if no_noise_df.empty:
+            #    #  TODO: fix this or print a warning message to user :)
+            #    no_noise_df = noise_df.copy()
+            
+            # Group clustered and noise contigs by trusted contigs
+            print('Re-grouping with Trusted Contigs...')
+            pool = multiprocessing.Pool(processes=nthreads)
+            arg_list = []
+            for sag_id in tqdm(mh_best_df['sag_id'].unique()):
+                sub_mh_df = mh_best_df.query('sag_id == @sag_id')
+                arg_list.append([sub_mh_df, no_noise_df, noise_df, sag_id])
+            label_max_list = []
+            contig_max_list = []
+            results = pool.imap_unordered(trust_clust, arg_list)
+            for i, output in tqdm(enumerate(results, 1)):
+                if isinstance(output[0], pd.DataFrame):
+                    label_max_list.append(output[0])
+                if isinstance(output[1], pd.DataFrame):
+                    contig_max_list.append(output[1])
+            pool.close()
+            pool.join()
+            if label_max_list:
+                sag_label_df = pd.concat(label_max_list)
             else:
-                hdbscan_cat_df = sub_trusted_df.drop_duplicates()
-            trust_recruit_list.append(hdbscan_cat_df)
-        trust_recruit_df = pd.concat(trust_recruit_list)
-        trust_recruit_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
-        trust_recruit_df.to_csv(hdbscan_out_file, sep='\t', index=False)
-        noise_df.to_csv(noise_out_file, sep='\t', index=False)
-    elif hdbscan_out_file.is_file():
-        print('HDBSCAN Anchored Clusters already exist...')
-        trust_recruit_df = pd.read_csv(hdbscan_out_file, sep='\t', header=0)
+                sag_label_df = pd.DataFrame(columns=['sag_id', 'contig_id', 'anch_cnt'])
+            if contig_max_list:
+                sag_contig_df = pd.concat(contig_max_list)
+            else:
+                sag_contig_df = pd.DataFrame(columns=['sag_id', 'contig_id'])
+            sag_label_best_df = sag_label_df.sort_values(by='anch_cnt', ascending=False
+                                                         ).drop_duplicates(subset='best_label')
+            print('Extracting Best Clusters...')
+            hdbscan_label_dict = {}
+            for index, row in tqdm(sag_label_best_df.iterrows()):
+                sag_id = row['sag_id']
+                best_label = row['best_label']
+                sub_sag_label_df = sag_label_df.query('sag_id == @sag_id and '
+                                                      'best_label == @best_label'
+                                                      )
+                hdbscan_label_dict[sag_id] = sub_sag_label_df
+
+            print('Building HDBSCAN Anchored Clusters...')
+            trust_recruit_list = []
+            count = 0
+            for sag_id in tqdm(mh_best_df['sag_id'].unique()):
+                trust_cols = ['sag_id', 'contig_id']
+                sub_trusted_df = mh_best_df.query('sag_id == @sag_id')[trust_cols]
+                subs_list = [sub_trusted_df]
+                #subs_list = []
+                if sag_id in hdbscan_label_dict.keys():
+                    sub_label_df = hdbscan_label_dict[sag_id][trust_cols]
+                    subs_list.append(sub_label_df)
+                if sag_id in sag_contig_df['sag_id']:
+                    sub_contig_df = sag_contig_df.query('sag_id == @sag_id')[trust_cols]
+                    subs_list.append(sub_contig_df)
+                if len(subs_list) > 1:
+                    hdbscan_cat_df = pd.concat(subs_list).drop_duplicates()
+                else:
+                    hdbscan_cat_df = sub_trusted_df.drop_duplicates()
+                trust_recruit_list.append(hdbscan_cat_df)
+            trust_recruit_df = pd.concat(trust_recruit_list)
+            trust_recruit_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
+            trust_recruit_df.to_csv(hdbscan_out_file, sep='\t', index=False)
+            noise_df.to_csv(noise_out_file, sep='\t', index=False)
+        elif hdbscan_out_file.is_file():
+            print('HDBSCAN Anchored Clusters already exist...')
+            trust_recruit_df = pd.read_csv(hdbscan_out_file, sep='\t', header=0)
     else:
         print('No Trusted Contigs Provided...')
         trust_recruit_df = False
 
-    # Run OC-SVM recruiting
-    ocsvm_out_file = Path(o_join(clst_path, mg_id + '.ocsvm_clusters.tsv'))
-    if minhash_dict and not ocsvm_out_file.is_file():
-        print('Performing Anchored Recruitment with OC-SVM...')
-        merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
-        print('Running OC-SVM algorithm...')
-        pool = multiprocessing.Pool(processes=nthreads)
-        arg_list = []
-        oc_sag_list = list(mh_best_df['sag_id'].unique())
-        for sag_id in tqdm(oc_sag_list):
-            sub_mh_df = mh_best_df.query('sag_id == @sag_id')
-            arg_list.append([merge_df, sub_mh_df, sag_id, nu, gamma])
-        ocsvm_recruit_list = []
-        ocsvm_recruit_dict = {}
-        results = pool.imap_unordered(recruitOCSVM, arg_list)
-        for i, output in tqdm(enumerate(results, 1)):
-            sag_id, ocsvm_recruits = output
-            if isinstance(ocsvm_recruits, pd.DataFrame):
-                ocsvm_recruit_list.append(ocsvm_recruits)
-                ocsvm_recruit_dict[sag_id] = ocsvm_recruits
-        pool.close()
-        pool.join()
-        ocsvm_contig_df = pd.concat(ocsvm_recruit_list)
-        ocsvm_contig_best_df = ocsvm_contig_df.sort_values(by='percent', ascending=False
-                                                           ).drop_duplicates(subset='contig_id')
-        print('Compiling OC-SVM recruited contigs...')
-        ocsvm_contig_dict = {}
-        for index, row in tqdm(list(ocsvm_contig_best_df.iterrows())):
-            sag_id = row['sag_id']
-            percent = row['percent']
-            sub_ocsvm_df = ocsvm_recruit_dict[sag_id]
-            sub_sag_contig_df = sub_ocsvm_df.query('percent >= @percent')
-            ocsvm_contig_dict[sag_id] = sub_sag_contig_df
+    if minhash_dict:
+        # Run OC-SVM recruiting
+        ocsvm_out_file = Path(o_join(clst_path, mg_id + '.ocsvm_clusters.tsv'))
+        if not ocsvm_out_file.is_file():
+            print('Performing Anchored Recruitment with OC-SVM...')
+            merge_df = pd.read_csv(merged_emb, sep='\t', header=0, index_col='subcontig_id')
+            print('Running OC-SVM algorithm...')
+            pool = multiprocessing.Pool(processes=nthreads)
+            arg_list = []
+            oc_sag_list = list(mh_best_df['sag_id'].unique())
+            for sag_id in tqdm(oc_sag_list):
+                sub_mh_df = mh_best_df.query('sag_id == @sag_id')
+                arg_list.append([merge_df, sub_mh_df, sag_id, nu, gamma])
+            ocsvm_recruit_list = []
+            ocsvm_recruit_dict = {}
+            results = pool.imap_unordered(recruitOCSVM, arg_list)
+            for i, output in tqdm(enumerate(results, 1)):
+                sag_id, ocsvm_recruits = output
+                if isinstance(ocsvm_recruits, pd.DataFrame):
+                    ocsvm_recruit_list.append(ocsvm_recruits)
+                    ocsvm_recruit_dict[sag_id] = ocsvm_recruits
+            pool.close()
+            pool.join()
+            ocsvm_contig_df = pd.concat(ocsvm_recruit_list)
+            ocsvm_contig_best_df = ocsvm_contig_df.sort_values(by='percent', ascending=False
+                                                               ).drop_duplicates(subset='contig_id')
+            print('Compiling OC-SVM recruited contigs...')
+            ocsvm_contig_dict = {}
+            for index, row in tqdm(list(ocsvm_contig_best_df.iterrows())):
+                sag_id = row['sag_id']
+                percent = row['percent']
+                sub_ocsvm_df = ocsvm_recruit_dict[sag_id]
+                sub_sag_contig_df = sub_ocsvm_df.query('percent >= @percent')
+                ocsvm_contig_dict[sag_id] = sub_sag_contig_df
 
-        print('Building OC-SVM Clusters...')
-        ocsvm_clust_list = []
-        for sag_id in tqdm(oc_sag_list):
-            trust_cols = ['sag_id', 'contig_id']
-            sub_trusted_df = mh_best_df.query('sag_id == @sag_id')[trust_cols]
-            if sag_id in ocsvm_contig_dict.keys():
-                sub_ocsvm_df = ocsvm_contig_dict[sag_id][trust_cols]
-                ocsvm_cat_df = pd.concat([sub_trusted_df, sub_ocsvm_df]).drop_duplicates()
-                ocsvm_clust_list.append(ocsvm_cat_df)
-            else:
-                ocsvm_cat_df = sub_trusted_df.drop_duplicates()
-                ocsvm_clust_list.append(ocsvm_cat_df)
-        ocsvm_clust_df = pd.concat(ocsvm_clust_list)
-        ocsvm_clust_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
-        ocsvm_clust_df.to_csv(ocsvm_out_file, sep='\t', index=False)
-    elif ocsvm_out_file.is_file():
-        print('OC-SVM Clusters already exist...')
-        ocsvm_clust_df = pd.read_csv(ocsvm_out_file, sep='\t', header=0)
+            print('Building OC-SVM Clusters...')
+            ocsvm_clust_list = []
+            for sag_id in tqdm(oc_sag_list):
+                trust_cols = ['sag_id', 'contig_id']
+                sub_trusted_df = mh_best_df.query('sag_id == @sag_id')[trust_cols]
+                if sag_id in ocsvm_contig_dict.keys():
+                    sub_ocsvm_df = ocsvm_contig_dict[sag_id][trust_cols]
+                    ocsvm_cat_df = pd.concat([sub_trusted_df, sub_ocsvm_df]).drop_duplicates()
+                    ocsvm_clust_list.append(ocsvm_cat_df)
+                else:
+                    ocsvm_cat_df = sub_trusted_df.drop_duplicates()
+                    ocsvm_clust_list.append(ocsvm_cat_df)
+            ocsvm_clust_df = pd.concat(ocsvm_clust_list)
+            ocsvm_clust_df.rename(columns={'sag_id': 'best_label'}, inplace=True)
+            ocsvm_clust_df.to_csv(ocsvm_out_file, sep='\t', index=False)
+        elif ocsvm_out_file.is_file():
+            print('OC-SVM Clusters already exist...')
+            ocsvm_clust_df = pd.read_csv(ocsvm_out_file, sep='\t', header=0)
     else:
         ocsvm_clust_df = False
 
-    # Find intersection of HDBSCAN and OC-SVM
-    inter_out_file = Path(o_join(clst_path, mg_id + '.inter_clusters.tsv'))
-    if minhash_dict and not inter_out_file.is_file():
-        print('Combining Recruits from HDBSCAN and OC-SVM...')
-        inter_clust_list = []
-        #trust_labels = list(trust_recruit_df['best_label'].unique())
-        trust_labels = list(mh_best_df['sag_id'].unique())
-        for best_label in tqdm(trust_labels):
-            sub_mh_best_df = mh_best_df.query('sag_id == @best_label')[['sag_id', 'contig_id']]
-            sub_mh_best_df.columns = ['best_label', 'contig_id']
-            sub_minhash_df = mh_trusted_df.query('sag_id == @best_label')[['sag_id', 'contig_id']]
-            sub_scan_df = trust_recruit_df.query('best_label == @best_label')
-            sub_svm_df = ocsvm_clust_df.query('best_label == @best_label')
-            mh_hdb_inter = set(sub_minhash_df['contig_id']).intersection(set(sub_scan_df['contig_id']))
-            mh_svm_inter = set(sub_minhash_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
-            hdb_svm_inter = set(sub_scan_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
-            inter_list = [mh_hdb_inter, mh_svm_inter, hdb_svm_inter]
-            intersect = list(set().union(*inter_list))
-            best_inter_list = [(best_label, x) for x in intersect]
-            best_inter_df = pd.DataFrame(best_inter_list, columns=['best_label', 'contig_id'])
-            best_concat_df = pd.concat([best_inter_df, sub_mh_best_df]).drop_duplicates()
-            inter_clust_list.append(best_concat_df)
-        inter_clust_df = pd.concat(inter_clust_list)
-        inter_clust_df.to_csv(inter_out_file, sep='\t', index=False)
-    elif inter_out_file.is_file():
-        print('Combined Clusters already exist...')
-        inter_clust_df = pd.read_csv(inter_out_file, sep='\t', header=0)
+    if minhash_dict:
+        # Find intersection of HDBSCAN and OC-SVM
+        inter_out_file = Path(o_join(clst_path, mg_id + '.inter_clusters.tsv'))
+        if not inter_out_file.is_file():
+            print('Combining Recruits from HDBSCAN and OC-SVM...')
+            inter_clust_list = []
+            #trust_labels = list(trust_recruit_df['best_label'].unique())
+            trust_labels = list(mh_best_df['sag_id'].unique())
+            for best_label in tqdm(trust_labels):
+                sub_mh_best_df = mh_best_df.query('sag_id == @best_label')[['sag_id', 'contig_id']]
+                sub_mh_best_df.columns = ['best_label', 'contig_id']
+                sub_minhash_df = mh_trusted_df.query('sag_id == @best_label')[['sag_id', 'contig_id']]
+                sub_scan_df = trust_recruit_df.query('best_label == @best_label')
+                sub_svm_df = ocsvm_clust_df.query('best_label == @best_label')
+                mh_hdb_inter = set(sub_minhash_df['contig_id']).intersection(set(sub_scan_df['contig_id']))
+                mh_svm_inter = set(sub_minhash_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
+                hdb_svm_inter = set(sub_scan_df['contig_id']).intersection(set(sub_svm_df['contig_id']))
+                inter_list = [mh_hdb_inter, mh_svm_inter, hdb_svm_inter]
+                intersect = list(set().union(*inter_list))
+                best_inter_list = [(best_label, x) for x in intersect]
+                best_inter_df = pd.DataFrame(best_inter_list, columns=['best_label', 'contig_id'])
+                best_concat_df = pd.concat([best_inter_df, sub_mh_best_df]).drop_duplicates()
+                inter_clust_list.append(best_concat_df)
+            inter_clust_df = pd.concat(inter_clust_list)
+            inter_clust_df.to_csv(inter_out_file, sep='\t', index=False)
+        elif inter_out_file.is_file():
+            print('Combined Clusters already exist...')
+            inter_clust_df = pd.read_csv(inter_out_file, sep='\t', header=0)
     else:
         inter_clust_df = False
 

@@ -179,7 +179,7 @@ def cnt_contig_bp(fasta_file):
     fasta_records = get_seqs(fasta_file)
     fa_cnt_dict = {}
     for f_rec in fasta_records:
-        fa_cnt_dict[f_rec.name] = len(f_rec.seq)
+        fa_cnt_dict[f_rec[0]] = len(f_rec[1])
     return fa_cnt_dict
 
 
@@ -190,7 +190,7 @@ def cnt_total_bp(fasta_file):
     fasta_records = get_seqs(fasta_file)
     bp_sum = 0
     for f_rec in fasta_records:
-        bp_sum += len(f_rec.seq)
+        bp_sum += len(f_rec[1])
     return fasta_file, bp_sum
 
 

@@ -216,7 +216,7 @@ def kmer_slide(scd_db, n, o_lap, m_len):
     all_sub_headers = []
     for k in scd_db:
         rec = k
-        header, seq = rec.name, rec.seq
+        header, seq = rec[0], rec[1]
         if len(str(seq)) >= int(o_lap):
             clean_seq = str(seq).upper()
             sub_list = sliding_window(clean_seq, n, o_lap)
@@ -306,9 +306,9 @@ def tetra_cnt(fasta):  # TODO: add multi-processing to this function
     # count up all tetramers and also populate the tetra dict
     subcontig_len_dict = {}
     for rec in fasta:
-        header = rec.name
+        header = rec[0]
         header_list.append(header)
-        seq = rec.seq
+        seq = rec[1]
         subcontig_len_dict[header] = len(seq)
         tmp_dict = {k: 0 for k, v in tetra_cnt_dict.items()}
         clean_seq = seq.strip('\n').lower()

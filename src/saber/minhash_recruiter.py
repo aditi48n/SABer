@@ -186,10 +186,9 @@ def load_sag_sigs(p):
 
 def build_sag_sigs(sag_file, sag_id, sig_path, kmer):
     sag_subcontigs = s_utils.get_seqs(sag_file)
-    sag_headers = tuple(sag_subcontigs.keys())
     sag_sig_list = []
-    for i, sag_head in enumerate(sag_headers):
-        sag_sig = build_signature([sag_head, str(sag_subcontigs[sag_head].seq), kmer])
+    for i, sag_rec in enumerate(sag_subcontigs):
+        sag_sig = build_signature([sag_rec[0], str(sag_rec[1]), kmer])
         sag_sig_list.append(sag_sig)
     with open(o_join(sig_path, sag_id + '.' + str(kmer) + '.TC.sig'), 'w') as sag_out:
         sourmash.signature.save_signatures(sag_sig_list, fp=sag_out)
@@ -198,11 +197,10 @@ def build_sag_sigs(sag_file, sag_id, sig_path, kmer):
 
 
 def build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer, min_len):
-    mg_headers = mg_subcontigs.keys()
     arg_list = []
-    for i, mg_head in enumerate(mg_headers):
-        if len(str(mg_subcontigs[mg_head].seq)) >= min_len:
-            arg_list.append([mg_head, str(mg_subcontigs[mg_head].seq), kmer])
+    for i, mg_rec in enumerate(mg_subcontigs):
+        if len(str(mg_rec[1])) >= min_len:
+            arg_list.append([mg_rec[0], str(mg_rec[1]), kmer])
     pool = multiprocessing.Pool(processes=nthreads)
     results = pool.imap_unordered(build_signature, arg_list)
     mg_sig_list = []

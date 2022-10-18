@@ -21,6 +21,16 @@ conda activate saber_cenv
 make install-saber
 ```
 
+### Test SABer Install
+Here is a small [demo dataset](https://drive.google.com/file/d/1yUoPpoNRl6-CZHkRoUYDbikBJk4yC-3V/view?usp=sharing) to make sure your SABer install was successful.
+Just download and follow along below to run SABer:
+```sh
+unzip demo.zip
+cd demo
+conda activate saber_cenv
+saber recruit -m k12.gold_assembly.fasta -l read_list.txt -o SABer_out -s SAGs
+```
+
 ### Docker and Singularity containers
 If you would like to use a docker or singularity container of SABer they are available:
 

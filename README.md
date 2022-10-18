@@ -34,9 +34,9 @@ The result of the above commands is a new directory named `SABer_out` that conta
 ### Docker and Singularity containers
 If you would like to use a docker or singularity container of SABer they are available:
 
-[Docker](not_available_yet)
+[Docker](not_available_yet) (Not availavble yet...)
 
-[Singularity](not_available_yet)
+[Singularity](not_available_yet) (Not availavble yet...)
 
 They can also be build from scratch using the following commands:
 

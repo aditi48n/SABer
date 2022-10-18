@@ -29,6 +29,7 @@ unzip demo.zip
 cd demo
 saber recruit -m k12.gold_assembly.fasta -l read_list.txt -o SABer_out -s SAG
 ```
+The result of the above commands is a new directory named `SABer_out` that contains all the intermediate and final outputs for the SABer analysis. 
 
 ### Docker and Singularity containers
 If you would like to use a docker or singularity container of SABer they are available:

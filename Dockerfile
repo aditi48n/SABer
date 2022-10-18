@@ -1,5 +1,5 @@
-FROM continuumio/miniconda3
-MAINTAINER Ryan J. McLaughlin
+FROM continuumio/miniconda3:4.12.0
+
 
 ### EXAMPLES ###
 
@@ -20,11 +20,11 @@ ENV PYTHONPATH=/opt/:/opt/libs
 ARG git_branch=master
 
 ### Install apt dependencies
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -y 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3 \
-						      python3-pip \
-						      wget \
-						      libgmp3-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+                    && apt-get install --no-install-recommends -y \
+                       python3 python3-pip wget libgmp3-dev \
+                    && apt-get clean \
+                    && rm -rf /var/lib/apt/lists/*
 
 ## Set up Conda:
 COPY environment.yml /opt/environment.yml

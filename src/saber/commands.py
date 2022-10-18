@@ -87,7 +87,7 @@ def recruit(sys_args):
             recruit_s.mode = m
     # Build save dir structure and start logging file
     save_dirs_dict = s_utils.check_out_dirs(recruit_s.save_path, recruit_s.a, recruit_s.mode)
-    s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), args.verbose)
+    s_log.prep_logging(os.path.join(recruit_s.save_path, "SABer_log.txt"), verbosity=args.verbose)
 
     # TODO: should check for prebuilt files before anything else to avoid rebuilding things
     # TODO: think about setting a default upper and lower bp size for bins to filter bad ones

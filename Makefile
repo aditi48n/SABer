@@ -34,7 +34,6 @@ PYTHON ?= python3
 install-saberenv: #installs SABer deps with conda + pip
 	conda env create -f environment.yml
 install-saber: # installs saber with pip
-	python setup.py sdist
 	pip install .
 
 ### Container Automation

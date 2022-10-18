@@ -400,6 +400,7 @@ def set_clust_params(denovo_min_clust, denovo_min_samp, anchor_min_clust,
 
 
 def entropy_cluster(ent_df):
+    logging.disable(logging.DEBUG)
     samp2type = {x: y for x, y in zip(ent_df['sample_id'], ent_df['sample_type'])}
     piv_df = ent_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
     scaler = StandardScaler()
@@ -462,7 +463,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     #last_int = working_dir.rsplit('/', 4)[-1][-1]
     #print('Skipping', skip_id, last_int)
     #####################################################################
-
+    logging.disable(logging.DEBUG)
     r_cmpr_list = []
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
@@ -486,6 +487,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
 
 
 def real_cluster(clusterer, real_df, umap_fit, scale_fit):
+    logging.disable(logging.DEBUG)
     # Assign real data to clusters
     real_piv_df = real_df.pivot(index='sample_id', columns='alpha', values='Renyi_Entropy')
     scale_emb = scale_fit.transform(real_piv_df)
@@ -504,6 +506,7 @@ def real_cluster(clusterer, real_df, umap_fit, scale_fit):
 
 
 def calc_real_entrophy(mba_cov_list, working_dir):
+    logging.disable(logging.DEBUG)
     logging.info('Calculating Renyi Entropy profile\n')
     entropy_list = []
     for samp_file in mba_cov_list:
@@ -549,6 +552,7 @@ def calc_real_entrophy(mba_cov_list, working_dir):
 
 
 def remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit):
+    logging.disable(logging.DEBUG)
     # If labeled as an outlier, take the closest match
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
                  'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'euc_d'
@@ -569,6 +573,7 @@ def remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit):
 
 
 def calc_centroid(best_df, ren_df, real_ids, umap_fit, scale_fit):
+    logging.disable(logging.DEBUG)
     ren_piv_df = ren_df.pivot(index=['sample_id', 'cluster'], columns='alpha', values='Renyi_Entropy').reset_index()
     sample_ren_df = ren_piv_df.query('cluster == -1').drop(['cluster'], axis=1)
     sample_ren_df.set_index('sample_id', inplace=True)

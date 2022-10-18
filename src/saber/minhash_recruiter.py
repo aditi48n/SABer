@@ -5,6 +5,7 @@ from os.path import join as o_join
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 import sourmash
 from sourmash.sbtmh import SigLeaf
 
@@ -42,16 +43,10 @@ def run_minhash_recruiter(sig_path, mhr_path, sag_sub_files, mg_sub_file, nthrea
                              'be patient\n'.format(len(chunk_list))
                              )
                 df_cnt = 0
-                logging.info('Signatures Queried Against SBT: {}/{}'
-                             '\r'.format(df_cnt, len(sag_sig_dict.keys()))
-                             )
-                for i, search_df in enumerate(results):
+                logging.info('Signatures Queried Against SBT:\n')
+                for search_df in tqdm(results):
                     df_cnt += len(search_df)
-                    logging.info('Signatures Queried Against SBT: {}/{}'
-                                 '\r'.format(df_cnt, len(sag_sig_dict.keys()))
-                                 )
                     minhash_pass_list.extend(search_df)
-                logging.info('\n')
                 pool.close()
                 pool.join()
 
@@ -83,11 +78,10 @@ def build_sag_sig_dict(build_list, nthreads, sig_path, kmer):
         arg_list.append([sag_file, sag_id, sig_path, kmer])
     results = pool.imap_unordered(load_sag_sigs, arg_list)
     sag_sig_dict = {}
-    for i, sag_sig_rec in enumerate(results):
+    logging.info('Loading/Building Trusted Contig Signatures:\n')
+    for sag_sig_rec in tqdm(results):
         sag_id, sag_sig_list = sag_sig_rec
-        logging.info('Loading/Building Trusted Contig Signatures: {}/{}\r'.format(i + 1, len(build_list)))
         sag_sig_dict[sag_id] = sag_sig_list
-    logging.info('\n')
     pool.close()
     pool.join()
 
@@ -138,15 +132,13 @@ def build_mg_sbt(mg_id, mg_sub_file, sig_path, nthreads, kmer, min_len, checkonl
         pool = multiprocessing.Pool(processes=nthreads)
         results = pool.imap_unordered(build_leaf, mg_sig_list)
         leaf_list = []
-        for i, leaf in enumerate(results, 1):
-            logging.info('Building leaves for SBT: {}/{}\r'.format(i, len(mg_sig_list)))
+        logging.info('Building leaves for SBT:\n')
+        for leaf in tqdm(results):
             leaf_list.append(leaf)
         leaf_list = tuple(leaf_list)
-        logging.info('\n')
-        for i, lef in enumerate(leaf_list, 1):
-            logging.info('Adding leaves to tree: {}/{}\r'.format(i, len(leaf_list)))
+        logging.info('Adding leaves to tree:\n')
+        for lef in tqdm(leaf_list):
             mg_sbt_tree.add_node(lef)
-        logging.info('\n')
         mg_sbt_tree.save(mg_sbt_file)
         pool.close()
         pool.join()
@@ -204,10 +196,9 @@ def build_mg_sigs(mg_id, mg_subcontigs, nthreads, sig_path, kmer, min_len):
     pool = multiprocessing.Pool(processes=nthreads)
     results = pool.imap_unordered(build_signature, arg_list)
     mg_sig_list = []
-    for i, mg_sig in enumerate(results, 1):
-        logging.info('Building MinHash Signatures for {}: {}/{} done\r'.format('metagenome contigs', i, len(arg_list)))
+    logging.info('Building MinHash Signatures for metagenome contigs:\n')
+    for mg_sig in tqdm(results):
         mg_sig_list.append(mg_sig)
-    logging.info('\n')
     pool.close()
     pool.join()
     with open(o_join(sig_path, mg_id + '.' + str(kmer) + '.metaG.sig'), 'w') as mg_out:
@@ -222,7 +213,8 @@ def sag_recruit_checker(mhr_path, sag_sub_files, kmer):
     minhash_pass_list = []
     l = 0
     b = 0
-    for i, sag_rec in enumerate(sag_sub_files):
+    logging.info('Checking for previously completed Trusted Contigs:\n')
+    for sag_rec in tqdm(sag_sub_files):
         sag_id, sag_file = sag_rec
         mh_file = o_join(mhr_path, sag_id + '.' + str(kmer) + '.mhr_recruits.tsv')
         if isfile(mh_file):
@@ -236,8 +228,6 @@ def sag_recruit_checker(mhr_path, sag_sub_files, kmer):
         else:
             build_list.append(sag_rec)
             b += 1
-        logging.info('Checking for previously completed Trusted Contigs: {}/{} done\r'.format(l, b))
-    logging.info('\n')
     return build_list, minhash_pass_list
 
 

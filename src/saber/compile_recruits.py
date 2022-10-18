@@ -16,7 +16,7 @@ def run_combine_recruits(save_dirs_dict, mg_file, clusters,
 
     logging.info('Combining All Recruits\n')
     mg_contigs_dict = s_utils.get_seqs(mg_file)
-    mg_contigs = tuple([(r.name, r.seq) for r in mg_contigs_dict])
+    mg_contigs = tuple([(r[0], r[1]) for r in mg_contigs_dict])
     mg_contigs_df = pd.DataFrame(mg_contigs, columns=['contig_id', 'seq'])
     trust_dict = {t[0]: t[1] for t in trusted_list}
     

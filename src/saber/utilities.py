@@ -511,9 +511,10 @@ def calc_real_entrophy(mba_cov_list, working_dir):
     entropy_list = []
     for samp_file in mba_cov_list:
         samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-        if samp_id.rsplit('_', 1)[1][0].isdigit():
-            samp_label = samp_id.rsplit('_', 1)[0]
-            samp_rep = samp_id.rsplit('_', 1)[1]
+        if '_' in samp_id:
+            if samp_id.rsplit('_', 1)[1][0].isdigit():
+                samp_label = samp_id.rsplit('_', 1)[0]
+                samp_rep = samp_id.rsplit('_', 1)[1]
         else:
             samp_label = samp_id
             samp_rep = 0

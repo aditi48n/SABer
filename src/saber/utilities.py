@@ -456,12 +456,9 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     #####################################################################
     # Added just for benchmarking, REMOVE after analysis is complete!!! #
     #####################################################################
-    # skip_id = str(working_dir.rsplit('/', 4)[2] + '_' + working_dir.rsplit('/', 4)[-1]).strip('CAMI_II_').strip('CAMI_')
-    #print(working_dir)
-    #print(real_piv_df)
-    #skip_id = str(working_dir.rsplit('/', 4)[2]).replace('CAMI_II_', '').replace('CAMI_', '')
-    #last_int = working_dir.rsplit('/', 4)[-1][-1]
-    #print('Skipping', skip_id, last_int)
+    skip_id = str(working_dir.rsplit('/', 1)[1]).split('_', 1)[0]
+    last_int = working_dir.rsplit('/', 1)[1].rsplit('_', 2)[1]
+    print('Skipping', skip_id, last_int)
     #####################################################################
     logging.disable(logging.DEBUG)
     r_cmpr_list = []
@@ -470,14 +467,14 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
         for r2, row2 in piv_df.iterrows():
             euc_d = np.linalg.norm(row1 - row2)
             if euc_d < keep_diff[2] and r1 != r2:
-                keep_diff = [r1, r2, euc_d]
+                #keep_diff = [r1, r2, euc_d]
                 #######################################################
-                #if last_int != r2[-1]:
-                #    keep_diff = [r1, r2, euc_d]
-                #elif skip_id not in r2:
-                #    keep_diff = [r1, r2, euc_d]
-                #else:
-                #    print("Found and skipped", r2)
+                if last_int != r2[-1]:
+                    keep_diff = [r1, r2, euc_d]
+                elif skip_id not in r2:
+                    keep_diff = [r1, r2, euc_d]
+                else:
+                    print("Found and skipped", r2)
                 #######################################################
         r_cmpr_list.append(keep_diff)
     r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])

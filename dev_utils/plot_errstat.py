@@ -32,12 +32,11 @@ diffdna_multi_file = sys.argv[7]
 workdir = sys.argv[8]
 
 # column renaming/mapping dictionaries
-type2label = {'CAMI_II_Airways': 'Air',
-              'CAMI_II_Gastrointestinal': 'GI',
-              'CAMI_II_Oral': 'Oral',
-              'CAMI_II_Skin': 'Skin',
-              'CAMI_II_Urogenital': 'Urog',
-              'MGE_6': 'MGE'
+type2label = {'Airways': 'Air',
+              'Gastrointestinal': 'GI',
+              'Oral': 'Oral',
+              'Skin': 'Skin',
+              'Urogenital': 'Urog',
               }
 algo2rank = {'denovo': 0, 'hdbscan': 1,
              'ocsvm': 2, 'intersect': 3,
@@ -48,16 +47,17 @@ type2rank = {'Air': 0,
              'Oral': 2,
              'Skin': 3,
              'Urog': 4,
-             'MGE': 5
              }
-mode2rank = {'majority_rule': 0,
-             'best_cluster': 1,
-             'best_match': 2
+mode2rank = {'algo_defaults': 0,
+             'majority_rule': 1,
+             'best_cluster': 2,
+             'best_match': 3             
              }
-param2rank = {'very_relaxed': 0,
-              'relaxed': 1,
-              'strict': 2,
-              'very_strict': 3
+param2rank = {'algo_defaults': 0,
+              'very_relaxed': 1,
+              'relaxed': 2,
+              'strict': 3,
+              'very_strict': 4
               }
 binnerconf2rank = {'maxbin_ms40': 0,
                    'maxbin_ms107': 1,
@@ -74,7 +74,9 @@ binner2rank = {'maxbin': 0,
                'VAMB': 3,
                'SABer_denovo': 4,
                'SABer_intersect': 5,
-               'SABer_xPG': 6
+               'SABer_xPG': 6,
+               'SABer_hdbscan': 7,
+               'SABer_ocsvm': 8
                }
 
 level2rank = {'exact_assembly_single': 0,
@@ -95,7 +97,9 @@ binner2cmap = {'maxbin': cmap_pastel[0],
                'VAMB': cmap_pastel[4],
                'SABer_denovo': cmap_pastel[3],
                'SABer_intersect': cmap_pastel[1],
-               'SABer_xPG': cmap[1]
+               'SABer_xPG': cmap[1],
+                'SABer_hdbscan': cmap_pastel[1],
+               'SABer_ocsvm': cmap_pastel[1]
                }
 
 # Load stats tables
@@ -123,6 +127,13 @@ diffdna_single_df['sample_id'] = ['S' + str(x) for x in
 diffdna_multi_df['sample_id'] = ['S' + str(x) for x in
                                  diffdna_multi_df['sample_id']
                                  ]
+diffdna_single_df['ref_id'] = [x.rsplit('.', 1)[0] for x in
+                                diffdna_single_df['ref_id']
+                                ]
+diffdna_multi_df['ref_id'] = [x.rsplit('.', 1)[0] for x in
+                                diffdna_multi_df['ref_id']
+                                ]
+
 saber_single_df['binner'] = ['_'.join(['SABer', str(x), str(y), str(z)])
                              for x, y, z in
                              zip(saber_single_df['algorithm'],
@@ -181,12 +192,10 @@ bin_cat_df['level_mode'] = [x + '_' + y for x, y in zip(bin_cat_df['level'],
                                                         bin_cat_df['bin_mode']
                                                         )]
 bin_cat_df['dataset'] = [type2label[x] for x in bin_cat_df['sample_type']]
-# Remove MGE for now
-bin_cat_df = bin_cat_df.query("dataset != 'MGE'")
 ########################################################################################################################
 ##### Calc all basic metrics ###########################################################################################
 ########################################################################################################################
-
+'''
 # By dataset
 cat_list = []
 for binner in bin_cat_df['binner'].unique():
@@ -230,12 +239,16 @@ for binner in bin_cat_df['binner'].unique():
                     sub_err_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in sub_err_df['asm_per_bp']]
                     sub_err_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in sub_err_df['asm_per_bp']]
                     sub_err_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
+                    poss_ext_bp_df = sub_err_df[['exact_label', 'possible_bp',
+                                                 'total_bp', 'asm_per_bp',
+                                                 'yes_NC', 'yes_MQ'
+                                                 ]].copy().drop_duplicates(subset='exact_label')
                     poss_str_bp_df = sub_err_df[['strain_label', 'possible_bp',
                                                  'total_bp', 'asm_per_bp',
                                                  'yes_NC', 'yes_MQ'
                                                  ]].copy().drop_duplicates(subset='strain_label')
-                    ext_mq_poss = sub_err_df['yes_MQ'].sum()
-                    ext_nc_poss = sub_err_df['yes_NC'].sum()
+                    ext_mq_poss = poss_ext_bp_df['yes_MQ'].sum()
+                    ext_nc_poss = poss_ext_bp_df['yes_NC'].sum()
                     str_mq_poss = poss_str_bp_df['yes_MQ'].sum()
                     str_nc_poss = poss_str_bp_df['yes_NC'].sum()
                     err_list = [binner, bin_mode, level, dataset, mq_avg_p,
@@ -303,12 +316,16 @@ for binner in bin_cat_df['binner'].unique():
                         sub_err_df['yes_NC'] = [1 if x >= 0.9 else 0 for x in sub_err_df['asm_per_bp']]
                         sub_err_df['yes_MQ'] = [1 if x >= 0.5 else 0 for x in sub_err_df['asm_per_bp']]
                         sub_err_df.sort_values(by='asm_per_bp', ascending=False, inplace=True)
+                        poss_ext_bp_df = sub_err_df[['exact_label', 'possible_bp',
+                                                 'total_bp', 'asm_per_bp',
+                                                 'yes_NC', 'yes_MQ'
+                                                 ]].copy().drop_duplicates(subset='exact_label')
                         poss_str_bp_df = sub_err_df[['strain_label', 'possible_bp',
                                                      'total_bp', 'asm_per_bp',
                                                      'yes_NC', 'yes_MQ'
                                                      ]].copy().drop_duplicates(subset='strain_label')
-                        ext_mq_poss = sub_err_df['yes_MQ'].sum()
-                        ext_nc_poss = sub_err_df['yes_NC'].sum()
+                        ext_mq_poss = poss_ext_bp_df['yes_MQ'].sum()
+                        ext_nc_poss = poss_ext_bp_df['yes_NC'].sum()
                         str_mq_poss = poss_str_bp_df['yes_MQ'].sum()
                         str_nc_poss = poss_str_bp_df['yes_NC'].sum()
                         err_list = [binner, bin_mode, level, dataset, sample_id, mq_avg_p,
@@ -333,7 +350,7 @@ dataset_metrics_df = pd.read_csv(os.path.join(workdir, 'tables/ALL_BINNERS.datas
 
 sample_metrics_df = pd.read_csv(os.path.join(workdir, 'tables/ALL_BINNERS.sample.avg_metrics.tsv'), sep='\t',
                                 header=0)
-'''
+
 # below should be kept in the above processing in the future
 dataset_metrics_df['level_mode'] = [x + '_' + y for x, y in zip(dataset_metrics_df['level'],
                                                                 dataset_metrics_df['bin_mode']
@@ -347,6 +364,7 @@ dataset_metrics_df['binner_config'] = [x + '_' + y for x, y in zip(dataset_metri
 sample_metrics_df['binner_config'] = [x + '_' + y for x, y in zip(sample_metrics_df['binner'],
                                                                   sample_metrics_df['bin_mode']
                                                                   )]
+
 ########################################################################################################################
 ##### RUN NC STATS #####################################################################################################
 ########################################################################################################################
@@ -414,7 +432,8 @@ cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                         if 'SABer' in x else x.split('_', 1)[0]
                         for x in cat_cnt_df['binner_config']
                         ]
-filter_list = ['SABer_denovo', 'SABer_hdbscan', 'SABer_ocsvm', 'SABer_intersect']
+
+filter_list = ['SABer_hdbscan', 'SABer_ocsvm', 'SABer_intersect']
 filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
 dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 dedup_cnt_df['binner_config_level_mode'] = [x + '_' + y for x, y
@@ -427,6 +446,8 @@ dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.NC.uniq_sample.cou
 
 # Calculate the Recall diff between SAGs and xPGs
 bclm_list = list(dedup_cnt_df['binner_config_level_mode'].unique())
+print(bclm_list)
+flurp
 bin_cat_df['binner_config_level_mode'] = [x + '_' + y for x, y
                                           in zip(bin_cat_df['binner_config'],
                                                  bin_cat_df['level_mode']
@@ -468,6 +489,7 @@ diffxpg_single_df = xpg_single_df.merge(diffdna_single_df,
                                             'param_set'],
                                         how='left'
                                         )
+
 diff_filter_list = ['best_label', 'dataset', 'sample_type',
                     'sample_id', 'mode', 'param_set'
                     ]
@@ -652,6 +674,8 @@ sum_binstat_df = sub_binstat_df.groupby(['binner', 'bin_rank',
                                         )['ext_nc_uniq'].sum().reset_index()
 sum_binstat_df.sort_values(by=['level_rank', 'bin_rank', 'type_rank'],
                            inplace=True)
+print(sum_binstat_df)
+flurp
 barie = sns.catplot(x="dataset", y="ext_nc_uniq", hue="binner",
                     col="level_mode", col_wrap=2,
                     kind="bar", data=sum_binstat_df,
@@ -750,7 +774,7 @@ cat_cnt_df['binner'] = [x.split('_', 2)[0] + '_' + x.split('_', 2)[1]
                         if 'SABer' in x else x.split('_', 1)[0]
                         for x in cat_cnt_df['binner_config']
                         ]
-filter_list = ['SABer_denovo', 'SABer_hdbscan', 'SABer_ocsvm', 'SABer_intersect']
+filter_list = ['SABer_hdbscan', 'SABer_ocsvm', 'SABer_intersect']
 filter_cnt_df = cat_cnt_df.query("binner not in @filter_list")
 dedup_cnt_df = filter_cnt_df.drop_duplicates(subset=['binner', 'level_mode'])
 dedup_cnt_df.to_csv(os.path.join(workdir, 'tables/ALL_BINNERS.MQ.uniq_sample.counts.tsv'),

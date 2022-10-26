@@ -453,29 +453,15 @@ def find_best_match(piv_df, ent_umap_df):
 
 def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
     # Closest ref sample methods
-    #####################################################################
-    # Added just for benchmarking, REMOVE after analysis is complete!!! #
-    #####################################################################
-    skip_id = str(working_dir.rsplit('/', 1)[1]).split('_', 1)[0]
-    last_int = working_dir.rsplit('/', 1)[1].rsplit('_', 2)[1]
-    print('Skipping', skip_id, last_int)
-    #####################################################################
     logging.disable(logging.DEBUG)
     r_cmpr_list = []
     for r1, row1 in real_piv_df.iterrows():
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
             euc_d = np.linalg.norm(row1 - row2)
-            if euc_d < keep_diff[2] and r1 != r2:
-                #keep_diff = [r1, r2, euc_d]
-                #######################################################
-                if last_int != r2[-1]:
-                    keep_diff = [r1, r2, euc_d]
-                elif skip_id not in r2:
-                    keep_diff = [r1, r2, euc_d]
-                else:
-                    print("Found and skipped", r2)
-                #######################################################
+            if euc_d < keep_diff[2] and r1 != r2: # TODO: remove second if test once bench is done
+                keep_diff = [r1, r2, euc_d]
+        print(keep_diff)
         r_cmpr_list.append(keep_diff)
     r_cmpr_df = pd.DataFrame(r_cmpr_list, columns=['sample_id', 'best_match', 'euc_d'])
     best_df = real_umap_df.merge(r_cmpr_df, on='sample_id', how='left')
@@ -508,6 +494,14 @@ def calc_real_entrophy(mba_cov_list, working_dir):
     entropy_list = []
     for samp_file in mba_cov_list:
         samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
+        #####################################################################
+        # Added just for benchmarking, REMOVE after analysis is complete!!! #
+        #####################################################################
+        skip_id = working_dir.rsplit('/', 1)[1].split('_', 1)[0]
+        last_int = working_dir.rsplit('/', 1)[1].rsplit('_', 2)[1]
+        samp_id = skip_id + '_' + last_int
+        print(samp_id)
+        #####################################################################
         if '_' in samp_id:
             if samp_id.rsplit('_', 1)[1][0].isdigit():
                 samp_label = samp_id.rsplit('_', 1)[0]
@@ -555,6 +549,7 @@ def remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit):
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
                  'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'euc_d'
                  ]
+    real_merge_df['sample_id'] = [x + '_' + 'test' for x in real_merge_df['sample_id']] # TODO: remove this after bench
     best_merge_df = pd.concat([ent_best_df[keep_cols],
                                real_merge_df[keep_cols]]
                               )

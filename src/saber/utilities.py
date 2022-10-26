@@ -459,7 +459,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
             euc_d = np.linalg.norm(row1 - row2)
-            if euc_d < keep_diff[2] and r1 != r2: # TODO: remove second if test once bench is done
+            if euc_d < keep_diff[2] and r1.strip('_test') != r2: # TODO: remove second if test once bench is done
                 keep_diff = [r1, r2, euc_d]
         print(keep_diff)
         r_cmpr_list.append(keep_diff)
@@ -499,11 +499,11 @@ def calc_real_entrophy(mba_cov_list, working_dir):
         #####################################################################
         skip_id = working_dir.rsplit('/', 1)[1].split('_', 1)[0]
         last_int = working_dir.rsplit('/', 1)[1].rsplit('_', 2)[1]
-        samp_id = skip_id + '_' + last_int
+        samp_id = skip_id + '_' + last_int + '_test'
         print(samp_id)
         #####################################################################
         if '_' in samp_id:
-            if samp_id.rsplit('_', 1)[1][0].isdigit():
+            if samp_id.rsplit('_')[1][0].isdigit():
                 samp_label = samp_id.rsplit('_', 1)[0]
                 samp_rep = samp_id.rsplit('_', 1)[1]
         else:
@@ -549,7 +549,6 @@ def remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit):
     keep_cols = ['sample_id', 'sample_type', 'alpha', 'Renyi_Entropy', 'alpha_int',
                  'x_labels', 'u0', 'u1', 'cluster', 'probabilities', 'best_match', 'euc_d'
                  ]
-    real_merge_df['sample_id'] = [x + '_' + 'test' for x in real_merge_df['sample_id']] # TODO: remove this after bench
     best_merge_df = pd.concat([ent_best_df[keep_cols],
                                real_merge_df[keep_cols]]
                               )
@@ -625,9 +624,9 @@ def calc_entropy(working_dir, mba_cov_list):
 
         # Replace outliers with best match
         best_merge_df = remove_outliers(ent_best_df, real_merge_df, umap_fit, scale_fit)
-        real_type = real_df['sample_type'].values[0]
+        real_samp = real_df['sample_id'].values[0]
         # Save final files
-        real_only_df = best_merge_df.query('sample_type == @real_type')
+        real_only_df = best_merge_df.query('sample_id == @real_samp')
         real_only_df.to_csv(real_clean, sep='\t', index=False)
 
     return real_only_df

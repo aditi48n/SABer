@@ -459,7 +459,7 @@ def real_best_match(piv_df, real_piv_df, real_umap_df, working_dir):
         keep_diff = [r1, '', np.inf]
         for r2, row2 in piv_df.iterrows():
             euc_d = np.linalg.norm(row1 - row2)
-            if euc_d < keep_diff[2] and r1.strip('_test') != r2: # TODO: remove second if test once bench is done
+            if euc_d < keep_diff[2]:
                 keep_diff = [r1, r2, euc_d]
         print(keep_diff)
         r_cmpr_list.append(keep_diff)
@@ -494,21 +494,8 @@ def calc_real_entrophy(mba_cov_list, working_dir):
     entropy_list = []
     for samp_file in mba_cov_list:
         samp_id = samp_file.split('/')[-1].rsplit('.', 1)[0]
-        #####################################################################
-        # Added just for benchmarking, REMOVE after analysis is complete!!! #
-        #####################################################################
-        skip_id = working_dir.rsplit('/', 1)[1].split('_', 1)[0]
-        last_int = working_dir.rsplit('/', 1)[1].rsplit('_', 2)[1]
-        samp_id = skip_id + '_' + last_int + '_test'
-        print(samp_id)
-        #####################################################################
-        if '_' in samp_id:
-            if samp_id.rsplit('_')[1][0].isdigit():
-                samp_label = samp_id.rsplit('_', 1)[0]
-                samp_rep = samp_id.rsplit('_', 1)[1]
-        else:
-            samp_label = samp_id
-            samp_rep = 0
+        samp_label = samp_id
+        samp_rep = 0
         cov_df = pd.read_csv(samp_file, sep='\t', header=0)
         cov_df['hash_id'] = [hashlib.sha256(x.encode(encoding='utf-8')).hexdigest()
                              for x in cov_df['contigName']

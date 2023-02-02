@@ -76,12 +76,12 @@ def runMiniMap2(abr_path, subcontig_path, mg_id, raw_file_list, nthreads):
         if len(raw_file_list) == 2:
             logging.info('Raw reads in FWD and REV file...\n')
             pe2 = raw_file_list[1]
-            mem_cmd = ['minimap2', '-ax', 'sr', '-t', str(nthreads), '-o', mg_sam_out,
+            mem_cmd = ['minimap2', '-ax', 'sr', '-I', '8G', '-t', str(nthreads), '-o', mg_sam_out,
                        o_join(subcontig_path, mg_id + '.subcontigs.fasta'), pe1, pe2
                        ]
         else:  # if the fastq is interleaved
             logging.info('Raw reads in interleaved file...\n')
-            mem_cmd = ['minimap2', '-ax', 'sr', '-t', str(nthreads), '-o', mg_sam_out,
+            mem_cmd = ['minimap2', '-ax', 'sr', '-I', '8G', '-t', str(nthreads), '-o', mg_sam_out,
                        o_join(subcontig_path, mg_id + '.subcontigs.fasta'), pe1
                        ]
 

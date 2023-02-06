@@ -1,9 +1,0 @@
-working_dir: "/home/ryan/SABer_local/SI/GAPP/SI_SAGs" # global path to WD
-fasta_dir: "fasta" # within the WD
-nthreads: "16" # <= num CPUs/threads
-logs: "logs" # within the WD
-condaenv: "genome_qc"
-filter_size: "2000" # if empty, no filter. if multiple, space delimited. e.g. "1000 2500 10000"
-completeness: "0" # >= checkm completeness
-contamination: "5" # <= checkm contamination
-qscore_min: "0" # >= derived q-score

@@ -1,8 +1,9 @@
 ### Usage: ###
-#snakemake -p -s Snakefile --cluster 'qsub -l {resource_list} -N {params.name} -A {account} -m {mail_opt} -M {email} -V -o {params.pbs_out} -e {params.pbs_err}' -j 10 --keep-going --use-conda --conda-frontend conda
+#snakemake -p -s Snakefile.genome_qc --use-conda --cores all
 
 import os
 import glob
+import sys
 
 # read config info into this namespace
 configfile: "config.yaml"

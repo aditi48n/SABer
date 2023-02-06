@@ -139,7 +139,7 @@ rule run_qscore:
 	shell:
 		"""
 		mkdir -p {working_dir}/qscore
-		python ./calc_qscore.py {working_dir} {comp} {cont}
+		python ./calc_qscore.py {working_dir} {comp} {cont} {qsmin}
 		echo "Done."  > {output.out_log}
 		"""
 

@@ -25,6 +25,7 @@ def calc_qscore(compl, contam, strhet, n50, size):
 working_dir = sys.argv[1]
 comp = int(sys.argv[2])
 cont = int(sys.argv[3])
+qscr = int(sys.argv[4])
 
 checkm_file = os.path.join(working_dir, "checkm/checkm_output_HPMQ.tsv")  # checkm output tsv
 seqkit_file = os.path.join(working_dir, "seqkit/seqkit_stats.tsv")  # seqkit output tsv
@@ -51,5 +52,5 @@ keep_cols = ['SAG_ID', 'Bin Id', 'Completeness', 'Contamination', 'Strain hetero
 		'num_seqs', 'sum_len', 'min_len', 'avg_len', 'max_len', 'N50', 'qscore']
 #print(set(sorted_df['pass_GUNC']))
 sorted_df['SAG_ID'] = [x.split('.', 1)[0] for x in sorted_df['Bin Id']]
-mq_df = sorted_df[keep_cols].query("Completeness >= 50 & Contamination <= @cont & qscore >= @comp")
+mq_df = sorted_df[keep_cols].query("Completeness >= @comp & Contamination <= @cont & qscore >= @qscr")
 mq_df.to_csv(os.path.join(working_dir, 'qscore/qscore_mqhp.tsv'), index=False, sep='\t')

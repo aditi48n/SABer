@@ -173,7 +173,12 @@ rule run_gtdbtk:
 		condaenv
 	shell:
 		"""
-		gtdbtk classify_wf --genome_dir {input.fasta_dir} --out_dir {working_dir}/gtdbtk -x fasta --cpus {threads} --pplacer_cpus {threads}
+		mkdir -p {working_dir}/gtdbtk
+		gtdbtk identify --genome_dir {input.fasta_dir} --out_dir {working_dir}/gtdbtk/identify_out -x fasta --write_single_copy_genes --cpus {threads} --debug
+
+		gtdbtk align --identify_dir {working_dir}/gtdbtk/identify_out --out_dir {working_dir}/gtdbtk/align_out/ --cpus {threads}
+
+		gtdbtk classify --genome_dir {input.fasta_dir} -x fasta --align_dir {working_dir}/gtdbtk/align_out/ --out_dir {working_dir}/gtdbtk/classify_out/ --cpus {threads} --pplacer_cpus {threads}
 		echo "Done."  > {output.out_log}
 		"""
 
@@ -191,9 +196,9 @@ rule run_barrnap:
 	shell:
 		"""
 		mkdir -p {working_dir}/barrnap
-		for g in $(cat {working_dir}/gtdbtk/gtdbtk.bac120.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; barrnap --kingdom bac --threads {threads} --outseq {working_dir}/barrnap/$g.rRNA.fasta {input.fasta_dir}/$g.fasta > {working_dir}/barrnap/$g.rRNA.gff; done;
+		for g in $(cat {working_dir}/gtdbtk/classify_out/classify/gtdbtk.bac120.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; barrnap --kingdom bac --threads {threads} --outseq {working_dir}/barrnap/$g.rRNA.fasta {input.fasta_dir}/$g.fasta > {working_dir}/barrnap/$g.rRNA.gff; done;
 		 echo "Bacteria Done." >> {output.out_log}
-		for g in $(cat {working_dir}/gtdbtk/gtdbtk.ar53.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; barrnap --kingdom arc --threads {threads} --outseq {working_dir}/barrnap/$g.rRNA.fasta {input.fasta_dir}/$g.fasta > {working_dir}/barrnap/$g.rRNA.gff; done;
+		for g in $(cat {working_dir}/gtdbtk/classify_out/classify/gtdbtk.ar53.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; barrnap --kingdom arc --threads {threads} --outseq {working_dir}/barrnap/$g.rRNA.fasta {input.fasta_dir}/$g.fasta > {working_dir}/barrnap/$g.rRNA.gff; done;
 		 echo "Archaea Done." >> {output.out_log}
 		"""
 
@@ -210,13 +215,13 @@ rule run_blast:
 	shell:
 		"""
 		# BLAST rRNAs against themselves
-		for g in $(cat {working_dir}/gtdbtk/gtdbtk.bac120.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then makeblastdb -in $fasta -dbtype nucl -out {working_dir}/barrnap/$g; fi; done;
+		for g in $(cat {working_dir}/gtdbtk/classify_out/classify/gtdbtk.bac120.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then makeblastdb -in $fasta -dbtype nucl -out {working_dir}/barrnap/$g; fi; done;
 
-		for g in $(cat {working_dir}/gtdbtk/gtdbtk.bac120.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then blastn -query {working_dir}/barrnap/$g.rRNA.fasta -db {working_dir}/barrnap/$g -outfmt 6 -out {working_dir}/barrnap/$g.blastout -max_target_seqs 10; fi; done;
+		for g in $(cat {working_dir}/gtdbtk/classify_out/classify/gtdbtk.bac120.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then blastn -query {working_dir}/barrnap/$g.rRNA.fasta -db {working_dir}/barrnap/$g -outfmt 6 -out {working_dir}/barrnap/$g.blastout -max_target_seqs 10; fi; done;
 
-		for g in $(cat {working_dir}/gtdbtk/gtdbtk.ar53.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then makeblastdb -in {working_dir}/barrnap/$g.rRNA.fasta -dbtype nucl -out {working_dir}/barrnap/$g; fi; done;
+		for g in $(cat {working_dir}/gtdbtk/classify_out/classify/gtdbtk.ar53.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then makeblastdb -in {working_dir}/barrnap/$g.rRNA.fasta -dbtype nucl -out {working_dir}/barrnap/$g; fi; done;
 
-		for g in $(cat {working_dir}/gtdbtk/gtdbtk.ar53.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then blastn -query {working_dir}/barrnap/$g.rRNA.fasta -db {working_dir}/barrnap/$g -outfmt 6 -out {working_dir}/barrnap/$g.blastout -max_target_seqs 10; fi; done;
+		for g in $(cat {working_dir}/gtdbtk/classify_out/classify/gtdbtk.ar53.summary.tsv | cut -f1 | grep -v 'user_genome'); do echo $g; fasta={working_dir}/barrnap/$g.rRNA.fasta; count=$(wc -l $fasta | cut -d' ' -f1); echo $count; if [ "$count" -ne "0" ]; then blastn -query {working_dir}/barrnap/$g.rRNA.fasta -db {working_dir}/barrnap/$g -outfmt 6 -out {working_dir}/barrnap/$g.blastout -max_target_seqs 10; fi; done;
 		echo "Done."  > {output.out_log}
 		"""
 

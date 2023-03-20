@@ -51,6 +51,6 @@ sorted_df = qscore_df.sort_values(by=['qscore', 'N50', 'sum_len'],
 keep_cols = ['SAG_ID', 'Bin Id', 'Completeness', 'Contamination', 'Strain heterogeneity',
 		'num_seqs', 'sum_len', 'min_len', 'avg_len', 'max_len', 'N50', 'qscore']
 #print(set(sorted_df['pass_GUNC']))
-sorted_df['SAG_ID'] = [x.split('.', 1)[0] for x in sorted_df['Bin Id']]
+sorted_df['SAG_ID'] = [x.rsplit('.', 2)[0] for x in sorted_df['Bin Id']]
 mq_df = sorted_df[keep_cols].query("Completeness >= @comp & Contamination <= @cont & qscore >= @qscr")
 mq_df.to_csv(os.path.join(working_dir, 'qscore/qscore_mqhp.tsv'), index=False, sep='\t')

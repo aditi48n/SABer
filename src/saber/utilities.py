@@ -361,19 +361,28 @@ def tetra_cnt(fasta):  # TODO: add multi-processing to this function
     return std_tetra_df
 
 
-def runCleaner(dir_path, ptrn):
+def check_ent(ent, skip_list):
+    skip = False
+    for s in skip_list:
+        if s in ent:
+            skip = True
+    return skip
+
+
+def runCleaner(dir_path, ptrn, skip_list=[]):
     ptrn_glob = glob.glob(os.path.join(dir_path, ptrn))
     for ent in ptrn_glob:
-        if os.path.isfile(ent):
-            try:
-                os.remove(ent)
-            except:
-                print("Error while deleting file : ", ent)
-        elif os.path.isdir(ent):
-            try:
-                shutil.rmtree(ent)
-            except:
-                print("Error while deleting directory : ", ent)
+        if check_ent(ent, skip_list) == False:
+            if os.path.isfile(ent):
+                try:
+                    os.remove(ent)
+                except:
+                    print("Error while deleting file : ", ent)
+            elif os.path.isdir(ent):
+                try:
+                    shutil.rmtree(ent)
+                except:
+                    print("Error while deleting directory : ", ent)
 
 
 ##########################################################################

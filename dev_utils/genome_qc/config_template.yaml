@@ -1,9 +1,9 @@
-working_dir: "/full/path/to/working/directory" # global path to WD
+working_dir: "/full/path/to/working/directory" # global path to WD which contains all individual sample directories
 fasta_dir: "fasta" # within the WD
-nthreads: "1" # <= num CPUs/threads
+nthreads: "16" # <= num CPUs/threads
 logs: "logs" # within the WD
 condaenv: "genome_qc"
-filter_size: "1000" # if empty, no filter. if multiple, space delimited. e.g. "1000 2500 10000"
-completeness: "50" # >= checkm completeness
+filter_size: "1500 2500" # if empty, no filter. if multiple, space delimited. e.g. "1000 2500 10000"
+completeness: "70" # >= checkm completeness
 contamination: "5" # <= checkm contamination
 qscore_min: "50" # >= derived q-score
